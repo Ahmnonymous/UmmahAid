@@ -1985,3 +1985,202 @@ INSERT INTO Employee (
     NULL, NULL, 14, 1, 1, 3,  -- Example FKs: South African (14), African (1), Male (1), Matric (3)
     '+27123456789', '+27123456789', 1, null, NULL  -- Blood_Type A Positive (1)
 );
+
+
+-- Insert into Center_Detail (depends on Suburb)
+INSERT INTO Center_Detail (
+    Organisation_Name, Date_of_Establishment, Contact_Number, Email_Address, Address, Area, NPO_Number, Created_By
+) VALUES
+('Welfare Center Alpha', '2020-01-01', '+27123456789', 'center.alpha@example.com', '123 Main St, Soweto', 1, 'NPO-2020-001', 'admin');
+
+-- Insert into Center_Audits (depends on Center_Detail)
+INSERT INTO Center_Audits (
+    audit_date, audit_type, findings, recommendations, conducted_by, center_id, Created_By
+) VALUES
+('2024-01-15', 'Financial Audit', 'Compliant with regulations', 'Improve record-keeping', 'Auditor Jane', 1, 'admin');
+
+-- Insert into Policy_and_Procedure (depends on Policy_Procedure_Type, File_Status, Policy_Procedure_Field)
+INSERT INTO Policy_and_Procedure (
+    Name, Description, Type, Date_Of_Publication, Status, Field, Created_By
+) VALUES
+('Employee Safety Policy', 'Safety guidelines for staff', 1, '2023-06-01', 1, 1, 'admin'); -- Type=1 (Health and Safety), Status=1 (Active), Field=1 (Compliance)
+
+-- Insert into Employee_Appraisal (depends on Employee, Center_Detail)
+INSERT INTO Employee_Appraisal (
+    Employee_ID, Positions, Attendance, Job_Knowledge_Skills, Quality_of_Work, Initiative_And_Motivation, 
+    Teamwork, General_Conduct, Discipline, Special_Task, Overall_Comments, Room_for_Improvement, center_id, Created_By
+) VALUES
+(1, 'Case Worker', 'Excellent', 'Proficient', 'High Quality', 'Proactive', 'Collaborative', 'Professional', 'Good', 'None', 'Excellent performance', 'Continue training', 1, 'admin');
+
+-- Insert into Employee_Initiative (depends on Employee, Center_Detail)
+INSERT INTO Employee_Initiative (
+    Employee_ID, Idea, Details, Idea_Date, Status, center_id, Created_By
+) VALUES
+(1, 'Streamline Application Process', 'Automate data entry', '2024-02-01', 'Under Review', 1, 'admin');
+
+-- Insert into Employee_Skills (depends on Employee, Training_Courses, Training_Institutions, Training_Outcome, Center_Detail)
+INSERT INTO Employee_Skills (
+    Employee_ID, Course, Institution, Date_Conducted, Date_Expired, Training_Outcome, center_id, Created_By
+) VALUES
+(1, 1, 1, '2023-03-01', '2026-03-01', 2, 1, 'admin'); -- Course=1 (First Aid), Institution=1 (Mancosa), Outcome=2 (Certified)
+
+-- Insert into HSEQ_Toolbox_Meeting (depends on Center_Detail)
+INSERT INTO HSEQ_Toolbox_Meeting (
+    Meeting_Date, Conducted_By, In_Attendance, Health_Discussions, Safety_Discussions, center_id, Created_By
+) VALUES
+('2024-03-10', 'John Manager', 'Team Alpha, Team Beta', 'Hygiene protocols', 'Fire safety measures', 1, 'admin');
+
+-- Insert into HSEQ_Toolbox_Meeting_Tasks (depends on HSEQ_Toolbox_Meeting, Tasks_Status, Center_Detail)
+INSERT INTO HSEQ_Toolbox_Meeting_Tasks (
+    HSEQ_Toolbox_Meeting_ID, Task_Description, Completion_Date, Responsible, Status, Notes, center_id, Created_By
+) VALUES
+(1, 'Install fire extinguishers', '2024-04-01', 'Safety Officer', 3, 'Urgent task', 1, 'admin'); -- Status=3 (In Progress)
+
+-- Insert into Applicant_Details (depends on Race, Nationality, Gender, Born_Religion, Period_As_Muslim, File_Condition, File_Status, Education_Level, Marital_Status, Employment_Status, Suburb, Dwelling_Type, Dwelling_Status, Health, Skills, Center_Detail)
+INSERT INTO Applicant_Details (
+    Name, Surname, ID_Number, Race, Nationality, Gender, Born_Religion_ID, Period_As_Muslim_ID, File_Number, 
+    File_Condition, File_Status, Date_Intake, Highest_Education_Level, Marital_Status, Employment_Status, 
+    Cell_Number, Email_Address, Suburb, Street_Address, Dwelling_Type, Dwelling_Status, Health, Skills, center_id, Created_By
+) VALUES
+('Ahmed', 'Khan', '8705051234081', 2, 14, 1, 4, 1, 'APP-2024-001', 1, 1, '2024-01-10', 3, 2, 1, 
+ '+27812345678', 'ahmed.khan@example.com', 1, '456 Oak St, Soweto', 1, 3, 1, 2, 1, 'admin'); -- Race=2 (Asian), Nationality=14 (South African), etc.
+
+-- Insert into Comments (depends on Applicant_Details, Center_Detail)
+INSERT INTO Comments (
+    File_ID, Comment, Comment_Date, center_id, Created_By
+) VALUES
+(1, 'Initial assessment completed', '2024-01-11', 1, 'admin');
+
+-- Insert into Tasks (depends on Applicant_Details, Center_Detail)
+INSERT INTO Tasks (
+    File_ID, Task_Description, Date_Required, Status, center_id, Created_By
+) VALUES
+(1, 'Schedule home visit', '2024-02-15', 'In Progress', 1, 'admin');
+
+-- Insert into Relationships (depends on Applicant_Details, Relationship_Types, Employment_Status, Gender, Education_Level, Health_Conditions, Center_Detail)
+INSERT INTO Relationships (
+    File_ID, Relationship_Type, Name, Surname, ID_Number, Date_of_Birth, Employment_Status, Gender, 
+    Highest_Education, Health_Condition, center_id, Created_By
+) VALUES
+(1, 2, 'Aisha', 'Khan', '1505051234082', '2015-05-05', 2, 2, 1, 1, 1, 'admin'); -- Type=2 (Child), Employment_Status=2 (Student), etc.
+
+-- Insert into Home_Visit (depends on Applicant_Details, Center_Detail)
+INSERT INTO Home_Visit (
+    File_ID, Visit_Date, Representative, Comments, center_id, Created_By
+) VALUES
+(1, '2024-02-20', 'Case Worker Jane', 'Stable living conditions', 1, 'admin');
+
+-- Insert into Financial_Assistance (depends on Applicant_Details, Assistance_Types, Center_Detail)
+INSERT INTO Financial_Assistance (
+    File_ID, Assistance_Type, Financial_Amount, Date_of_Assistance, center_id, Created_By
+) VALUES
+(1, 1, 1000.00, '2024-02-25', 1, 'admin'); -- Assistance_Type=1 (Food Voucher)
+
+-- Insert into Food_Assistance (depends on Applicant_Details, Hampers, Center_Detail)
+INSERT INTO Food_Assistance (
+    File_ID, Distributed_Date, Hamper_Type, Financial_Cost, center_id, Created_By
+) VALUES
+(1, '2024-02-28', 1, 250.00, 1, 'admin'); -- Hamper_Type=1 (assumed Basic Food Hamper from prior context)
+
+-- Insert into Attachments (depends on Applicant_Details, Center_Detail)
+INSERT INTO Attachments (
+    File_ID, Attachment_Name, Attachment_Details, center_id, Created_By
+) VALUES
+(1, 'ID Document Scan', 'Applicant ID copy', 1, 'admin');
+
+-- Insert into Programs (depends on Applicant_Details, Training_Courses, Means_of_communication, Employee, Training_Level, Training_Institutions, Training_Outcome, Center_Detail)
+INSERT INTO Programs (
+    Person_Trained_ID, Program_Name, Means_of_communication, Date_of_program, Communicated_by, 
+    Training_Level, Training_Provider, Program_Outcome, center_id, Created_By
+) VALUES
+(1, 1, 1, '2024-03-01', 1, 1, 1, 2, 1, 'admin'); -- Program_Name=1 (First Aid), Means=1 (Email), Outcome=2 (Certified)
+
+-- Insert into Financial_Assessment (depends on Applicant_Details, Center_Detail)
+INSERT INTO Financial_Assessment (
+    File_ID, center_id, Total_Income, Total_Expenses, Disposable_Income, Created_By
+) VALUES
+(1, 1, 1500.00, 1200.00, 300.00, 'admin');
+
+-- Insert into Applicant_Income (depends on Financial_Assessment, Income_Type)
+INSERT INTO Applicant_Income (
+    Financial_Assessment_ID, Income_Type_ID, Amount, Description, Created_By
+) VALUES
+(1, 1, 1500.00, 'Part-time job salary', 'admin'); -- Income_Type=1 (Salary)
+
+-- Insert into Applicant_Expense (depends on Financial_Assessment, Expense_Type)
+INSERT INTO Applicant_Expense (
+    Financial_Assessment_ID, Expense_Type_ID, Amount, Description, Created_By
+) VALUES
+(1, 1, 800.00, 'Monthly rent payment', 'admin'); -- Expense_Type=1 (Rent)
+
+-- Insert into Service_Rating (depends on Center_Detail)
+INSERT INTO Service_Rating (
+    Overall_Experience, Respect_And_Dignity, Communication_And_Clarity, Timeliness_Of_Support, 
+    Fairness_And_Equality, Usefulness_Of_Service, Friendliness_Of_Staff, Positive_Impact, 
+    Access_Ease, Would_Recommend, Appreciate_Most, How_To_Improve, Other_Comments, center_id, Created_By
+) VALUES
+(4, 5, 4, 3, 5, 4, 5, TRUE, 4, TRUE, 'Friendly staff', 'Faster response times', 'Great service', 1, 'admin');
+
+-- Insert into Supplier_Profile (depends on Center_Detail, Supplier_Category)
+INSERT INTO Supplier_Profile (
+    center_id, Name, Registration_No, Contact_Person, Contact_Email, Contact_Phone, Address, Category_ID, Status, Created_By
+) VALUES
+(1, 'Fresh Foods Ltd', 'REG-2024-001', 'Sam Supplier', 'sam@freshfoods.com', '+27123456788', '789 Food St, Sandton', 
+ (SELECT ID FROM Supplier_Category WHERE Name = 'Food Supplier'), 'Active', 'admin');
+
+-- Insert into Supplier_Evaluation (depends on Center_Detail, Supplier_Profile)
+INSERT INTO Supplier_Evaluation (
+    center_id, Supplier_ID, Eval_Date, Quality_Score, Delivery_Score, Cost_Score, OHS_Score, Env_Score, 
+    Quality_Wt, Delivery_Wt, Cost_Wt, OHS_Wt, Env_Wt, Overall_Score, Status, Notes, Expiry_Date, Created_By
+) VALUES
+(1, (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), '2024-03-15', 4, 5, 3, 4, 5, 
+ 0.2, 0.2, 0.2, 0.2, 0.2, 4.2, 'Approved', 'Reliable supplier', '2025-03-15', 'admin');
+
+-- Insert into Supplier_Document (depends on Center_Detail, Supplier_Profile)
+INSERT INTO Supplier_Document (
+    center_id, Supplier_ID, Doc_Type, Issued_At, Description, Created_By
+) VALUES
+(1, (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), 'Tax Certificate', '2024-01-01', 'Annual tax compliance', 'admin');
+
+-- Insert into Inventory_Items (depends on Hampers, Center_Detail, Supplier_Profile)
+INSERT INTO Inventory_Items (
+    Item_Name, Description, Hamper_Type, Quantity, Unit, Min_Stock, Cost_Per_Unit, Supplier_ID, center_id, Created_By
+) VALUES
+('Canned Beans', '400g canned beans', 1, 200.00, 'units', 50.00, 5.50, 
+ (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), 1, 'admin');
+
+-- Insert into Inventory_Transactions (depends on Inventory_Items, Employee, Center_Detail)
+INSERT INTO Inventory_Transactions (
+    Item_ID, Transaction_Type, Quantity, Transaction_Date, Notes, Employee_ID, center_id, Created_By
+) VALUES
+(1, 'IN', 100.00, '2024-03-20', 'Received new stock', 1, 1, 'admin');
+
+-- Insert into Conversations (depends on Center_Detail)
+INSERT INTO Conversations (
+    Title, Type, center_id, Created_By
+) VALUES
+('Weekly Staff Discussion', 'Group', 1, 'admin');
+
+-- Insert into Conversation_Participants (depends on Conversations, Employee, Center_Detail)
+INSERT INTO Conversation_Participants (
+    Conversation_ID, Employee_ID, Joined_Date, center_id, Created_By
+) VALUES
+(1, 1, '2024-03-25', 1, 'admin');
+
+-- Insert into Messages (depends on Conversations, Employee, Center_Detail)
+INSERT INTO Messages (
+    Conversation_ID, Sender_ID, Message_Text, center_id, Created_By
+) VALUES
+(1, 1, 'Please review the new policy document', 1, 'admin');
+
+-- Insert into Folders (depends on Employee, Center_Detail)
+INSERT INTO Folders (
+    Name, Employee_ID, center_id, Created_By
+) VALUES
+('HR Documents', 1, 1, 'admin');
+
+-- Insert into Personal_Files (depends on Folders, Employee, Center_Detail)
+INSERT INTO Personal_Files (
+    Name, Folder_ID, Employee_ID, center_id, Created_By
+) VALUES
+('Contract.pdf', 1, 1, 1, 'admin');
