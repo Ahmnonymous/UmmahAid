@@ -1,0 +1,23 @@
+﻿const express = require('express');
+const router = express.Router();
+const homeVisitController = require('../controllers/homeVisitController');
+const multer = require('multer');
+const path = require('path');
+const uploadsDir = path.join(__dirname, '../uploads/Home_Visit');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, Date.now() + '_' + file.originalname)
+});
+const upload = multer({ storage });
+
+router.get('/', homeVisitController.getAll);
+router.get('/:id/view-attachment1', homeVisitController.viewAttachment1);
+router.get('/:id/download-attachment1', homeVisitController.downloadAttachment1);
+router.get('/:id/view-attachment2', homeVisitController.viewAttachment2);
+router.get('/:id/download-attachment2', homeVisitController.downloadAttachment2);
+router.get('/:id', homeVisitController.getById);
+router.post('/', upload.fields([{ name: 'attachment_1' }, { name: 'attachment_2' }]), homeVisitController.create);
+router.put('/:id', upload.fields([{ name: 'attachment_1' }, { name: 'attachment_2' }]), homeVisitController.update);
+router.delete('/:id', homeVisitController.delete);
+
+module.exports = router;

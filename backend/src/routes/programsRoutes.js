@@ -1,0 +1,21 @@
+﻿const express = require('express');
+const router = express.Router();
+const programsController = require('../controllers/programsController');
+const multer = require('multer');
+const path = require('path');
+const uploadsDir = path.join(__dirname, '../uploads/Programs');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, Date.now() + '_' + file.originalname)
+});
+const upload = multer({ storage });
+
+router.get('/', programsController.getAll);
+router.get('/:id/view-attachment', programsController.viewAttachment);
+router.get('/:id/download-attachment', programsController.downloadAttachment);
+router.get('/:id', programsController.getById);
+router.post('/', upload.fields([{ name: 'attachment' }]), programsController.create);
+router.put('/:id', upload.fields([{ name: 'attachment' }]), programsController.update);
+router.delete('/:id', programsController.delete);
+
+module.exports = router;

@@ -1,0 +1,292 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardBody, Row, Col, Table, Spinner, Alert, Button } from 'reactstrap';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { GET_APPLICANT_DETAILS_REPORT } from '../../helpers/url_helper';
+
+const ApplicantDetailsReport = () => {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('authToken');
+
+            const response = await axios.get(GET_APPLICANT_DETAILS_REPORT, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (response.data.success) {
+                setData(response.data.data);
+            } else {
+                setError(response.data.message || 'Failed to fetch data');
+            }
+        } catch (err) {
+            console.error('Error fetching applicant details:', err);
+            setError(err.response?.data?.message || 'Error fetching applicant details');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredData = data.filter(item =>
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.file_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.id_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    const formatCurrency = (amount) => {
+        if (!amount) return 'R 0.00';
+        return new Intl.NumberFormat('en-ZA', {
+            style: 'currency',
+            currency: 'ZAR'
+        }).format(amount);
+    };
+
+    if (loading) {
+        return (
+            <div className="page-content">
+                <div className="container-fluid">
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                        <Spinner color="primary" className="me-2" />
+                        <span>Loading applicant details...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="page-content">
+                <div className="container-fluid">
+                    <Alert color="danger">
+                        <h5>Error Loading Report</h5>
+                        <p>{error}</p>
+                        <Button color="primary" onClick={fetchData}>Retry</Button>
+                    </Alert>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="page-content">
+            <div className="container-fluid">
+                {/* Header */}
+                <Row>
+                    <Col lg={12}>
+                        <div className="page-title-box d-sm-flex align-items-center justify-content-between">
+                            <h4 className="mb-sm-0">
+                                <i className="bx bx-user-plus me-2"></i>
+                                Applicant Details Report
+                            </h4>
+                            <div className="page-title-right">
+                                <ol className="breadcrumb m-0">
+                                    <li className="breadcrumb-item">
+                                        <Link to="/dashboard">Dashboard</Link>
+                                    </li>
+                                    <li className="breadcrumb-item">
+                                        <Link to="/reports">Reports</Link>
+                                    </li>
+                                    <li className="breadcrumb-item active">Applicant Details</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
+
+                {/* Summary Cards */}
+                <Row>
+                    <Col lg={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1 overflow-hidden">
+                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Total Applicants</p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <h5 className="text-success fs-14 mb-0">{data.length}</h5>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1 overflow-hidden">
+                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Active Files</p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <h5 className="text-info fs-14 mb-0">
+                                            {data.filter(item => item.file_status_name === 'Active').length}
+                                        </h5>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1 overflow-hidden">
+                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Employed</p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <h5 className="text-warning fs-14 mb-0">
+                                            {data.filter(item => 
+                                                item.employment_status_name === 'Full Time Employed' || 
+                                                item.employment_status_name === 'Part-time Employed'
+                                            ).length}
+                                        </h5>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1 overflow-hidden">
+                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Unemployed</p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <h5 className="text-danger fs-14 mb-0">
+                                            {data.filter(item => item.employment_status_name === 'Unemployed').length}
+                                        </h5>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+
+                {/* Search and Actions */}
+                <Row>
+                    <Col lg={12}>
+                        <Card>
+                            <CardBody>
+                                <Row className="g-3">
+                                    <Col lg={6}>
+                                        <div className="search-box">
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Search by name, file number, or ID number..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
+                                            <i className="ri-search-line search-icon"></i>
+                                        </div>
+                                    </Col>
+                                    <Col lg={6} className="text-end">
+                                        <Button color="primary" className="me-2">
+                                            <i className="bx bx-export me-1"></i>
+                                            Export Excel
+                                        </Button>
+                                        <Button color="success">
+                                            <i className="bx bx-printer me-1"></i>
+                                            Print
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+
+                {/* Data Table */}
+                <Row>
+                    <Col lg={12}>
+                        <Card>
+                            <CardBody>
+                                <div className="table-responsive">
+                                    <Table className="table table-striped table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>File Number</th>
+                                                <th>Name</th>
+                                                <th>ID Number</th>
+                                                <th>Gender</th>
+                                                <th>Employment Status</th>
+                                                <th>File Status</th>
+                                                <th>File Condition</th>
+                                                <th>Date Intake</th>
+                                                <th>Contact</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredData.map((item, index) => (
+                                                <tr key={item.id}>
+                                                    <td>
+                                                        <strong>{item.file_number || '-'}</strong>
+                                                    </td>
+                                                    <td>
+                                                        {item.name} {item.surname}
+                                                    </td>
+                                                    <td>{item.id_number || '-'}</td>
+                                                    <td>{item.gender_name || '-'}</td>
+                                                    <td>
+                                                        <span className={`badge bg-${item.employment_status_name === 'Unemployed' ? 'danger' : 
+                                                            item.employment_status_name?.includes('Employed') ? 'success' : 'secondary'}`}>
+                                                            {item.employment_status_name || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`badge bg-${item.file_status_name === 'Active' ? 'success' : 'secondary'}`}>
+                                                            {item.file_status_name || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`badge bg-${item.file_condition_name === 'High Risk' ? 'danger' : 
+                                                            item.file_condition_name === 'Caution' ? 'warning' : 'success'}`}>
+                                                            {item.file_condition_name || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td>{formatDate(item.date_intake)}</td>
+                                                    <td>
+                                                        <div>
+                                                            <div>{item.cell_number || '-'}</div>
+                                                            <small className="text-muted">{item.email_address || '-'}</small>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                                
+                                {filteredData.length === 0 && (
+                                    <div className="text-center py-4">
+                                        <p className="text-muted">No applicants found matching your search criteria.</p>
+                                    </div>
+                                )}
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
+        </div>
+    );
+};
+
+export default ApplicantDetailsReport;

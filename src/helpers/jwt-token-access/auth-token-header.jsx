@@ -1,0 +1,28 @@
+import api, { post } from ".././api_helper";
+
+export const login = async (username, password) => {
+  console.log("🔐 Starting login process for user:", username);
+  console.log("🔐 Using API helper post function");
+  try {
+    const res = await post("http://localhost:5000/api/auth/login", { username, password });
+    console.log("✅ Login API response:", res);
+    
+    if (res.token) {
+      localStorage.setItem("authToken", res.token);
+      localStorage.setItem("UmmahAidUser", JSON.stringify(res.userInfo));
+      console.log("💾 Stored authToken and UmmahAidUser in localStorage");
+    }
+    
+    console.log("🚀 Returning login response:", res);
+    return res;
+  } catch (error) {
+    console.error("❌ Login API error:", error);
+    throw error;
+  }
+};
+
+export const logout = () => {
+  localStorage.removeItem("authToken");
+  // localStorage.removeItem("employee");
+  localStorage.removeItem("UmmahAidUser");
+};

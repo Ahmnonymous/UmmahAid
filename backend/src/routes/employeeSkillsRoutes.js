@@ -1,0 +1,19 @@
+﻿const express = require('express');
+const router = express.Router();
+const employeeSkillsController = require('../controllers/employeeSkillsController');
+const multer = require('multer');
+const path = require('path');
+const uploadsDir = path.join(__dirname, '../uploads/Employee_Skills');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, Date.now() + '_' + file.originalname)
+});
+const upload = multer({ storage });
+router.get('/', employeeSkillsController.getAll);
+router.get('/:id/view-attachment', employeeSkillsController.viewAttachment);
+router.get('/:id/download-attachment', employeeSkillsController.downloadAttachment);
+router.get('/:id', employeeSkillsController.getById);
+router.post('/', upload.fields([{ name: 'attachment' }]), employeeSkillsController.create);
+router.put('/:id', upload.fields([{ name: 'attachment' }]), employeeSkillsController.update);
+router.delete('/:id', employeeSkillsController.delete);
+module.exports = router;
