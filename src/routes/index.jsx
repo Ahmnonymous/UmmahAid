@@ -69,6 +69,7 @@ import FoodAssistanceReport from "../pages/Reports/FoodAssistanceReport";
 import HomeVisitsReport from "../pages/Reports/HomeVisitsReport";
 import ApplicantProgramsReport from "../pages/Reports/ApplicantProgramsReport";
 import RelationshipReport from "../pages/Reports/RelationshipReport";
+import SkillsMatrixReport from "../pages/Reports/SkillsMatrixReport";
 
 // //  // Inner Authentication
 import Login1 from "../pages/AuthenticationInner/Login";
@@ -352,7 +353,6 @@ const authProtectedRoutes = [
   { path: "/lookups/:table", component: <LookupTableView /> },
 
   // Reports
-  { path: "/reports", component: <ReportsMenu /> },
   { path: "/reports/applicant-details", component: <ApplicantDetailsReport /> },
   { path: "/reports/total-financial-assistance", component: <TotalFinancialAssistanceReport /> },
   { path: "/reports/financial-assistance", component: <FinancialAssistanceReport /> },
@@ -360,6 +360,7 @@ const authProtectedRoutes = [
   { path: "/reports/home-visits", component: <HomeVisitsReport /> },
   { path: "/reports/applicant-programs", component: <ApplicantProgramsReport /> },
   { path: "/reports/relationship-report", component: <RelationshipReport /> },
+  { path: "/reports/skills-matrix", component: <SkillsMatrixReport /> },
 
   //   // this route should be at the end of all other routes
   //   // eslint-disable-next-line react/display-name

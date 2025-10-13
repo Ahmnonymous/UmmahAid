@@ -60,6 +60,14 @@ const ReportsMenu = () => {
             icon: 'bx bx-group',
             path: '/reports/relationship-report',
             color: 'secondary'
+        },
+        {
+            id: 'skills-matrix',
+            title: 'Applicant Skills Report',
+            description: 'Employee training courses, certifications, and expiry status',
+            icon: 'bx bx-award',
+            path: '/reports/skills-matrix',
+            color: 'dark'
         }
     ];
 

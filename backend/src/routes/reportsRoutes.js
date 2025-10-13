@@ -49,4 +49,16 @@ router.get('/applicant-programs',
     ReportsController.getApplicantPrograms.bind(ReportsController)
 );
 
+// Financial Assessment Report
+router.get('/financial-assessment', 
+    roleMiddleware([1, 2, 3]), // Org. Caseworkers, Org. Admin, Org. Executives
+    ReportsController.getFinancialAssessment.bind(ReportsController)
+);
+
+// Skills Matrix Report
+router.get('/skills-matrix', 
+    roleMiddleware([1, 2, 3]), // Org. Caseworkers, Org. Admin, Org. Executives
+    ReportsController.getSkillsMatrix.bind(ReportsController)
+);
+
 module.exports = router;

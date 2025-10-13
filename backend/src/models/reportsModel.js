@@ -330,6 +330,118 @@ class ReportsModel {
             throw new Error(`Error fetching applicant programs: ${error.message}`);
         }
     }
+
+    // Financial Assessment Report
+    static async getFinancialAssessment(centerId = null) {
+        try {
+            let query = `
+                SELECT 
+                    ad.name,
+                    ad.surname,
+                    ad.file_number,
+                    ad.cell_number,
+                    fs.name AS file_status_name,
+                    es.name AS employment_status_name,
+                    fa.id AS assessment_id,
+                    fa.total_income,
+                    fa.total_expenses,
+                    fa.disposable_income,
+                    fa.created_by,
+                    fa.created_at,
+                    -- Income details (up to 9 items)
+                    ARRAY_AGG(DISTINCT jsonb_build_object(
+                        'income_type', it.name,
+                        'income_amount', ai.amount,
+                        'income_description', ai.description
+                    )) FILTER (WHERE ai.id IS NOT NULL) AS income_items,
+                    -- Expense details (up to 9 items)
+                    ARRAY_AGG(DISTINCT jsonb_build_object(
+                        'expense_type', et.name,
+                        'expense_amount', ae.amount,
+                        'expense_description', ae.description
+                    )) FILTER (WHERE ae.id IS NOT NULL) AS expense_items
+                FROM financial_assessment fa
+                INNER JOIN applicant_details ad ON fa.file_id = ad.id
+                LEFT JOIN file_status fs ON ad.file_status = fs.id
+                LEFT JOIN employment_status es ON ad.employment_status = es.id
+                LEFT JOIN applicant_income ai ON ai.financial_assessment_id = fa.id
+                LEFT JOIN income_type it ON ai.income_type_id = it.id
+                LEFT JOIN applicant_expense ae ON ae.financial_assessment_id = fa.id
+                LEFT JOIN expense_type et ON ae.expense_type_id = et.id
+            `;
+            
+            const params = [];
+            if (centerId) {
+                query += ` WHERE fa.center_id = $1`;
+                params.push(centerId);
+            }
+            
+            query += `
+                GROUP BY
+                    ad.name, ad.surname, ad.file_number, ad.cell_number,
+                    fs.name, es.name, fa.id, fa.total_income, fa.total_expenses, 
+                    fa.disposable_income, fa.created_by, fa.created_at
+                ORDER BY fa.created_at DESC
+            `;
+            
+            const result = await db.query(query, params);
+            return result.rows;
+        } catch (error) {
+            throw new Error(`Error fetching financial assessment: ${error.message}`);
+        }
+    }
+
+    // Skills Matrix Report (Employee Skills)
+    static async getSkillsMatrix(centerId = null) {
+        try {
+            let query = `
+                SELECT 
+                    e.id AS employee_id,
+                    e.name,
+                    e.surname,
+                    e.id_number,
+                    e.contact_number AS cell_number,
+                    d.name AS department_name,
+                    es.course,
+                    es.institution,
+                    es.date_conducted,
+                    es.date_expired,
+                    es.training_outcome,
+                    es.created_by,
+                    es.created_at,
+                    -- Join with lookup tables for readable names
+                    tc.name AS course_name,
+                    ti.institute_name AS institution_name,
+                    tout.name AS program_outcome_name,
+                    -- Calculate status based on date_expired
+                    CASE
+                        WHEN es.date_expired IS NULL THEN 'No Expiry'
+                        WHEN es.date_expired < CURRENT_DATE THEN 'Expired'
+                        WHEN es.date_expired <= CURRENT_DATE + INTERVAL '30 days' THEN 'Coming Up Soon'
+                        ELSE 'Still Valid'
+                    END AS status
+                FROM employee_skills es
+                INNER JOIN employee e ON es.employee_id = e.id
+                LEFT JOIN departments d ON e.department = d.id
+                LEFT JOIN training_courses tc ON es.course = tc.id
+                LEFT JOIN training_institutions ti ON es.institution = ti.id
+                LEFT JOIN training_outcome tout ON es.training_outcome = tout.id
+            `;
+            
+            const params = [];
+            if (centerId) {
+                query += ` WHERE es.center_id = $1`;
+                params.push(centerId);
+            }
+            
+            query += ` ORDER BY e.surname, e.name, es.date_expired ASC`;
+            
+            const result = await db.query(query, params);
+            return result.rows;
+        } catch (error) {
+            throw new Error(`Error fetching skills matrix: ${error.message}`);
+        }
+    }
 }
 
 module.exports = ReportsModel;

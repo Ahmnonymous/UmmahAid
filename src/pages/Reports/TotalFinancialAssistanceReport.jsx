@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardBody, Row, Col, Table, Spinner, Alert, Button } from 'reactstrap';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Container, Card, CardBody, Row, Col, Table, Spinner, Alert, Button, Input, Label, FormGroup, Badge, Collapse, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import Breadcrumbs from '../../components/Common/Breadcrumb';
 import { GET_TOTAL_FINANCIAL_ASSISTANCE_REPORT } from '../../helpers/url_helper';
 
 const TotalFinancialAssistanceReport = () => {
@@ -9,6 +10,22 @@ const TotalFinancialAssistanceReport = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    const [filters, setFilters] = useState({
+        fileStatus: '',
+        employmentStatus: '',
+        fileCondition: '',
+        healthCondition: ''
+    });
+
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const [groupBy, setGroupBy] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [showGroupBy, setShowGroupBy] = useState(false);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         fetchData();
@@ -38,11 +55,131 @@ const TotalFinancialAssistanceReport = () => {
         }
     };
 
-    const filteredData = data.filter(item =>
+    const getUniqueValues = (field) => {
+        return [...new Set(data.map(item => item[field]).filter(Boolean))].sort();
+    };
+
+    const processedData = useMemo(() => {
+        let result = [...data];
+
+        if (searchTerm) {
+            result = result.filter(item =>
         item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.file_number?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+                item.file_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.cell_number?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (filters.fileStatus) {
+            result = result.filter(item => item.file_status_name === filters.fileStatus);
+        }
+        if (filters.employmentStatus) {
+            result = result.filter(item => item.employment_status_name === filters.employmentStatus);
+        }
+        if (filters.fileCondition) {
+            result = result.filter(item => item.file_condition_name === filters.fileCondition);
+        }
+        if (filters.healthCondition) {
+            result = result.filter(item => item.health_condition_name === filters.healthCondition);
+        }
+
+        if (sortConfig.key) {
+            result.sort((a, b) => {
+                const aVal = a[sortConfig.key] || '';
+                const bVal = b[sortConfig.key] || '';
+                
+                if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return result;
+    }, [data, searchTerm, filters, sortConfig]);
+
+    const groupedData = useMemo(() => {
+        if (!groupBy) return null;
+
+        const grouped = {};
+        processedData.forEach(item => {
+            const key = item[groupBy] || 'Not Specified';
+            if (!grouped[key]) {
+                grouped[key] = [];
+            }
+            grouped[key].push(item);
+        });
+
+        return grouped;
+    }, [processedData, groupBy]);
+
+    // Paginate data
+    const paginatedData = useMemo(() => {
+        if (groupBy) return processedData;
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        return processedData.slice(startIndex, endIndex);
+    }, [processedData, currentPage, itemsPerPage, groupBy]);
+
+    const totalPages = Math.ceil(processedData.length / itemsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filters, sortConfig]);
+
+    const handleSort = (key) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
+
+    const exportToCSV = () => {
+        const headers = [
+            'File Number', 'Name', 'Surname', 'Cell Number', 'File Status', 
+            'Employment Status', 'File Condition', 'Health Condition',
+            'Food Assistance (R)', 'Financial Transactions (R)', 'Total Assistance (R)'
+        ];
+
+        const csvData = processedData.map(item => [
+            item.file_number || '',
+            item.name || '',
+            item.surname || '',
+            item.cell_number || '',
+            item.file_status_name || '',
+            item.employment_status_name || '',
+            item.file_condition_name || '',
+            item.health_condition_name || '',
+            item.financial_food_assistance || '0',
+            item.financial_transactions || '0',
+            item.total_financial || '0'
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `total_financial_assistance_report_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            fileStatus: '',
+            employmentStatus: '',
+            fileCondition: '',
+            healthCondition: ''
+        });
+        setSearchTerm('');
+        setGroupBy('');
+        setSortConfig({ key: null, direction: 'asc' });
+        setShowFilters(false);
+        setShowGroupBy(false);
+    };
 
     const formatCurrency = (amount) => {
         if (!amount) return 'R 0.00';
@@ -52,8 +189,15 @@ const TotalFinancialAssistanceReport = () => {
         }).format(amount);
     };
 
-    const totalFoodAssistance = data.reduce((sum, item) => sum + (parseFloat(item.financial_food_assistance) || 0), 0);
-    const totalFinancialTransactions = data.reduce((sum, item) => sum + (parseFloat(item.financial_transactions) || 0), 0);
+    const getSortIcon = (key) => {
+        if (sortConfig.key !== key) return <i className="bx bx-sort text-muted"></i>;
+        return sortConfig.direction === 'asc' ? 
+            <i className="bx bx-sort-up text-primary"></i> : 
+            <i className="bx bx-sort-down text-primary"></i>;
+    };
+
+    const totalFoodAssistance = processedData.reduce((sum, item) => sum + (parseFloat(item.financial_food_assistance) || 0), 0);
+    const totalFinancialTransactions = processedData.reduce((sum, item) => sum + (parseFloat(item.financial_transactions) || 0), 0);
     const grandTotal = totalFoodAssistance + totalFinancialTransactions;
 
     if (loading) {
@@ -83,203 +227,494 @@ const TotalFinancialAssistanceReport = () => {
         );
     }
 
+    document.title = "Total Assistance Report | UmmahAid";
+
     return (
         <div className="page-content">
-            <div className="container-fluid">
-                {/* Header */}
+            <Container fluid>
+                <Breadcrumbs title="Reports" breadcrumbItem="Total Assistance Report" />
+
+                {/* Summary Cards */}
+                <Row>
+                    <Col md={4}>
+                        <Card className="mini-stats-wid">
+                            <CardBody>
+                                <div className="d-flex">
+                                    <div className="flex-grow-1">
+                                        <p className="text-muted fw-medium mb-2">Total Assistance Given</p>
+                                        <h4 className="mb-0">{formatCurrency(grandTotal)}</h4>
+                                    </div>
+                                    <div className="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
+                                        <span className="avatar-title rounded-circle bg-primary">
+                                            <i className="bx bx-money font-size-24"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col md={4}>
+                        <Card className="mini-stats-wid">
+                            <CardBody>
+                                <div className="d-flex">
+                                    <div className="flex-grow-1">
+                                        <p className="text-muted fw-medium mb-2">Total Food Assistance Given</p>
+                                        <h4 className="mb-0">{formatCurrency(totalFoodAssistance)}</h4>
+                                    </div>
+                                    <div className="avatar-sm rounded-circle bg-success align-self-center mini-stat-icon">
+                                        <span className="avatar-title rounded-circle bg-success">
+                                            <i className="bx bx-home font-size-24"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col md={4}>
+                        <Card className="mini-stats-wid">
+                            <CardBody>
+                                <div className="d-flex">
+                                    <div className="flex-grow-1">
+                                        <p className="text-muted fw-medium mb-2">Total Financial Assistance Given</p>
+                                        <h4 className="mb-0">{formatCurrency(totalFinancialTransactions)}</h4>
+                                    </div>
+                                    <div className="avatar-sm rounded-circle bg-info align-self-center mini-stat-icon">
+                                        <span className="avatar-title rounded-circle bg-info">
+                                            <i className="bx bx-credit-card font-size-24"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+
                 <Row>
                     <Col lg={12}>
-                        <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 className="mb-sm-0">
-                                <i className="bx bx-money me-2"></i>
-                                Total Financial Assistance Report
-                            </h4>
-                            <div className="page-title-right">
-                                <ol className="breadcrumb m-0">
-                                    <li className="breadcrumb-item">
-                                        <Link to="/dashboard">Dashboard</Link>
-                                    </li>
-                                    <li className="breadcrumb-item">
-                                        <Link to="/reports">Reports</Link>
-                                    </li>
-                                    <li className="breadcrumb-item active">Total Financial Assistance</li>
-                                </ol>
-                            </div>
+                        <Card>
+                            <CardBody>
+                                <Row className="mb-3">
+                                    <Col sm={6}>
+                                        <div className="d-flex align-items-center">
+                                            <h4 className="card-title mb-0">
+                                                <i className="bx bx-money me-2"></i>
+                                                Total Assistance Report
+                                            </h4>
+                                        </div>
+                                    </Col>
+                                    <Col sm={6}>
+                                        <div className="text-sm-end">
+                                            <UncontrolledDropdown className="d-inline-block">
+                                                <DropdownToggle color="primary" caret style={{ borderRadius: 0 }}>
+                                                    <i className="bx bx-cog me-1"></i>
+                                                    Actions
+                                                    {Object.values(filters).filter(Boolean).length > 0 && 
+                                                        <Badge color="light" className="ms-1">{Object.values(filters).filter(Boolean).length}</Badge>
+                                                    }
+                                                </DropdownToggle>
+                                                <DropdownMenu end>
+                                                    <DropdownItem header>Report Functions</DropdownItem>
+                                                    <DropdownItem onClick={exportToCSV}>
+                                                        <i className="bx bx-download me-2"></i>
+                                                        Export to CSV
+                                                    </DropdownItem>
+                                                    <DropdownItem divider />
+                                                    <DropdownItem header>Filters & Grouping</DropdownItem>
+                                                    <DropdownItem onClick={() => setShowFilters(!showFilters)}>
+                                                        <i className="bx bx-filter-alt me-2"></i>
+                                                        {showFilters ? 'Hide' : 'Show'} Filters
+                                                        {Object.values(filters).filter(Boolean).length > 0 && 
+                                                            <Badge color="danger" className="ms-1">{Object.values(filters).filter(Boolean).length}</Badge>
+                                                        }
+                                                    </DropdownItem>
+                                                    <DropdownItem onClick={() => setShowGroupBy(!showGroupBy)}>
+                                                        <i className="bx bx-group me-2"></i>
+                                                        {showGroupBy ? 'Hide' : 'Show'} Group By
+                                                        {groupBy && <Badge color="success" className="ms-1">Active</Badge>}
+                                                    </DropdownItem>
+                                                    <DropdownItem divider />
+                                                    <DropdownItem onClick={clearFilters}>
+                                                        <i className="bx bx-reset me-2"></i>
+                                                        Clear All Filters
+                                                    </DropdownItem>
+                                                </DropdownMenu>
+                                            </UncontrolledDropdown>
                         </div>
                     </Col>
                 </Row>
 
-                {/* Summary Cards */}
-                <Row>
-                    <Col lg={3} md={6}>
-                        <Card className="card-animate">
-                            <CardBody>
-                                <div className="d-flex align-items-center">
-                                    <div className="flex-grow-1 overflow-hidden">
-                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Total Recipients</p>
+                                {loading && (
+                                    <div className="text-center my-5">
+                                        <Spinner color="primary" />
+                                        <p className="mt-2 text-muted">Loading data...</p>
                                     </div>
-                                    <div className="flex-shrink-0">
-                                        <h5 className="text-primary fs-14 mb-0">{data.length}</h5>
+                                )}
+
+                                {error && (
+                                    <div className="alert alert-danger" role="alert">
+                                        <i className="bx bx-error-circle me-2"></i>
+                                        {error}
                                     </div>
+                                )}
+
+                                {/* Advanced Filters */}
+                                <Collapse isOpen={showFilters}>
+                                    <div className="border p-3 mb-3 bg-light">
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 className="mb-0">
+                                                <i className="bx bx-filter me-2"></i>
+                                                Advanced Filters
+                                            </h6>
+                                            <Button 
+                                                color="light" 
+                                                size="sm"
+                                                onClick={() => setShowFilters(false)}
+                                            >
+                                                <i className="bx bx-x"></i>
+                                            </Button>
                                 </div>
-                            </CardBody>
-                        </Card>
+                                        <Row className="g-3">
+                                            <Col md={3}>
+                                                <FormGroup>
+                                                    <Label>File Status</Label>
+                                                    <Input
+                                                        type="select"
+                                                        value={filters.fileStatus}
+                                                        onChange={(e) => setFilters({...filters, fileStatus: e.target.value})}
+                                                    >
+                                                        <option value="">All</option>
+                                                        {getUniqueValues('file_status_name').map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </Input>
+                                                </FormGroup>
+                                            </Col>
+                                            <Col md={3}>
+                                                <FormGroup>
+                                                    <Label>Employment Status</Label>
+                                                    <Input
+                                                        type="select"
+                                                        value={filters.employmentStatus}
+                                                        onChange={(e) => setFilters({...filters, employmentStatus: e.target.value})}
+                                                    >
+                                                        <option value="">All</option>
+                                                        {getUniqueValues('employment_status_name').map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </Input>
+                                                </FormGroup>
                     </Col>
-                    <Col lg={3} md={6}>
-                        <Card className="card-animate">
-                            <CardBody>
-                                <div className="d-flex align-items-center">
-                                    <div className="flex-grow-1 overflow-hidden">
-                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Food Assistance</p>
-                                    </div>
-                                    <div className="flex-shrink-0">
-                                        <h5 className="text-success fs-14 mb-0">{formatCurrency(totalFoodAssistance)}</h5>
-                                    </div>
-                                </div>
-                            </CardBody>
-                        </Card>
+                                            <Col md={3}>
+                                                <FormGroup>
+                                                    <Label>File Condition</Label>
+                                                    <Input
+                                                        type="select"
+                                                        value={filters.fileCondition}
+                                                        onChange={(e) => setFilters({...filters, fileCondition: e.target.value})}
+                                                    >
+                                                        <option value="">All</option>
+                                                        {getUniqueValues('file_condition_name').map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </Input>
+                                                </FormGroup>
                     </Col>
-                    <Col lg={3} md={6}>
-                        <Card className="card-animate">
-                            <CardBody>
-                                <div className="d-flex align-items-center">
-                                    <div className="flex-grow-1 overflow-hidden">
-                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Financial Transactions</p>
-                                    </div>
-                                    <div className="flex-shrink-0">
-                                        <h5 className="text-info fs-14 mb-0">{formatCurrency(totalFinancialTransactions)}</h5>
-                                    </div>
-                                </div>
-                            </CardBody>
-                        </Card>
+                                            <Col md={3}>
+                                                <FormGroup>
+                                                    <Label>Health Condition</Label>
+                                                    <Input
+                                                        type="select"
+                                                        value={filters.healthCondition}
+                                                        onChange={(e) => setFilters({...filters, healthCondition: e.target.value})}
+                                                    >
+                                                        <option value="">All</option>
+                                                        {getUniqueValues('health_condition_name').map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </Input>
+                                                </FormGroup>
                     </Col>
-                    <Col lg={3} md={6}>
-                        <Card className="card-animate">
-                            <CardBody>
-                                <div className="d-flex align-items-center">
-                                    <div className="flex-grow-1 overflow-hidden">
-                                        <p className="text-uppercase fw-medium text-muted text-truncate mb-0">Grand Total</p>
+                                        </Row>
                                     </div>
-                                    <div className="flex-shrink-0">
-                                        <h5 className="text-warning fs-14 mb-0">{formatCurrency(grandTotal)}</h5>
+                                </Collapse>
+
+                                {/* Group By Control */}
+                                <Collapse isOpen={showGroupBy}>
+                                    <div className="border p-3 mb-3 bg-light">
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 className="mb-0">
+                                                <i className="bx bx-group me-2"></i>
+                                                Group By Options
+                                            </h6>
+                                            <Button 
+                                                color="light" 
+                                                size="sm"
+                                                onClick={() => setShowGroupBy(false)}
+                                            >
+                                                <i className="bx bx-x"></i>
+                                            </Button>
                                     </div>
-                                </div>
-                            </CardBody>
-                        </Card>
+                                        <Row>
+                                            <Col md={6}>
+                                                <FormGroup>
+                                                    <Label>Group By (Control Break)</Label>
+                                                    <Input
+                                                        type="select"
+                                                        value={groupBy}
+                                                        onChange={(e) => setGroupBy(e.target.value)}
+                                                    >
+                                                        <option value="">No Grouping</option>
+                                                        <option value="file_status_name">File Status</option>
+                                                        <option value="employment_status_name">Employment Status</option>
+                                                        <option value="file_condition_name">File Condition</option>
+                                                        <option value="health_condition_name">Health Condition</option>
+                                                    </Input>
+                                                </FormGroup>
                     </Col>
                 </Row>
+                                    </div>
+                                </Collapse>
 
-                {/* Search and Actions */}
-                <Row>
-                    <Col lg={12}>
-                        <Card>
-                            <CardBody>
-                                <Row className="g-3">
-                                    <Col lg={6}>
-                                        <div className="search-box">
-                                            <input
+                                {/* Search and Pagination Controls */}
+                                {!loading && !error && data.length > 0 && (
+                                    <Row className="mb-2">
+                                        <Col sm={2}>
+                                            <select
+                                                className="form-select pageSize mb-2"
+                                                value={itemsPerPage}
+                                                onChange={(e) => {
+                                                    setItemsPerPage(Number(e.target.value));
+                                                    setCurrentPage(1);
+                                                }}
+                                            >
+                                                {[10, 20, 30, 40, 50].map(pageSize => (
+                                                    <option key={pageSize} value={pageSize}>
+                                                        Show {pageSize}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </Col>
+                                        <Col sm={4}>
+                                            <Input
                                                 type="text"
-                                                className="form-control"
-                                                placeholder="Search by name or file number..."
+                                                className="form-control search-box me-2 mb-2 d-inline-block"
+                                                placeholder="Search Total Financial Assistance..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
                                             />
-                                            <i className="ri-search-line search-icon"></i>
-                                        </div>
-                                    </Col>
-                                    <Col lg={6} className="text-end">
-                                        <Button color="primary" className="me-2">
-                                            <i className="bx bx-export me-1"></i>
-                                            Export Excel
-                                        </Button>
-                                        <Button color="success">
-                                            <i className="bx bx-printer me-1"></i>
-                                            Print
-                                        </Button>
                                     </Col>
                                 </Row>
-                            </CardBody>
-                        </Card>
-                    </Col>
-                </Row>
+                                )}
 
-                {/* Data Table */}
-                <Row>
-                    <Col lg={12}>
-                        <Card>
-                            <CardBody>
-                                <div className="table-responsive">
-                                    <Table className="table table-striped table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>File Number</th>
-                                                <th>Contact</th>
-                                                <th>Employment Status</th>
-                                                <th>File Status</th>
-                                                <th>Food Assistance</th>
-                                                <th>Financial Transactions</th>
-                                                <th>Total Assistance</th>
+                                {!loading && !error && data.length === 0 && (
+                                    <div className="alert alert-info" role="alert">
+                                        <i className="bx bx-info-circle me-2"></i>
+                                        No total financial assistance data found.
+                                    </div>
+                                )}
+                                {!loading && !error && data.length > 0 && (
+                                    <>
+                                        {groupBy && groupedData ? (
+                                    Object.entries(groupedData).map(([groupKey, groupItems]) => (
+                                        <div key={groupKey} className="mb-4">
+                                            <div className="bg-primary bg-soft p-3 mb-2 rounded">
+                                                <h5 className="mb-0">
+                                                    <i className="bx bx-group me-2"></i>
+                                                    {groupKey} 
+                                                    <Badge color="primary" className="ms-2">{groupItems.length} records</Badge>
+                                                </h5>
+                                            </div>
+                                            <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
+                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1200px' }}>
+                                                    <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                                                        <tr>
+                                                            <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
+                                                                File # {getSortIcon('file_number')}
+                                                            </th>
+                                                            <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
+                                                                Name {getSortIcon('name')}
+                                                            </th>
+                                                            <th style={{minWidth: '120px'}}>Contact</th>
+                                                            <th style={{minWidth: '100px'}}>File Status</th>
+                                                            <th style={{minWidth: '150px'}}>Employment</th>
+                                                            <th style={{minWidth: '100px'}}>Condition</th>
+                                                            <th style={{minWidth: '100px'}}>Health</th>
+                                                            <th className="text-end" style={{minWidth: '120px'}}>Food Assist.</th>
+                                                            <th className="text-end" style={{minWidth: '120px'}}>Financial</th>
+                                                            <th className="text-end" style={{minWidth: '120px'}}>Total</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {filteredData.map((item, index) => (
+                                                        {groupItems.map((item, index) => (
                                                 <tr key={index}>
-                                                    <td>
-                                                        <strong>{item.name} {item.surname}</strong>
-                                                    </td>
-                                                    <td>{item.file_number || '-'}</td>
+                                                                <td><strong>{item.file_number || '-'}</strong></td>
+                                                                <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                     <td>
-                                                        <span className={`badge bg-${item.employment_status_name === 'Unemployed' ? 'danger' : 
-                                                            item.employment_status_name?.includes('Employed') ? 'success' : 'secondary'}`}>
+                                                                    <Badge color={item.file_status_name === 'Active' ? 'success' : 'secondary'}>
+                                                                        {item.file_status_name || '-'}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td>
+                                                                    <Badge color={item.employment_status_name === 'Unemployed' ? 'danger' : 
+                                                                        item.employment_status_name?.includes('Employed') ? 'success' : 'secondary'}>
                                                             {item.employment_status_name || '-'}
-                                                        </span>
+                                                                    </Badge>
                                                     </td>
                                                     <td>
-                                                        <span className={`badge bg-${item.file_status_name === 'Active' ? 'success' : 'secondary'}`}>
+                                                                    <Badge color={item.file_condition_name === 'High Risk' ? 'danger' : 
+                                                                        item.file_condition_name === 'Caution' ? 'warning' : 'success'}>
+                                                                        {item.file_condition_name || '-'}
+                                                                    </Badge>
+                                                    </td>
+                                                                <td>{item.health_condition_name || '-'}</td>
+                                                                <td className="text-end">{formatCurrency(item.financial_food_assistance)}</td>
+                                                                <td className="text-end">{formatCurrency(item.financial_transactions)}</td>
+                                                                <td className="text-end"><strong className="text-success">{formatCurrency(item.total_financial)}</strong></td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </Table>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
+                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1200px' }}>
+                                            <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
+                                                <tr>
+                                                    <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
+                                                        File Number {getSortIcon('file_number')}
+                                                    </th>
+                                                    <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
+                                                        Name {getSortIcon('name')}
+                                                    </th>
+                                                    <th style={{minWidth: '120px'}}>Cell Number</th>
+                                                    <th style={{cursor: 'pointer', minWidth: '100px'}} onClick={() => handleSort('file_status_name')}>
+                                                        File Status {getSortIcon('file_status_name')}
+                                                    </th>
+                                                    <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('employment_status_name')}>
+                                                        Employment Status {getSortIcon('employment_status_name')}
+                                                    </th>
+                                                    <th style={{cursor: 'pointer', minWidth: '100px'}} onClick={() => handleSort('file_condition_name')}>
+                                                        File Condition {getSortIcon('file_condition_name')}
+                                                    </th>
+                                                    <th style={{minWidth: '100px'}}>Health Condition</th>
+                                                    <th className="text-end" style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('financial_food_assistance')}>
+                                                        Food Assistance {getSortIcon('financial_food_assistance')}
+                                                    </th>
+                                                    <th className="text-end" style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('financial_transactions')}>
+                                                        Financial Trans. {getSortIcon('financial_transactions')}
+                                                    </th>
+                                                    <th className="text-end" style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('total_financial')}>
+                                                        Total Assistance {getSortIcon('total_financial')}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {paginatedData.map((item, index) => (
+                                                    <tr key={index}>
+                                                        <td><strong>{item.file_number || '-'}</strong></td>
+                                                        <td>{item.name} {item.surname}</td>
+                                                        <td>{item.cell_number || '-'}</td>
+                                                        <td>
+                                                            <Badge color={item.file_status_name === 'Active' ? 'success' : 'secondary'}>
                                                             {item.file_status_name || '-'}
-                                                        </span>
+                                                            </Badge>
                                                     </td>
-                                                    <td className="text-end">
-                                                        <strong className="text-success">
-                                                            {formatCurrency(item.financial_food_assistance)}
-                                                        </strong>
+                                                        <td>
+                                                            <Badge color={item.employment_status_name === 'Unemployed' ? 'danger' : 
+                                                                item.employment_status_name?.includes('Employed') ? 'success' : 'secondary'}>
+                                                                {item.employment_status_name || '-'}
+                                                            </Badge>
                                                     </td>
-                                                    <td className="text-end">
-                                                        <strong className="text-info">
-                                                            {formatCurrency(item.financial_transactions)}
-                                                        </strong>
+                                                        <td>
+                                                            <Badge color={item.file_condition_name === 'High Risk' ? 'danger' : 
+                                                                item.file_condition_name === 'Caution' ? 'warning' : 'success'}>
+                                                                {item.file_condition_name || '-'}
+                                                            </Badge>
                                                     </td>
-                                                    <td className="text-end">
-                                                        <strong className="text-warning">
-                                                            {formatCurrency(item.total_financial)}
-                                                        </strong>
-                                                    </td>
+                                                        <td>{item.health_condition_name || '-'}</td>
+                                                        <td className="text-end">{formatCurrency(item.financial_food_assistance)}</td>
+                                                        <td className="text-end">{formatCurrency(item.financial_transactions)}</td>
+                                                        <td className="text-end"><strong className="text-success">{formatCurrency(item.total_financial)}</strong></td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot>
-                                            <tr className="table-active">
-                                                <th colSpan="5" className="text-end">Grand Totals:</th>
-                                                <th className="text-end text-success">{formatCurrency(totalFoodAssistance)}</th>
-                                                <th className="text-end text-info">{formatCurrency(totalFinancialTransactions)}</th>
-                                                <th className="text-end text-warning">{formatCurrency(grandTotal)}</th>
+                                            <tfoot className="table-active">
+                                                <tr>
+                                                    <th colSpan="7" className="text-end">Total:</th>
+                                                    <th className="text-end">{formatCurrency(totalFoodAssistance)}</th>
+                                                    <th className="text-end">{formatCurrency(totalFinancialTransactions)}</th>
+                                                    <th className="text-end text-success">{formatCurrency(grandTotal)}</th>
                                             </tr>
                                         </tfoot>
                                     </Table>
                                 </div>
-                                
-                                {filteredData.length === 0 && (
-                                    <div className="text-center py-4">
-                                        <p className="text-muted">No financial assistance records found matching your search criteria.</p>
+                                )}
+
+                                    {/* Pagination */}
+                                    {!groupBy && processedData.length > 0 && (
+                                        <Row className="mt-3">
+                                            <Col sm={12} md={5}>
+                                                <div className="dataTables_info">
+                                                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, processedData.length)} of {processedData.length} Results
+                                                </div>
+                                            </Col>
+                                            <Col sm={12} md={7}>
+                                                <div className="dataTables_paginate paging_simple_numbers float-end">
+                                                    <ul className="pagination mb-0">
+                                                        <li className={`paginate_button page-item previous ${currentPage === 1 ? 'disabled' : ''}`}>
+                                                            <Link to="#" className="page-link" onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(currentPage - 1); }}>
+                                                                <i className="mdi mdi-chevron-left"></i>
+                                                            </Link>
+                                                        </li>
+                                                        {[...Array(totalPages)].map((_, i) => {
+                                                            const pageNum = i + 1;
+                                                            if (
+                                                                pageNum === 1 ||
+                                                                pageNum === totalPages ||
+                                                                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                                                            ) {
+                                                                return (
+                                                                    <li key={pageNum} className={`paginate_button page-item ${currentPage === pageNum ? 'active' : ''}`}>
+                                                                        <Link to="#" className="page-link" onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}>
+                                                                            {pageNum}
+                                                                        </Link>
+                                                                    </li>
+                                                                );
+                                                            } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                                                                return <li key={pageNum} className="paginate_button page-item disabled"><span className="page-link">...</span></li>;
+                                                            }
+                                                            return null;
+                                                        })}
+                                                        <li className={`paginate_button page-item next ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                                            <Link to="#" className="page-link" onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(currentPage + 1); }}>
+                                                                <i className="mdi mdi-chevron-right"></i>
+                                                            </Link>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </Col>
+                                        </Row>
+                                    )}
+
+                                        {processedData.length === 0 && !loading && (
+                                            <div className="text-center py-5">
+                                                <i className="bx bx-search-alt" style={{ fontSize: '3rem', color: '#999' }}></i>
+                                                <p className="text-muted mt-3">No records found matching your search criteria.</p>
+                                                <Button color="primary" size="sm" onClick={clearFilters}>
+                                                    Clear Filters
+                                                </Button>
                                     </div>
+                                        )}
+                                    </>
                                 )}
                             </CardBody>
                         </Card>
                     </Col>
                 </Row>
-            </div>
+            </Container>
         </div>
     );
 };

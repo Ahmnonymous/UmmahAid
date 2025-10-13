@@ -1,18 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Card, CardBody, Row, Col, Table, Spinner, Alert, Button, Input, Label, FormGroup, Badge, Collapse, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
+import { Container, Card, CardBody, Row, Col, Table, Spinner, Alert, Button, Input, Badge, Collapse, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem, FormGroup, Label } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
-import { GET_HOME_VISITS_REPORT } from '../../helpers/url_helper';
+import { GET_SKILLS_MATRIX_REPORT } from '../../helpers/url_helper';
 
-const HomeVisitsReport = () => {
+const SkillsMatrixReport = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     
+    const [filters, setFilters] = useState({
+        status: ''
+    });
+
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [groupBy, setGroupBy] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
     const [showGroupBy, setShowGroupBy] = useState(false);
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -27,7 +32,7 @@ const HomeVisitsReport = () => {
             setLoading(true);
             const token = localStorage.getItem('authToken');
 
-            const response = await axios.get(GET_HOME_VISITS_REPORT, {
+            const response = await axios.get(GET_SKILLS_MATRIX_REPORT, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -39,11 +44,15 @@ const HomeVisitsReport = () => {
                 setError(response.data.message || 'Failed to fetch data');
             }
         } catch (err) {
-            console.error('Error fetching home visits:', err);
-            setError(err.response?.data?.message || 'Error fetching home visits');
+            console.error('Error fetching skills matrix:', err);
+            setError(err.response?.data?.message || 'Error fetching skills matrix');
         } finally {
             setLoading(false);
         }
+    };
+
+    const getUniqueValues = (field) => {
+        return [...new Set(data.map(item => item[field]).filter(Boolean))].sort();
     };
 
     const processedData = useMemo(() => {
@@ -51,12 +60,16 @@ const HomeVisitsReport = () => {
 
         if (searchTerm) {
             result = result.filter(item =>
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.file_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.representative?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.course_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.institution_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.cell_number?.toLowerCase().includes(searchTerm.toLowerCase())
             );
+        }
+
+        if (filters.status) {
+            result = result.filter(item => item.status === filters.status);
         }
 
         if (sortConfig.key) {
@@ -71,7 +84,7 @@ const HomeVisitsReport = () => {
         }
 
         return result;
-    }, [data, searchTerm, sortConfig]);
+    }, [data, searchTerm, filters, sortConfig]);
 
     const groupedData = useMemo(() => {
         if (!groupBy) return null;
@@ -98,7 +111,7 @@ const HomeVisitsReport = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, sortConfig]);
+    }, [searchTerm, filters, sortConfig]);
 
     const handleSort = (key) => {
         setSortConfig(prev => ({
@@ -109,20 +122,22 @@ const HomeVisitsReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'File Number', 'Name', 'Surname', 'Cell Number', 'Visit Date',
-            'Representative', 'Comments', 'Created By', 'Created At'
+            'Employee Name', 'ID Number', 'Department', 'Contact', 'Course',
+            'Institution', 'Date Conducted', 'Date Expired', 'Outcome', 'Status', 'Created By'
         ];
 
         const csvData = processedData.map(item => [
-            item.file_number || '',
-            item.name || '',
-            item.surname || '',
+            `${item.name} ${item.surname}`,
+            item.id_number || '',
+            item.department_name || '',
             item.cell_number || '',
-            formatDate(item.visit_date),
-            item.representative || '',
-            item.comments || '',
-            item.created_by || '',
-            formatDate(item.created_at)
+            item.course_name || '',
+            item.institution_name || '',
+            formatDate(item.date_conducted),
+            formatDate(item.date_expired),
+            item.program_outcome_name || '',
+            item.status || '',
+            item.created_by || ''
         ]);
 
         const csvContent = [
@@ -133,20 +148,17 @@ const HomeVisitsReport = () => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `home_visits_report_${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `skills_matrix_report_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
     };
 
     const clearFilters = () => {
+        setFilters({ status: '' });
         setSearchTerm('');
         setGroupBy('');
         setSortConfig({ key: null, direction: 'asc' });
+        setShowFilters(false);
         setShowGroupBy(false);
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString();
     };
 
     const getSortIcon = (key) => {
@@ -156,13 +168,44 @@ const HomeVisitsReport = () => {
             <i className="bx bx-sort-down text-primary"></i>;
     };
 
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    const getStatusBadge = (status) => {
+        const statusConfig = {
+            'Expired': { color: 'danger', icon: 'bx-x-circle' },
+            'Coming Up Soon': { color: 'warning', icon: 'bx-error-circle' },
+            'Still Valid': { color: 'success', icon: 'bx-check-circle' },
+            'No Expiry': { color: 'info', icon: 'bx-infinite' }
+        };
+        
+        const config = statusConfig[status] || { color: 'secondary', icon: 'bx-help-circle' };
+        
+        return (
+            <Badge color={config.color} className="font-size-12">
+                <i className={`bx ${config.icon} me-1`}></i>
+                {status}
+            </Badge>
+        );
+    };
+
+    const statusCounts = {
+        'All': data.length,
+        'Expired': processedData.filter(item => item.status === 'Expired').length,
+        'Coming Up Soon': processedData.filter(item => item.status === 'Coming Up Soon').length,
+        'Still Valid': processedData.filter(item => item.status === 'Still Valid').length,
+        'No Expiry': processedData.filter(item => item.status === 'No Expiry').length
+    };
+
     if (loading) {
         return (
             <div className="page-content">
                 <div className="container-fluid">
                     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
                         <Spinner color="primary" className="me-2" />
-                        <span>Loading home visits report...</span>
+                        <span>Loading skills matrix report...</span>
                     </div>
                 </div>
             </div>
@@ -183,10 +226,12 @@ const HomeVisitsReport = () => {
         );
     }
 
+    document.title = "Applicant Skills Report | UmmahAid";
+
     return (
         <div className="page-content">
             <Container fluid>
-                <Breadcrumbs title="Reports" breadcrumbItem="Home Visits Report" />
+                <Breadcrumbs title="Reports" breadcrumbItem="Applicant Skills Report" />
 
                 <Row>
                     <Col lg={12}>
@@ -196,10 +241,10 @@ const HomeVisitsReport = () => {
                                     <Col sm={6}>
                                         <div className="d-flex align-items-center">
                                             <h4 className="card-title mb-0">
-                                <i className="bx bx-car me-2"></i>
-                                Home Visits Report
-                            </h4>
-                            </div>
+                                                <i className="bx bx-medal me-2"></i>
+                                                Applicant Skills Report
+                                            </h4>
+                                        </div>
                                     </Col>
                                     <Col sm={6}>
                                         <div className="text-sm-end">
@@ -207,6 +252,9 @@ const HomeVisitsReport = () => {
                                                 <DropdownToggle color="primary" caret style={{ borderRadius: 0 }}>
                                                     <i className="bx bx-cog me-1"></i>
                                                     Actions
+                                                    {Object.values(filters).filter(Boolean).length > 0 && 
+                                                        <Badge color="light" className="ms-1">{Object.values(filters).filter(Boolean).length}</Badge>
+                                                    }
                                                 </DropdownToggle>
                                                 <DropdownMenu end>
                                                     <DropdownItem header>Report Functions</DropdownItem>
@@ -216,6 +264,13 @@ const HomeVisitsReport = () => {
                                                     </DropdownItem>
                                                     <DropdownItem divider />
                                                     <DropdownItem header>Filters & Grouping</DropdownItem>
+                                                    <DropdownItem onClick={() => setShowFilters(!showFilters)}>
+                                                        <i className="bx bx-filter-alt me-2"></i>
+                                                        {showFilters ? 'Hide' : 'Show'} Filters
+                                                        {Object.values(filters).filter(Boolean).length > 0 && 
+                                                            <Badge color="danger" className="ms-1">{Object.values(filters).filter(Boolean).length}</Badge>
+                                                        }
+                                                    </DropdownItem>
                                                     <DropdownItem onClick={() => setShowGroupBy(!showGroupBy)}>
                                                         <i className="bx bx-group me-2"></i>
                                                         {showGroupBy ? 'Hide' : 'Show'} Group By
@@ -228,9 +283,59 @@ const HomeVisitsReport = () => {
                                                     </DropdownItem>
                                                 </DropdownMenu>
                                             </UncontrolledDropdown>
-                        </div>
-                    </Col>
-                </Row>
+                                        </div>
+                                    </Col>
+                                </Row>
+
+                                {loading && (
+                                    <div className="text-center my-5">
+                                        <Spinner color="primary" />
+                                        <p className="mt-2 text-muted">Loading data...</p>
+                                    </div>
+                                )}
+
+                                {error && (
+                                    <div className="alert alert-danger" role="alert">
+                                        <i className="bx bx-error-circle me-2"></i>
+                                        {error}
+                                    </div>
+                                )}
+
+                                {/* Advanced Filters */}
+                                <Collapse isOpen={showFilters}>
+                                    <div className="border p-3 mb-3 bg-light">
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 className="mb-0">
+                                                <i className="bx bx-filter me-2"></i>
+                                                Advanced Filters
+                                            </h6>
+                                            <Button 
+                                                color="light" 
+                                                size="sm"
+                                                onClick={() => setShowFilters(false)}
+                                            >
+                                                <i className="bx bx-x"></i>
+                                            </Button>
+                                        </div>
+                                        <Row className="g-3">
+                                            <Col md={6}>
+                                                <FormGroup>
+                                                    <Label>Status</Label>
+                                                    <Input
+                                                        type="select"
+                                                        value={filters.status}
+                                                        onChange={(e) => setFilters({...filters, status: e.target.value})}
+                                                    >
+                                                        <option value="">All</option>
+                                                        {getUniqueValues('status').map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </Input>
+                                                </FormGroup>
+                                            </Col>
+                                        </Row>
+                                    </div>
+                                </Collapse>
 
                                 {/* Group By Control */}
                                 <Collapse isOpen={showGroupBy}>
@@ -248,7 +353,7 @@ const HomeVisitsReport = () => {
                                                 <i className="bx bx-x"></i>
                                             </Button>
                                         </div>
-                <Row>
+                                        <Row>
                                             <Col md={6}>
                                                 <FormGroup>
                                                     <Label>Group By (Control Break)</Label>
@@ -258,11 +363,13 @@ const HomeVisitsReport = () => {
                                                         onChange={(e) => setGroupBy(e.target.value)}
                                                     >
                                                         <option value="">No Grouping</option>
-                                                        <option value="representative">Representative</option>
+                                                        <option value="status">Status</option>
+                                                        <option value="department_name">Department</option>
+                                                        <option value="course_name">Course</option>
                                                     </Input>
                                                 </FormGroup>
-                    </Col>
-                </Row>
+                                            </Col>
+                                        </Row>
                                     </div>
                                 </Collapse>
 
@@ -289,18 +396,18 @@ const HomeVisitsReport = () => {
                                             <Input
                                                 type="text"
                                                 className="form-control search-box me-2 mb-2 d-inline-block"
-                                                placeholder="Search Home Visits..."
+                                                placeholder="Search Skills Matrix..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
                                             />
-                                    </Col>
-                                </Row>
+                                        </Col>
+                                    </Row>
                                 )}
 
                                 {!loading && !error && data.length === 0 && (
                                     <div className="alert alert-info" role="alert">
                                         <i className="bx bx-info-circle me-2"></i>
-                                        No home visit data found.
+                                        No skills matrix data found.
                                     </div>
                                 )}
                                 {!loading && !error && data.length > 0 && (
@@ -314,80 +421,130 @@ const HomeVisitsReport = () => {
                                                     {groupKey} 
                                                     <Badge color="primary" className="ms-2">{groupItems.length} records</Badge>
                                                 </h5>
-                                        </div>
+                                            </div>
                                             <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
-                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1200px' }}>
+                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1500px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                         <tr>
-                                                            <th style={{minWidth: '120px'}}>File #</th>
-                                                            <th style={{minWidth: '150px'}}>Name</th>
+                                                            <th style={{minWidth: '150px'}}>Employee</th>
+                                                            <th style={{minWidth: '120px'}}>ID Number</th>
+                                                            <th style={{minWidth: '120px'}}>Department</th>
                                                             <th style={{minWidth: '120px'}}>Contact</th>
-                                                            <th style={{minWidth: '100px'}}>Visit Date</th>
-                                                            <th style={{minWidth: '150px'}}>Representative</th>
-                                                            <th style={{minWidth: '300px'}}>Comments</th>
+                                                            <th style={{minWidth: '200px'}}>Course</th>
+                                                            <th style={{minWidth: '200px'}}>Institution</th>
+                                                            <th style={{minWidth: '100px'}}>Conducted</th>
+                                                            <th style={{minWidth: '100px'}}>Expires</th>
+                                                            <th style={{minWidth: '100px'}}>Outcome</th>
+                                                            <th style={{minWidth: '120px'}}>Status</th>
                                                             <th style={{minWidth: '120px'}}>Created By</th>
-                                                            <th style={{minWidth: '100px'}}>Created At</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
                                                         {groupItems.map((item, index) => (
-                                                <tr key={index}>
-                                                                <td><strong>{item.file_number || '-'}</strong></td>
-                                                                <td>{item.name} {item.surname}</td>
-                                                    <td>{item.cell_number || '-'}</td>
-                                                    <td>{formatDate(item.visit_date)}</td>
-                                                                <td>{item.representative || '-'}</td>
-                                                                <td><small>{item.comments || '-'}</small></td>
+                                                            <tr key={index}>
+                                                                <td><strong>{item.name} {item.surname}</strong></td>
+                                                                <td>{item.id_number || '-'}</td>
+                                                                <td><Badge color="secondary">{item.department_name || 'N/A'}</Badge></td>
+                                                                <td>{item.cell_number || '-'}</td>
+                                                                <td><strong>{item.course_name || '-'}</strong></td>
+                                                                <td>{item.institution_name || '-'}</td>
+                                                                <td>{formatDate(item.date_conducted)}</td>
+                                                                <td>
+                                                                    {item.date_expired ? (
+                                                                        <span className={
+                                                                            item.status === 'Expired' ? 'text-danger fw-bold' :
+                                                                            item.status === 'Coming Up Soon' ? 'text-warning fw-bold' :
+                                                                            'text-success'
+                                                                        }>
+                                                                            {formatDate(item.date_expired)}
+                                                                        </span>
+                                                                    ) : '-'}
+                                                                </td>
+                                                                <td><Badge color="primary">{item.program_outcome_name || '-'}</Badge></td>
+                                                                <td>{getStatusBadge(item.status)}</td>
                                                                 <td>{item.created_by || '-'}</td>
-                                                    <td>{formatDate(item.created_at)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </Table>
-                                                        </div>
-                                                        </div>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </Table>
+                                            </div>
+                                        </div>
                                     ))
                                 ) : (
                                     <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
-                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1200px' }}>
+                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1500px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
-                                                    <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
-                                                        File Number {getSortIcon('file_number')}
-                                                    </th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
-                                                        Name {getSortIcon('name')}
+                                                        Employee Name {getSortIcon('name')}
                                                     </th>
-                                                    <th style={{minWidth: '120px'}}>Cell Number</th>
-                                                    <th style={{cursor: 'pointer', minWidth: '100px'}} onClick={() => handleSort('visit_date')}>
-                                                        Visit Date {getSortIcon('visit_date')}
+                                                    <th style={{minWidth: '120px'}}>ID Number</th>
+                                                    <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('department_name')}>
+                                                        Department {getSortIcon('department_name')}
                                                     </th>
-                                                    <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('representative')}>
-                                                        Representative {getSortIcon('representative')}
+                                                    <th style={{minWidth: '120px'}}>Contact</th>
+                                                    <th style={{cursor: 'pointer', minWidth: '200px'}} onClick={() => handleSort('course_name')}>
+                                                        Course {getSortIcon('course_name')}
                                                     </th>
-                                                    <th style={{minWidth: '300px'}}>Comments</th>
+                                                    <th style={{cursor: 'pointer', minWidth: '200px'}} onClick={() => handleSort('institution_name')}>
+                                                        Institution {getSortIcon('institution_name')}
+                                                    </th>
+                                                    <th style={{cursor: 'pointer', minWidth: '100px'}} onClick={() => handleSort('date_conducted')}>
+                                                        Date Conducted {getSortIcon('date_conducted')}
+                                                    </th>
+                                                    <th style={{cursor: 'pointer', minWidth: '100px'}} onClick={() => handleSort('date_expired')}>
+                                                        Date Expired {getSortIcon('date_expired')}
+                                                    </th>
+                                                    <th style={{minWidth: '100px'}}>Outcome</th>
+                                                    <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('status')}>
+                                                        Status {getSortIcon('status')}
+                                                    </th>
                                                     <th style={{minWidth: '120px'}}>Created By</th>
-                                                    <th style={{cursor: 'pointer', minWidth: '100px'}} onClick={() => handleSort('created_at')}>
-                                                        Created Date {getSortIcon('created_at')}
-                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {paginatedData.map((item, index) => (
-                                                    <tr key={index}>
-                                                        <td><strong>{item.file_number || '-'}</strong></td>
-                                                        <td>{item.name} {item.surname}</td>
-                                                        <td>{item.cell_number || '-'}</td>
-                                                        <td>{formatDate(item.visit_date)}</td>
-                                                        <td>{item.representative || '-'}</td>
-                                                        <td><small>{item.comments || '-'}</small></td>
-                                                        <td>{item.created_by || '-'}</td>
-                                                    <td>{formatDate(item.created_at)}</td>
+                                                <tr key={index}>
+                                                    <td>
+                                                        <strong>{item.name} {item.surname}</strong>
+                                                    </td>
+                                                    <td>{item.id_number || '-'}</td>
+                                                    <td>
+                                                        <Badge color="secondary">
+                                                            {item.department_name || 'N/A'}
+                                                        </Badge>
+                                                    </td>
+                                                    <td>{item.cell_number || '-'}</td>
+                                                    <td>
+                                                        <strong>{item.course_name || '-'}</strong>
+                                                    </td>
+                                                    <td>{item.institution_name || '-'}</td>
+                                                    <td>{formatDate(item.date_conducted)}</td>
+                                                    <td>
+                                                        {item.date_expired ? (
+                                                            <span className={
+                                                                item.status === 'Expired' ? 'text-danger fw-bold' :
+                                                                item.status === 'Coming Up Soon' ? 'text-warning fw-bold' :
+                                                                'text-success'
+                                                            }>
+                                                                {formatDate(item.date_expired)}
+                                                            </span>
+                                                        ) : '-'}
+                                                    </td>
+                                                    <td>
+                                                        <Badge color="primary">
+                                                            {item.program_outcome_name || '-'}
+                                                        </Badge>
+                                                    </td>
+                                                    <td>
+                                                        {getStatusBadge(item.status)}
+                                                    </td>
+                                                    <td>{item.created_by || '-'}</td>
                                                 </tr>
                                             ))}
-                                        </tbody>
-                                    </Table>
-                                </div>
+                                            </tbody>
+                                        </Table>
+                                    </div>
                                 )}
 
                                     {/* Pagination */}
@@ -439,11 +596,11 @@ const HomeVisitsReport = () => {
                                         {processedData.length === 0 && !loading && (
                                             <div className="text-center py-5">
                                                 <i className="bx bx-search-alt" style={{ fontSize: '3rem', color: '#999' }}></i>
-                                                <p className="text-muted mt-3">No home visit records found matching your search criteria.</p>
+                                                <p className="text-muted mt-3">No skills matrix records found matching your search criteria.</p>
                                                 <Button color="primary" size="sm" onClick={clearFilters}>
                                                     Clear Filters
                                                 </Button>
-                                    </div>
+                                            </div>
                                         )}
                                     </>
                                 )}
@@ -456,4 +613,5 @@ const HomeVisitsReport = () => {
     );
 };
 
-export default HomeVisitsReport;
+export default SkillsMatrixReport;
+

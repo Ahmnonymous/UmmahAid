@@ -464,36 +464,28 @@ const SidebarContent = (props) => {
               </Link>
               <ul className="sub-menu" aria-expanded="false">
                 <li>
-                  <Link to="/reports">
-                    <i className="bx bx-menu"></i>
-                    {props.t("Reports Dashboard")}
-                  </Link>
-                </li>
-                <li>
                   <Link to="/reports/applicant-details">
                     <i className="bx bx-user-plus"></i>
                     {props.t("Applicant Details")}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/#" className="has-arrow">
+                  <Link to="/reports/total-financial-assistance">
                     <i className="bx bx-money"></i>
-                    <span>{props.t("Total Financial Assistance")}</span>
+                    {props.t("Total Assistance")}
                   </Link>
-                  <ul className="sub-menu" aria-expanded="false">
-                    <li>
-                      <Link to="/reports/financial-assistance">
-                        <i className="bx bx-credit-card"></i>
-                        {props.t("Financial Assistance")}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/reports/food-assistance">
-                        <i className="bx bx-home"></i>
-                        {props.t("Food Assistance")}
-                      </Link>
-                    </li>
-                  </ul>
+                </li>
+                <li>
+                  <Link to="/reports/financial-assistance">
+                    <i className="bx bx-credit-card"></i>
+                    {props.t("Financial Assistance")}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reports/food-assistance">
+                    <i className="bx bx-home"></i>
+                    {props.t("Food Assistance")}
+                  </Link>
                 </li>
                 <li>
                   <Link to="/reports/home-visits">
@@ -511,6 +503,12 @@ const SidebarContent = (props) => {
                   <Link to="/reports/relationship-report">
                     <i className="bx bx-group"></i>
                     {props.t("Relationship Report")}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reports/skills-matrix">
+                    <i className="bx bx-medal"></i>
+                    {props.t("Applicant Skills")}
                   </Link>
                 </li>
               </ul>

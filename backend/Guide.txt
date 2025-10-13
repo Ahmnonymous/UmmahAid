@@ -1,2 +1,0 @@
-PS D:\WORK\LUQMAN\WelfareApp_react\welfare-app> 
-powershell -ExecutionPolicy Bypass -File backend\codegen.ps1 -sqlFile "backend\table.sql" -backendPath "backend\src"

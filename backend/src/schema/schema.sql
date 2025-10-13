@@ -1,39 +1,13 @@
 -- PostgreSQL Schema for Welfare Application
 -- Updated to implement recommendations: Supplier_Category table, TIMESTAMPTZ standardization, secure password storage,
 -- Employee_ID relationships, validation, HSEQ status consistency, inventory triggers, and documentation.
--- Unchanged tables are noted but not repeated for brevity.
+-- Removed set_created_updated_by_insert() and set_updated_by_at_timestamptz() triggers as they are handled by the application.
+-- Aligned code for consistent formatting and readability.
 
--- =========================
 -- Extensions
--- =========================
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- =========================
 -- Trigger Functions
--- =========================
-CREATE OR REPLACE FUNCTION set_created_updated_by_insert()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.Created_By IS NULL THEN
-        NEW.Created_By := CURRENT_USER;
-        NEW.Updated_By := CURRENT_USER;
-    ELSE
-        NEW.Updated_By := CURRENT_USER;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION set_updated_by_at_timestamptz()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.Updated_By := CURRENT_USER;
-    NEW.Updated_At := now();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger to hash password on insert or update
 CREATE OR REPLACE FUNCTION hash_employee_password()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -44,9 +18,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger function to update Financial_Assessment totals
 CREATE OR REPLACE FUNCTION update_financial_assessment_totals()
-RETURNS TRIGGER AS $$  
+RETURNS TRIGGER AS $$
 BEGIN
     UPDATE Financial_Assessment fa
     SET 
@@ -56,14 +29,13 @@ BEGIN
             (SELECT COALESCE(SUM(Amount), 0) FROM Applicant_Income WHERE Financial_Assessment_ID = fa.ID) -
             (SELECT COALESCE(SUM(Amount), 0) FROM Applicant_Expense WHERE Financial_Assessment_ID = fa.ID)
         )
-    WHERE fa.ID = COALESCE(NEW.Financial_Assessment_ID, OLD.Financial_Assessment_ID);  -- Handle INSERT/DELETE
+    WHERE fa.ID = COALESCE(NEW.Financial_Assessment_ID, OLD.Financial_Assessment_ID);
     RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
--- New trigger function for inventory quantity updates
 CREATE OR REPLACE FUNCTION update_inventory_quantity()
-RETURNS TRIGGER AS $$  
+RETURNS TRIGGER AS $$
 DECLARE
     delta DECIMAL(12,2);
     item_id BIGINT;
@@ -96,10 +68,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- =========================
 -- Lookup Tables
--- =========================
--- New Supplier_Category table
 CREATE TABLE Supplier_Category (
     ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -109,17 +78,6 @@ CREATE TABLE Supplier_Category (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Supplier_Category_insert 
-    BEFORE INSERT ON Supplier_Category 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Supplier_Category_update 
-    BEFORE UPDATE ON Supplier_Category 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Supplier_Category IS 'Stores categories for classifying suppliers (e.g., food, medical, services).';
-COMMENT ON COLUMN Supplier_Category.Name IS 'Unique name of the supplier category.';
-
--- Updated lookup tables (TIMESTAMP -> TIMESTAMPTZ, added comments)
 CREATE TABLE Suburb (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -128,12 +86,6 @@ CREATE TABLE Suburb (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Suburb_insert BEFORE INSERT ON Suburb FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Suburb_update BEFORE UPDATE ON Suburb FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Suburb IS 'Stores suburb names for applicant and employee addresses.';
-COMMENT ON COLUMN Suburb.Name IS 'Unique name of the suburb.';
 
 CREATE TABLE Nationality (
     ID SERIAL PRIMARY KEY,
@@ -144,12 +96,6 @@ CREATE TABLE Nationality (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Nationality_insert BEFORE INSERT ON Nationality FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Nationality_update BEFORE UPDATE ON Nationality FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Nationality IS 'Stores nationalities for applicants and employees.';
-COMMENT ON COLUMN Nationality.Name IS 'Unique name of the nationality.';
-
 CREATE TABLE Departments (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -158,12 +104,6 @@ CREATE TABLE Departments (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Departments_insert BEFORE INSERT ON Departments FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Departments_update BEFORE UPDATE ON Departments FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Departments IS 'Stores departments for the organization.';
-COMMENT ON COLUMN Departments.Name IS 'Unique name of the department.';
 
 CREATE TABLE Health_Conditions (
     ID SERIAL PRIMARY KEY,
@@ -174,12 +114,6 @@ CREATE TABLE Health_Conditions (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Health_Conditions_insert BEFORE INSERT ON Health_Conditions FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Health_Conditions_update BEFORE UPDATE ON Health_Conditions FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Health_Conditions IS 'Stores health conditions for applicants and relationships.';
-COMMENT ON COLUMN Health_Conditions.Name IS 'Unique name of the health condition.';
-
 CREATE TABLE Skills (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -188,12 +122,6 @@ CREATE TABLE Skills (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Skills_insert BEFORE INSERT ON Skills FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Skills_update BEFORE UPDATE ON Skills FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Skills IS 'Stores skills possessed by applicants.';
-COMMENT ON COLUMN Skills.Name IS 'Unique name of the skill.';
 
 CREATE TABLE Relationship_Types (
     ID SERIAL PRIMARY KEY,
@@ -204,12 +132,6 @@ CREATE TABLE Relationship_Types (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Relationship_Types_insert BEFORE INSERT ON Relationship_Types FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Relationship_Types_update BEFORE UPDATE ON Relationship_Types FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Relationship_Types IS 'Stores types of relationships for applicant dependents.';
-COMMENT ON COLUMN Relationship_Types.Name IS 'Unique name of the relationship type (e.g., Spouse, Child).';
-
 CREATE TABLE Tasks_Status (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -218,12 +140,6 @@ CREATE TABLE Tasks_Status (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Tasks_Status_insert BEFORE INSERT ON Tasks_Status FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Tasks_Status_update BEFORE UPDATE ON Tasks_Status FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Tasks_Status IS 'Stores possible statuses for tasks (e.g., Complete, In Progress).';
-COMMENT ON COLUMN Tasks_Status.Name IS 'Unique name of the task status.';
 
 CREATE TABLE Assistance_Types (
     ID SERIAL PRIMARY KEY,
@@ -234,12 +150,6 @@ CREATE TABLE Assistance_Types (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Assistance_Types_insert BEFORE INSERT ON Assistance_Types FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Assistance_Types_update BEFORE UPDATE ON Assistance_Types FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Assistance_Types IS 'Stores types of financial assistance provided.';
-COMMENT ON COLUMN Assistance_Types.Name IS 'Unique name of the assistance type.';
-
 CREATE TABLE File_Status (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -248,12 +158,6 @@ CREATE TABLE File_Status (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER File_Status_insert BEFORE INSERT ON File_Status FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER File_Status_update BEFORE UPDATE ON File_Status FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE File_Status IS 'Stores statuses for applicant files (e.g., Active, Inactive).';
-COMMENT ON COLUMN File_Status.Name IS 'Unique name of the file status.';
 
 CREATE TABLE File_Condition (
     ID SERIAL PRIMARY KEY,
@@ -264,12 +168,6 @@ CREATE TABLE File_Condition (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER File_Condition_insert BEFORE INSERT ON File_Condition FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER File_Condition_update BEFORE UPDATE ON File_Condition FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE File_Condition IS 'Stores conditions of applicant files (e.g., Satisfactory, High Risk).';
-COMMENT ON COLUMN File_Condition.Name IS 'Unique name of the file condition.';
-
 CREATE TABLE Dwelling_Status (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -278,12 +176,6 @@ CREATE TABLE Dwelling_Status (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Dwelling_Status_insert BEFORE INSERT ON Dwelling_Status FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Dwelling_Status_update BEFORE UPDATE ON Dwelling_Status FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Dwelling_Status IS 'Stores dwelling ownership statuses (e.g., Fully Owned, Renting).';
-COMMENT ON COLUMN Dwelling_Status.Name IS 'Unique name of the dwelling status.';
 
 CREATE TABLE Race (
     ID SERIAL PRIMARY KEY,
@@ -294,12 +186,6 @@ CREATE TABLE Race (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Race_insert BEFORE INSERT ON Race FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Race_update BEFORE UPDATE ON Race FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Race IS 'Stores race categories for demographic data.';
-COMMENT ON COLUMN Race.Name IS 'Unique name of the race.';
-
 CREATE TABLE Dwelling_Type (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -308,12 +194,6 @@ CREATE TABLE Dwelling_Type (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Dwelling_Type_insert BEFORE INSERT ON Dwelling_Type FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Dwelling_Type_update BEFORE UPDATE ON Dwelling_Type FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Dwelling_Type IS 'Stores types of dwellings (e.g., House, Shack).';
-COMMENT ON COLUMN Dwelling_Type.Name IS 'Unique name of the dwelling type.';
 
 CREATE TABLE Marital_Status (
     ID SERIAL PRIMARY KEY,
@@ -324,12 +204,6 @@ CREATE TABLE Marital_Status (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Marital_Status_insert BEFORE INSERT ON Marital_Status FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Marital_Status_update BEFORE UPDATE ON Marital_Status FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Marital_Status IS 'Stores marital status categories.';
-COMMENT ON COLUMN Marital_Status.Name IS 'Unique name of the marital status.';
-
 CREATE TABLE Education_Level (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -338,12 +212,6 @@ CREATE TABLE Education_Level (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Education_Level_insert BEFORE INSERT ON Education_Level FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Education_Level_update BEFORE UPDATE ON Education_Level FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Education_Level IS 'Stores education levels for applicants and employees.';
-COMMENT ON COLUMN Education_Level.Name IS 'Unique name of the education level.';
 
 CREATE TABLE Means_of_communication (
     ID SERIAL PRIMARY KEY,
@@ -354,12 +222,6 @@ CREATE TABLE Means_of_communication (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Means_of_communication_insert BEFORE INSERT ON Means_of_communication FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Means_of_communication_update BEFORE UPDATE ON Means_of_communication FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Means_of_communication IS 'Stores Means_of_communication.';
-COMMENT ON COLUMN Means_of_communication.Name IS 'Unique name of the Means_of_communication.';
-
 CREATE TABLE Employment_Status (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -368,12 +230,6 @@ CREATE TABLE Employment_Status (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Employment_Status_insert BEFORE INSERT ON Employment_Status FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Employment_Status_update BEFORE UPDATE ON Employment_Status FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Employment_Status IS 'Stores employment status categories.';
-COMMENT ON COLUMN Employment_Status.Name IS 'Unique name of the employment status.';
 
 CREATE TABLE Gender (
     ID SERIAL PRIMARY KEY,
@@ -384,12 +240,6 @@ CREATE TABLE Gender (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Gender_insert BEFORE INSERT ON Gender FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Gender_update BEFORE UPDATE ON Gender FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Gender IS 'Stores gender categories.';
-COMMENT ON COLUMN Gender.Name IS 'Unique name of the gender.';
-
 CREATE TABLE Training_Outcome (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -398,12 +248,6 @@ CREATE TABLE Training_Outcome (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Training_Outcome_insert BEFORE INSERT ON Training_Outcome FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Training_Outcome_update BEFORE UPDATE ON Training_Outcome FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Training_Outcome IS 'Stores outcomes of training programs.';
-COMMENT ON COLUMN Training_Outcome.Name IS 'Unique name of the training outcome.';
 
 CREATE TABLE Training_Level (
     ID SERIAL PRIMARY KEY,
@@ -414,12 +258,6 @@ CREATE TABLE Training_Level (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Training_Level_insert BEFORE INSERT ON Training_Level FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Training_Level_update BEFORE UPDATE ON Training_Level FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Training_Level IS 'Stores levels of training programs.';
-COMMENT ON COLUMN Training_Level.Name IS 'Unique name of the training level.';
-
 CREATE TABLE Blood_Type (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -428,12 +266,6 @@ CREATE TABLE Blood_Type (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Blood_Type_insert BEFORE INSERT ON Blood_Type FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Blood_Type_update BEFORE UPDATE ON Blood_Type FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Blood_Type IS 'Stores blood type categories for employees.';
-COMMENT ON COLUMN Blood_Type.Name IS 'Unique name of the blood type.';
 
 CREATE TABLE Rating (
     ID SERIAL PRIMARY KEY,
@@ -444,12 +276,6 @@ CREATE TABLE Rating (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Rating_insert BEFORE INSERT ON Rating FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Rating_update BEFORE UPDATE ON Rating FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Rating IS 'Stores rating scores for service evaluations.';
-COMMENT ON COLUMN Rating.Score IS 'Unique score value (1-5).';
-
 CREATE TABLE User_Types (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -458,12 +284,6 @@ CREATE TABLE User_Types (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER User_Types_insert BEFORE INSERT ON User_Types FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER User_Types_update BEFORE UPDATE ON User_Types FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE User_Types IS 'Stores user type categories for employees.';
-COMMENT ON COLUMN User_Types.Name IS 'Unique name of the user type.';
 
 CREATE TABLE Policy_Procedure_Type (
     ID SERIAL PRIMARY KEY,
@@ -474,12 +294,6 @@ CREATE TABLE Policy_Procedure_Type (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Policy_Procedure_Type_insert BEFORE INSERT ON Policy_Procedure_Type FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Policy_Procedure_Type_update BEFORE UPDATE ON Policy_Procedure_Type FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Policy_Procedure_Type IS 'Stores types of policies and procedures.';
-COMMENT ON COLUMN Policy_Procedure_Type.Name IS 'Unique name of the policy/procedure type.';
-
 CREATE TABLE Policy_Procedure_Field (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -488,12 +302,6 @@ CREATE TABLE Policy_Procedure_Field (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Policy_Procedure_Field_insert BEFORE INSERT ON Policy_Procedure_Field FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Policy_Procedure_Field_update BEFORE UPDATE ON Policy_Procedure_Field FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Policy_Procedure_Field IS 'Stores fields related to policies and procedures.';
-COMMENT ON COLUMN Policy_Procedure_Field.Name IS 'Unique name of the policy/procedure field.';
 
 CREATE TABLE Income_Type (
     ID SERIAL PRIMARY KEY,
@@ -504,11 +312,6 @@ CREATE TABLE Income_Type (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Income_Type_insert BEFORE INSERT ON Income_Type FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Income_Type_update BEFORE UPDATE ON Income_Type FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Income_Type IS 'Stores types of income for financial assessments.';
-
 CREATE TABLE Expense_Type (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -517,12 +320,6 @@ CREATE TABLE Expense_Type (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Expense_Type_insert BEFORE INSERT ON Expense_Type FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Expense_Type_update BEFORE UPDATE ON Expense_Type FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Expense_Type IS 'Stores types of expenses for financial assessments.';
-COMMENT ON COLUMN Expense_Type.Name IS 'Unique name of the expense type.';
 
 CREATE TABLE Hampers (
     ID SERIAL PRIMARY KEY,
@@ -533,12 +330,6 @@ CREATE TABLE Hampers (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Hampers_insert BEFORE INSERT ON Hampers FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Hampers_update BEFORE UPDATE ON Hampers FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Hampers IS 'Stores types of hampers for food assistance.';
-COMMENT ON COLUMN Hampers.Name IS 'Unique name of the hamper type.';
-
 CREATE TABLE Born_Religion (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255) UNIQUE NOT NULL,
@@ -547,12 +338,6 @@ CREATE TABLE Born_Religion (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Born_Religion_insert BEFORE INSERT ON Born_Religion FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Born_Religion_update BEFORE UPDATE ON Born_Religion FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Born_Religion IS 'Stores religions for applicant demographic data.';
-COMMENT ON COLUMN Born_Religion.Name IS 'Unique name of the religion.';
 
 CREATE TABLE Period_As_Muslim (
     ID SERIAL PRIMARY KEY,
@@ -563,28 +348,20 @@ CREATE TABLE Period_As_Muslim (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER Period_As_Muslim_insert BEFORE INSERT ON Period_As_Muslim FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Period_As_Muslim_update BEFORE UPDATE ON Period_As_Muslim FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Period_As_Muslim IS 'Stores time periods for applicants who converted to Islam.';
-COMMENT ON COLUMN Period_As_Muslim.Name IS 'Unique name of the period (e.g., 1-3 Years).';
-
--- =========================
 -- Main Tables
--- =========================
 CREATE TABLE Center_Detail (
     ID SERIAL PRIMARY KEY,
     Organisation_Name VARCHAR(255),
     Date_of_Establishment DATE,
-    Contact_Number VARCHAR(255), -- CHECK (Contact_Number ~* '^\+?[0-9]{10,15}$'),
-    Email_Address VARCHAR(255), -- CHECK (Email_Address ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    Contact_Number VARCHAR(255),
+    Email_Address VARCHAR(255),
     Website_Link VARCHAR(255),
     Address VARCHAR(255),
     Area BIGINT,
     Ameer VARCHAR(255),
-    Cell1 VARCHAR(255), -- CHECK (Cell1 ~* '^\+?[0-9]{10,15}$'),
-    Cell2 VARCHAR(255), -- CHECK (Cell2 ~* '^\+?[0-9]{10,15}$'),
-    Cell3 VARCHAR(255), -- CHECK (Cell3 ~* '^\+?[0-9]{10,15}$'),
+    Cell1 VARCHAR(255),
+    Cell2 VARCHAR(255),
+    Cell3 VARCHAR(255),
     Contact1 VARCHAR(255),
     Contact2 VARCHAR(255),
     Contact3 VARCHAR(255),
@@ -593,7 +370,7 @@ CREATE TABLE Center_Detail (
     Logo_Mime VARCHAR(255),
     Logo_Size INT,
     NPO_Number VARCHAR(255),
-    Service_Rating_Email VARCHAR(255), -- CHECK (Service_Rating_Email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    Service_Rating_Email VARCHAR(255),
     QR_Code_Service_URL BYTEA,
     QR_Code_Service_URL_Filename VARCHAR(255),
     QR_Code_Service_URL_Mime VARCHAR(255),
@@ -604,14 +381,6 @@ CREATE TABLE Center_Detail (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT fk_area FOREIGN KEY (Area) REFERENCES Suburb(ID)
 );
-
-CREATE TRIGGER Center_Detail_insert BEFORE INSERT ON Center_Detail FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Center_Detail_update BEFORE UPDATE ON Center_Detail FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Center_Detail IS 'Stores details of welfare centers.';
-COMMENT ON COLUMN Center_Detail.Organisation_Name IS 'Name of the organization.';
-COMMENT ON COLUMN Center_Detail.Contact_Number IS 'Primary contact phone number (validated format).';
-COMMENT ON COLUMN Center_Detail.Email_Address IS 'Primary email address (validated format).';
 
 CREATE TABLE Center_Audits (
     ID SERIAL PRIMARY KEY,
@@ -632,18 +401,12 @@ CREATE TABLE Center_Audits (
     CONSTRAINT fk_center_id FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Center_Audits_insert BEFORE INSERT ON Center_Audits FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Center_Audits_update BEFORE UPDATE ON Center_Audits FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Center_Audits IS 'Stores audit records for welfare centers.';
-COMMENT ON COLUMN Center_Audits.audit_date IS 'Date the audit was conducted.';
-
 CREATE TABLE Training_Institutions (
     ID SERIAL PRIMARY KEY,
     Institute_Name VARCHAR(255),
     Contact_Person VARCHAR(255),
-    Contact_Number VARCHAR(255), -- CHECK (Contact_Number ~* '^\+?[0-9]{10,15}$'),
-    Email_Address VARCHAR(255), -- CHECK (Email_Address ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    Contact_Number VARCHAR(255),
+    Email_Address VARCHAR(255),
     Seta_Number VARCHAR(255),
     Address VARCHAR(255),
     Created_By VARCHAR(255),
@@ -651,12 +414,6 @@ CREATE TABLE Training_Institutions (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Training_Institutions_insert BEFORE INSERT ON Training_Institutions FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Training_Institutions_update BEFORE UPDATE ON Training_Institutions FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Training_Institutions IS 'Stores details of training institutions.';
-COMMENT ON COLUMN Training_Institutions.Institute_Name IS 'Name of the institution.';
 
 CREATE TABLE Training_Courses (
     ID SERIAL PRIMARY KEY,
@@ -667,12 +424,6 @@ CREATE TABLE Training_Courses (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE TRIGGER Training_Courses_insert BEFORE INSERT ON Training_Courses FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Training_Courses_update BEFORE UPDATE ON Training_Courses FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Training_Courses IS 'Stores training course details.';
-COMMENT ON COLUMN Training_Courses.Name IS 'Name of the course.';
 
 CREATE TABLE Policy_and_Procedure (
     ID SERIAL PRIMARY KEY,
@@ -695,18 +446,12 @@ CREATE TABLE Policy_and_Procedure (
     CONSTRAINT fk_field FOREIGN KEY (Field) REFERENCES Policy_Procedure_Field(ID)
 );
 
-CREATE TRIGGER Policy_and_Procedure_insert BEFORE INSERT ON Policy_and_Procedure FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Policy_and_Procedure_update BEFORE UPDATE ON Policy_and_Procedure FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Policy_and_Procedure IS 'Stores policies and procedures for the organization.';
-COMMENT ON COLUMN Policy_and_Procedure.Name IS 'Name of the policy or procedure.';
-
 CREATE TABLE Employee (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255),
     Surname VARCHAR(255),
     Center_ID BIGINT,
-    ID_Number VARCHAR(255), -- CHECK (ID_Number ~* '^[0-9]{13}$'),
+    ID_Number VARCHAR(255),
     Date_of_Birth DATE,
     Nationality BIGINT,
     Race BIGINT,
@@ -715,15 +460,15 @@ CREATE TABLE Employee (
     Employment_Date DATE,
     Suburb BIGINT,
     Home_Address VARCHAR(255),
-    Emergency_Contact VARCHAR(255), -- CHECK (Emergency_Contact ~* '^\+?[0-9]{10,15}$'),
-    Contact_Number VARCHAR(255), -- CHECK (Contact_Number ~* '^\+?[0-9]{10,15}$'),
+    Emergency_Contact VARCHAR(255),
+    Contact_Number VARCHAR(255),
     Blood_Type BIGINT,
     Username VARCHAR(255) UNIQUE,
-    Password_Hash VARCHAR(255), -- Changed from Password to Password_Hash
+    Password_Hash VARCHAR(255),
     User_Type BIGINT,
     Department BIGINT,
     HSEQ_Related VARCHAR(1),
-    employee_avatar VARCHAR(1000), 
+    employee_avatar VARCHAR(1000),
     Created_By VARCHAR(255),
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     Updated_By VARCHAR(255),
@@ -736,24 +481,16 @@ CREATE TABLE Employee (
     CONSTRAINT fk_suburb FOREIGN KEY (Suburb) REFERENCES Suburb(ID),
     CONSTRAINT fk_blood_type FOREIGN KEY (Blood_Type) REFERENCES Blood_Type(ID),
     CONSTRAINT fk_user_type FOREIGN KEY (User_Type) REFERENCES User_Types(ID),
-    CONSTRAINT fk_department FOREIGN KEY (department) REFERENCES Departments(ID)
+    CONSTRAINT fk_department FOREIGN KEY (Department) REFERENCES Departments(ID)
 );
 
 CREATE TRIGGER Employee_password_hash
     BEFORE INSERT OR UPDATE ON Employee
     FOR EACH ROW EXECUTE FUNCTION hash_employee_password();
 
-CREATE TRIGGER Employee_insert BEFORE INSERT ON Employee FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Employee_update BEFORE UPDATE ON Employee FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Employee IS 'Stores employee details, including secure password hashes.';
-COMMENT ON COLUMN Employee.Password_Hash IS 'Hashed employee password using bcrypt.';
-COMMENT ON COLUMN Employee.ID_Number IS '13-digit ID number (validated format).';
-COMMENT ON COLUMN Employee.Contact_Number IS 'Employee contact number (validated format).';
-
 CREATE TABLE Employee_Appraisal (
     ID SERIAL PRIMARY KEY,
-    Employee_ID BIGINT NOT NULL, -- Added Employee_ID
+    Employee_ID BIGINT NOT NULL,
     Positions VARCHAR(255),
     Attendance VARCHAR(255),
     Job_Knowledge_Skills VARCHAR(255),
@@ -774,15 +511,9 @@ CREATE TABLE Employee_Appraisal (
     CONSTRAINT fk_center_id_app FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Employee_Appraisal_insert BEFORE INSERT ON Employee_Appraisal FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Employee_Appraisal_update BEFORE UPDATE ON Employee_Appraisal FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Employee_Appraisal IS 'Stores employee performance appraisals.';
-COMMENT ON COLUMN Employee_Appraisal.Employee_ID IS 'References the employee being appraised.';
-
 CREATE TABLE Employee_Initiative (
     ID SERIAL PRIMARY KEY,
-    Employee_ID BIGINT NOT NULL, -- Added Employee_ID
+    Employee_ID BIGINT NOT NULL,
     Idea VARCHAR(255),
     Details VARCHAR(255),
     Idea_Date DATE,
@@ -796,15 +527,9 @@ CREATE TABLE Employee_Initiative (
     CONSTRAINT fk_center_id_init FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Employee_Initiative_insert BEFORE INSERT ON Employee_Initiative FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Employee_Initiative_update BEFORE UPDATE ON Employee_Initiative FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Employee_Initiative IS 'Stores employee-initiated ideas or suggestions.';
-COMMENT ON COLUMN Employee_Initiative.Employee_ID IS 'References the employee who proposed the idea.';
-
 CREATE TABLE Employee_Skills (
     ID SERIAL PRIMARY KEY,
-    Employee_ID BIGINT NOT NULL, -- Added Employee_ID
+    Employee_ID BIGINT NOT NULL,
     Course BIGINT,
     Institution BIGINT,
     Date_Conducted DATE,
@@ -825,12 +550,6 @@ CREATE TABLE Employee_Skills (
     CONSTRAINT fk_training_outcome FOREIGN KEY (Training_Outcome) REFERENCES Training_Outcome(ID),
     CONSTRAINT fk_center_id_skills FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Employee_Skills_insert BEFORE INSERT ON Employee_Skills FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Employee_Skills_update BEFORE UPDATE ON Employee_Skills FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Employee_Skills IS 'Stores skills and training records for employees.';
-COMMENT ON COLUMN Employee_Skills.Employee_ID IS 'References the employee with the skill.';
 
 CREATE TABLE HSEQ_Toolbox_Meeting (
     ID SERIAL PRIMARY KEY,
@@ -853,51 +572,29 @@ CREATE TABLE HSEQ_Toolbox_Meeting (
     CONSTRAINT fk_center_id_hseq FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER HSEQ_Toolbox_Meeting_insert 
-    BEFORE INSERT ON HSEQ_Toolbox_Meeting 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER HSEQ_Toolbox_Meeting_update 
-    BEFORE UPDATE ON HSEQ_Toolbox_Meeting 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE HSEQ_Toolbox_Meeting IS 'Stores records of Health, Safety, Environment, and Quality (HSEQ) meetings.';
-COMMENT ON COLUMN HSEQ_Toolbox_Meeting.Meeting_Date IS 'Date the HSEQ meeting was held.';
-
 CREATE TABLE HSEQ_Toolbox_Meeting_Tasks (
     ID SERIAL PRIMARY KEY,
     HSEQ_Toolbox_Meeting_ID BIGINT,
     Task_Description VARCHAR(100),
     Completion_Date DATE,
     Responsible VARCHAR(40),
-    Status BIGINT, -- Changed to reference Tasks_Status
+    Status BIGINT,
     Notes VARCHAR(400),
     Created_By VARCHAR(255),
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     center_id BIGINT,
-    CONSTRAINT fk_hseq_toolbox_meeting_id 
-        FOREIGN KEY (HSEQ_Toolbox_Meeting_ID) REFERENCES HSEQ_Toolbox_Meeting(ID),
+    CONSTRAINT fk_hseq_toolbox_meeting_id FOREIGN KEY (HSEQ_Toolbox_Meeting_ID) REFERENCES HSEQ_Toolbox_Meeting(ID),
     CONSTRAINT fk_status FOREIGN KEY (Status) REFERENCES Tasks_Status(ID),
-    CONSTRAINT fk_center_id_hseq_tasks 
-        FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
+    CONSTRAINT fk_center_id_hseq_tasks FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER HSEQ_Toolbox_Meeting_Tasks_insert 
-    BEFORE INSERT ON HSEQ_Toolbox_Meeting_Tasks 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER HSEQ_Toolbox_Meeting_Tasks_update 
-    BEFORE UPDATE ON HSEQ_Toolbox_Meeting_Tasks 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE HSEQ_Toolbox_Meeting_Tasks IS 'Stores tasks assigned during HSEQ meetings.';
-COMMENT ON COLUMN HSEQ_Toolbox_Meeting_Tasks.Status IS 'References the task status (e.g., Complete, In Progress).';
 
 CREATE TABLE Applicant_Details (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255),
     Surname VARCHAR(255),
-    ID_Number VARCHAR(255), -- CHECK (ID_Number ~* '^[0-9]{13}$'),
+    ID_Number VARCHAR(255),
     Race BIGINT,
     Nationality BIGINT,
     Nationality_Expiry_Date DATE,
@@ -911,9 +608,9 @@ CREATE TABLE Applicant_Details (
     Highest_Education_Level BIGINT,
     Marital_Status BIGINT,
     Employment_Status BIGINT,
-    Cell_Number VARCHAR(255), -- CHECK (Cell_Number ~* '^\+?[0-9]{10,15}$'),
-    Alternate_Number VARCHAR(255), -- CHECK (Alternate_Number ~* '^\+?[0-9]{10,15}$'),
-    Email_Address VARCHAR(255), -- CHECK (Email_Address ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    Cell_Number VARCHAR(255),
+    Alternate_Number VARCHAR(255),
+    Email_Address VARCHAR(255),
     Suburb BIGINT,
     Street_Address VARCHAR(255),
     Dwelling_Type BIGINT,
@@ -950,14 +647,6 @@ CREATE TABLE Applicant_Details (
     CONSTRAINT fk_period_as_muslim FOREIGN KEY (Period_As_Muslim_ID) REFERENCES Period_As_Muslim(ID)
 );
 
-CREATE TRIGGER Applicant_Details_insert BEFORE INSERT ON Applicant_Details FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Applicant_Details_update BEFORE UPDATE ON Applicant_Details FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Applicant_Details IS 'Stores personal and demographic information for welfare applicants.';
-COMMENT ON COLUMN Applicant_Details.File_Number IS 'Unique identifier for the applicant''s file.';
-COMMENT ON COLUMN Applicant_Details.ID_Number IS '13-digit ID number (validated format).';
-COMMENT ON COLUMN Applicant_Details.Cell_Number IS 'Primary contact number (validated format).';
-
 CREATE TABLE Comments (
     ID SERIAL PRIMARY KEY,
     File_ID BIGINT,
@@ -971,12 +660,6 @@ CREATE TABLE Comments (
     CONSTRAINT fk_file_id FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID),
     CONSTRAINT fk_center_id_com FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Comments_insert BEFORE INSERT ON Comments FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Comments_update BEFORE UPDATE ON Comments FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Comments IS 'Stores comments related to applicant files.';
-COMMENT ON COLUMN Comments.File_ID IS 'References the applicant file.';
 
 CREATE TABLE Tasks (
     ID SERIAL PRIMARY KEY,
@@ -993,19 +676,13 @@ CREATE TABLE Tasks (
     CONSTRAINT fk_center_id_task FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Tasks_insert BEFORE INSERT ON Tasks FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Tasks_update BEFORE UPDATE ON Tasks FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Tasks IS 'Stores tasks related to applicant files.';
-COMMENT ON COLUMN Tasks.File_ID IS 'References the applicant file.';
-
 CREATE TABLE Relationships (
     ID SERIAL PRIMARY KEY,
     File_ID BIGINT,
     Relationship_Type BIGINT,
     Name VARCHAR(255),
     Surname VARCHAR(255),
-    ID_Number VARCHAR(255), -- CHECK (ID_Number ~* '^[0-9]{13}$'),
+    ID_Number VARCHAR(255),
     Date_of_Birth DATE,
     Employment_Status BIGINT,
     Gender BIGINT,
@@ -1024,12 +701,6 @@ CREATE TABLE Relationships (
     CONSTRAINT fk_health_condition FOREIGN KEY (Health_Condition) REFERENCES Health_Conditions(ID),
     CONSTRAINT fk_center_id_rel FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Relationships_insert BEFORE INSERT ON Relationships FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Relationships_update BEFORE UPDATE ON Relationships FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Relationships IS 'Stores information about applicant dependents.';
-COMMENT ON COLUMN Relationships.File_ID IS 'References the applicant file.';
 
 CREATE TABLE Home_Visit (
     ID SERIAL PRIMARY KEY,
@@ -1054,12 +725,6 @@ CREATE TABLE Home_Visit (
     CONSTRAINT fk_center_id_vis FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Home_Visit_insert BEFORE INSERT ON Home_Visit FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Home_Visit_update BEFORE UPDATE ON Home_Visit FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Home_Visit IS 'Stores records of home visits for applicants.';
-COMMENT ON COLUMN Home_Visit.File_ID IS 'References the applicant file.';
-
 CREATE TABLE Financial_Assistance (
     ID SERIAL PRIMARY KEY,
     File_ID BIGINT,
@@ -1076,12 +741,6 @@ CREATE TABLE Financial_Assistance (
     CONSTRAINT fk_center_id_fin FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Financial_Assistance_insert BEFORE INSERT ON Financial_Assistance FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Financial_Assistance_update BEFORE UPDATE ON Financial_Assistance FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Financial_Assistance IS 'Stores records of financial assistance provided to applicants.';
-COMMENT ON COLUMN Financial_Assistance.File_ID IS 'References the applicant file.';
-
 CREATE TABLE Food_Assistance (
     ID SERIAL PRIMARY KEY,
     File_ID BIGINT,
@@ -1097,12 +756,6 @@ CREATE TABLE Food_Assistance (
     CONSTRAINT fk_hamper_type FOREIGN KEY (Hamper_Type) REFERENCES Hampers(ID),
     CONSTRAINT fk_center_id_food FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Food_Assistance_insert BEFORE INSERT ON Food_Assistance FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Food_Assistance_update BEFORE UPDATE ON Food_Assistance FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Food_Assistance IS 'Stores records of food assistance provided to applicants.';
-COMMENT ON COLUMN Food_Assistance.File_ID IS 'References the applicant file.';
 
 CREATE TABLE Attachments (
     ID SERIAL PRIMARY KEY,
@@ -1121,12 +774,6 @@ CREATE TABLE Attachments (
     CONSTRAINT fk_file_id_att FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID),
     CONSTRAINT fk_center_id_att FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Attachments_insert BEFORE INSERT ON Attachments FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Attachments_update BEFORE UPDATE ON Attachments FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Attachments IS 'Stores file attachments for applicants.';
-COMMENT ON COLUMN Attachments.File_ID IS 'References the applicant file.';
 
 CREATE TABLE Programs (
     ID SERIAL PRIMARY KEY,
@@ -1157,18 +804,38 @@ CREATE TABLE Programs (
     CONSTRAINT fk_means_of_communication FOREIGN KEY (Means_of_communication) REFERENCES Means_of_communication(ID)
 );
 
-CREATE TRIGGER Programs_insert BEFORE INSERT ON Programs FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Programs_update BEFORE UPDATE ON Programs FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
+CREATE TABLE Applicant_Income (
+    ID SERIAL PRIMARY KEY,
+    Financial_Assessment_ID BIGINT NOT NULL,
+    Income_Type_ID BIGINT NOT NULL,
+    Amount DECIMAL(12,2),
+    Description TEXT,
+    Created_By VARCHAR(255),
+    Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
+    Updated_By VARCHAR(255),
+    Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT fk_income_type_id FOREIGN KEY (Income_Type_ID) REFERENCES Income_Type(ID)
+);
 
-COMMENT ON TABLE Programs IS 'Stores training program records for applicants.';
-COMMENT ON COLUMN Programs.Person_Trained_ID IS 'References the applicant who attended the program.';
+CREATE TABLE Applicant_Expense (
+    ID SERIAL PRIMARY KEY,
+    Financial_Assessment_ID BIGINT NOT NULL,
+    Expense_Type_ID BIGINT NOT NULL,
+    Amount DECIMAL(12,2),
+    Description TEXT,
+    Created_By VARCHAR(255),
+    Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
+    Updated_By VARCHAR(255),
+    Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT fk_expense_type_id FOREIGN KEY (Expense_Type_ID) REFERENCES Expense_Type(ID)
+);
 
 CREATE TABLE Financial_Assessment (
     ID SERIAL PRIMARY KEY,
     File_ID BIGINT NOT NULL,
     center_id BIGINT NOT NULL,
-    Total_Income DECIMAL(12,2), -- CHECK (Total_Income >= 0),
-    Total_Expenses DECIMAL(12,2), -- CHECK (Total_Expenses >= 0),
+    Total_Income DECIMAL(12,2),
+    Total_Expenses DECIMAL(12,2),
     Disposable_Income DECIMAL(12,2),
     Created_By VARCHAR(255),
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1178,94 +845,26 @@ CREATE TABLE Financial_Assessment (
     CONSTRAINT fk_center_id_fin_ass FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Financial_Assessment_insert 
-    BEFORE INSERT ON Financial_Assessment 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Financial_Assessment_update 
-    BEFORE UPDATE ON Financial_Assessment 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Financial_Assessment IS 'Stores financial assessment summaries for applicants.';
-COMMENT ON COLUMN Financial_Assessment.File_ID IS 'References the applicant file.';
-COMMENT ON COLUMN Financial_Assessment.center_id IS 'References the center managing the assessment.';
-COMMENT ON COLUMN Financial_Assessment.Total_Income IS 'Total income from all sources, updated by trigger.';
-COMMENT ON COLUMN Financial_Assessment.Total_Expenses IS 'Total expenses, updated by trigger.';
-COMMENT ON COLUMN Financial_Assessment.Disposable_Income IS 'Total_Income minus Total_Expenses, updated by trigger.';
-
-CREATE TABLE Applicant_Income (
-    ID SERIAL PRIMARY KEY,
-    Financial_Assessment_ID BIGINT NOT NULL,
-    Income_Type_ID BIGINT NOT NULL,
-    Amount DECIMAL(12,2), -- CHECK (Amount >= 0),
-    Description TEXT,
-    Created_By VARCHAR(255),
-    Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    Updated_By VARCHAR(255),
-    Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT fk_financial_assessment_id FOREIGN KEY (Financial_Assessment_ID) REFERENCES Financial_Assessment(ID) ON DELETE CASCADE,
-    CONSTRAINT fk_income_type_id FOREIGN KEY (Income_Type_ID) REFERENCES Income_Type(ID)
-);
-
-CREATE TRIGGER Applicant_Income_insert 
-    BEFORE INSERT ON Applicant_Income 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Applicant_Income_update 
-    BEFORE UPDATE ON Applicant_Income 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-CREATE TRIGGER Applicant_Income_update_totals
+CREATE TRIGGER Financial_Assessment_update_totals
     AFTER INSERT OR UPDATE OR DELETE ON Applicant_Income
     FOR EACH ROW EXECUTE FUNCTION update_financial_assessment_totals();
-
-COMMENT ON TABLE Applicant_Income IS 'Stores individual income entries for financial assessments.';
-COMMENT ON COLUMN Applicant_Income.Financial_Assessment_ID IS 'References the financial assessment.';
-COMMENT ON COLUMN Applicant_Income.Income_Type_ID IS 'Type of income (e.g., Salary, Grant).';
-COMMENT ON COLUMN Applicant_Income.Amount IS 'Amount of income, non-negative.';
-COMMENT ON COLUMN Applicant_Income.Description IS 'Optional description of the income source.';
-
-CREATE TABLE Applicant_Expense (
-    ID SERIAL PRIMARY KEY,
-    Financial_Assessment_ID BIGINT NOT NULL,
-    Expense_Type_ID BIGINT NOT NULL,
-    Amount DECIMAL(12,2), -- CHECK (Amount >= 0),
-    Description TEXT,
-    Created_By VARCHAR(255),
-    Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    Updated_By VARCHAR(255),
-    Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT fk_financial_assessment_id FOREIGN KEY (Financial_Assessment_ID) REFERENCES Financial_Assessment(ID) ON DELETE CASCADE,
-    CONSTRAINT fk_expense_type_id FOREIGN KEY (Expense_Type_ID) REFERENCES Expense_Type(ID)
-);
-
-CREATE TRIGGER Applicant_Expense_insert 
-    BEFORE INSERT ON Applicant_Expense 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Applicant_Expense_update 
-    BEFORE UPDATE ON Applicant_Expense 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
 
 CREATE TRIGGER Applicant_Expense_update_totals
     AFTER INSERT OR UPDATE OR DELETE ON Applicant_Expense
     FOR EACH ROW EXECUTE FUNCTION update_financial_assessment_totals();
 
-COMMENT ON TABLE Applicant_Expense IS 'Stores individual expense entries for financial assessments.';
-COMMENT ON COLUMN Applicant_Expense.Financial_Assessment_ID IS 'References the financial assessment.';
-COMMENT ON COLUMN Applicant_Expense.Expense_Type_ID IS 'Type of expense (e.g., Rent, Utilities).';
-COMMENT ON COLUMN Applicant_Expense.Amount IS 'Amount of expense, non-negative.';
-COMMENT ON COLUMN Applicant_Expense.Description IS 'Optional description of the expense.';
-
 CREATE TABLE Service_Rating (
     ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    Overall_Experience SMALLINT, -- CHECK (Overall_Experience BETWEEN 1 AND 5),
-    Respect_And_Dignity SMALLINT, -- CHECK (Respect_And_Dignity BETWEEN 1 AND 5),
-    Communication_And_Clarity SMALLINT, -- CHECK (Communication_And_Clarity BETWEEN 1 AND 5),
-    Timeliness_Of_Support SMALLINT, -- CHECK (Timeliness_Of_Support BETWEEN 1 AND 5),
-    Fairness_And_Equality SMALLINT, -- CHECK (Fairness_And_Equality BETWEEN 1 AND 5),
-    Usefulness_Of_Service SMALLINT, -- CHECK (Usefulness_Of_Service BETWEEN 1 AND 5),
-    Friendliness_Of_Staff SMALLINT, -- CHECK (Friendliness_Of_Staff BETWEEN 1 AND 5),
+    Overall_Experience SMALLINT,
+    Respect_And_Dignity SMALLINT,
+    Communication_And_Clarity SMALLINT,
+    Timeliness_Of_Support SMALLINT,
+    Fairness_And_Equality SMALLINT,
+    Usefulness_Of_Service SMALLINT,
+    Friendliness_Of_Staff SMALLINT,
     Positive_Impact BOOLEAN,
     No_Positive_Impact_Reason TEXT,
-    Access_Ease SMALLINT, -- CHECK (Access_Ease BETWEEN 1 AND 5),
+    Access_Ease SMALLINT,
     Would_Recommend BOOLEAN,
     Appreciate_Most TEXT,
     How_To_Improve TEXT,
@@ -1276,19 +875,8 @@ CREATE TABLE Service_Rating (
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     center_id BIGINT NOT NULL,
-    CONSTRAINT fk_center_id_service_rating 
-        FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
+    CONSTRAINT fk_center_id_service_rating FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Service_Rating_insert 
-    BEFORE INSERT ON Service_Rating 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Service_Rating_update 
-    BEFORE UPDATE ON Service_Rating 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Service_Rating IS 'Stores service quality ratings for centers.';
-COMMENT ON COLUMN Service_Rating.Overall_Experience IS 'Rating (1-5) for overall experience.';
 
 CREATE TABLE Supplier_Profile (
     ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1296,41 +884,29 @@ CREATE TABLE Supplier_Profile (
     Name VARCHAR(255) NOT NULL,
     Registration_No VARCHAR(100),
     Contact_Person VARCHAR(255),
-    Contact_Email VARCHAR(255), -- CHECK (Contact_Email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
-    Contact_Phone VARCHAR(50), -- CHECK (Contact_Phone ~* '^\+?[0-9]{10,15}$'),
+    Contact_Email VARCHAR(255),
+    Contact_Phone VARCHAR(50),
     Address TEXT,
-    Category_ID UUID, -- Now references Supplier_Category
+    Category_ID UUID,
     Status VARCHAR(50),
     Created_By VARCHAR(255),
     Datestamp DATE DEFAULT CURRENT_DATE,
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT fk_center_id_supplier 
-        FOREIGN KEY (center_id) REFERENCES Center_Detail(ID),
-    CONSTRAINT fk_category_id 
-        FOREIGN KEY (Category_ID) REFERENCES Supplier_Category(ID)
+    CONSTRAINT fk_center_id_supplier FOREIGN KEY (center_id) REFERENCES Center_Detail(ID),
+    CONSTRAINT fk_category_id FOREIGN KEY (Category_ID) REFERENCES Supplier_Category(ID)
 );
-
-CREATE TRIGGER Supplier_Profile_insert 
-    BEFORE INSERT ON Supplier_Profile 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Supplier_Profile_update 
-    BEFORE UPDATE ON Supplier_Profile 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Supplier_Profile IS 'Stores supplier profiles for the organization.';
-COMMENT ON COLUMN Supplier_Profile.Category_ID IS 'References the supplier category.';
 
 CREATE TABLE Supplier_Evaluation (
     ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     center_id BIGINT NOT NULL,
     Supplier_ID UUID NOT NULL,
     Eval_Date DATE NOT NULL,
-    Quality_Score SMALLINT, -- CHECK (Quality_Score BETWEEN 1 AND 5),
-    Delivery_Score SMALLINT, -- CHECK (Delivery_Score BETWEEN 1 AND 5),
-    Cost_Score SMALLINT, -- CHECK (Cost_Score BETWEEN 1 AND 5),
-    OHS_Score SMALLINT, -- CHECK (OHS_Score BETWEEN 1 AND 5),
-    Env_Score SMALLINT, -- CHECK (Env_Score BETWEEN 1 AND 5),
+    Quality_Score SMALLINT,
+    Delivery_Score SMALLINT,
+    Cost_Score SMALLINT,
+    OHS_Score SMALLINT,
+    Env_Score SMALLINT,
     Quality_Wt NUMERIC(5,2),
     Delivery_Wt NUMERIC(5,2),
     Cost_Wt NUMERIC(5,2),
@@ -1344,21 +920,9 @@ CREATE TABLE Supplier_Evaluation (
     Datestamp DATE DEFAULT CURRENT_DATE,
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT fk_center_id_sup_eval 
-        FOREIGN KEY (center_id) REFERENCES Center_Detail(ID),
-    CONSTRAINT fk_supplier_id 
-        FOREIGN KEY (Supplier_ID) REFERENCES Supplier_Profile(ID) ON DELETE CASCADE
+    CONSTRAINT fk_center_id_sup_eval FOREIGN KEY (center_id) REFERENCES Center_Detail(ID),
+    CONSTRAINT fk_supplier_id FOREIGN KEY (Supplier_ID) REFERENCES Supplier_Profile(ID) ON DELETE CASCADE
 );
-
-CREATE TRIGGER Supplier_Evaluation_insert 
-    BEFORE INSERT ON Supplier_Evaluation 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Supplier_Evaluation_update 
-    BEFORE UPDATE ON Supplier_Evaluation 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Supplier_Evaluation IS 'Stores evaluations of supplier performance.';
-COMMENT ON COLUMN Supplier_Evaluation.Supplier_ID IS 'References the evaluated supplier.';
 
 CREATE TABLE Supplier_Document (
     ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1375,21 +939,9 @@ CREATE TABLE Supplier_Document (
     Datestamp DATE DEFAULT CURRENT_DATE,
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT fk_center_id_sup_doc 
-        FOREIGN KEY (center_id) REFERENCES Center_Detail(ID),
-    CONSTRAINT fk_supplier_id_doc 
-        FOREIGN KEY (Supplier_ID) REFERENCES Supplier_Profile(ID) ON DELETE CASCADE
+    CONSTRAINT fk_center_id_sup_doc FOREIGN KEY (center_id) REFERENCES Center_Detail(ID),
+    CONSTRAINT fk_supplier_id_doc FOREIGN KEY (Supplier_ID) REFERENCES Supplier_Profile(ID) ON DELETE CASCADE
 );
-
-CREATE TRIGGER Supplier_Document_insert 
-    BEFORE INSERT ON Supplier_Document 
-    FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Supplier_Document_update 
-    BEFORE UPDATE ON Supplier_Document 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Supplier_Document IS 'Stores documents related to suppliers.';
-COMMENT ON COLUMN Supplier_Document.Supplier_ID IS 'References the supplier.';
 
 CREATE TABLE Inventory_Items (
     ID SERIAL PRIMARY KEY,
@@ -1411,16 +963,10 @@ CREATE TABLE Inventory_Items (
     CONSTRAINT fk_supplier_id FOREIGN KEY (Supplier_ID) REFERENCES Supplier_Profile(ID)
 );
 
-CREATE TRIGGER Inventory_Items_insert BEFORE INSERT ON Inventory_Items FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Inventory_Items_update BEFORE UPDATE ON Inventory_Items FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Inventory_Items IS 'Stores inventory items for food assistance.';
-COMMENT ON COLUMN Inventory_Items.Quantity IS 'Current stock quantity, updated by transactions.';
-
 CREATE TABLE Inventory_Transactions (
     ID SERIAL PRIMARY KEY,
     Item_ID BIGINT,
-    Transaction_Type VARCHAR(50), -- CHECK (Transaction_Type IN ('IN', 'OUT')),
+    Transaction_Type VARCHAR(50),
     Quantity DECIMAL(12,2),
     Transaction_Date DATE,
     Notes TEXT,
@@ -1435,17 +981,15 @@ CREATE TABLE Inventory_Transactions (
     CONSTRAINT fk_center_id_trans FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Inventory_Transactions_insert BEFORE INSERT ON Inventory_Transactions FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Inventory_Transactions_update BEFORE UPDATE ON Inventory_Transactions FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-CREATE TRIGGER Inventory_Transactions_update_quantity AFTER INSERT OR UPDATE ON Inventory_Transactions FOR EACH ROW EXECUTE FUNCTION update_inventory_quantity();
-CREATE TRIGGER Inventory_Transactions_update_quantity_delete AFTER DELETE ON Inventory_Transactions FOR EACH ROW EXECUTE FUNCTION update_inventory_quantity();
+CREATE TRIGGER Inventory_Transactions_update_quantity
+    AFTER INSERT OR UPDATE ON Inventory_Transactions
+    FOR EACH ROW EXECUTE FUNCTION update_inventory_quantity();
 
-COMMENT ON TABLE Inventory_Transactions IS 'Stores transactions affecting inventory quantities.';
-COMMENT ON COLUMN Inventory_Transactions.Transaction_Type IS 'Type of transaction (IN for stock addition, OUT for stock removal).';
+CREATE TRIGGER Inventory_Transactions_update_quantity_delete
+    AFTER DELETE ON Inventory_Transactions
+    FOR EACH ROW EXECUTE FUNCTION update_inventory_quantity();
 
--- =========================
 -- Secondary Features Tables
--- =========================
 CREATE TABLE Conversations (
     ID SERIAL PRIMARY KEY,
     Title VARCHAR(255),
@@ -1457,12 +1001,6 @@ CREATE TABLE Conversations (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT fk_center_id_conv FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Conversations_insert BEFORE INSERT ON Conversations FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Conversations_update BEFORE UPDATE ON Conversations FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Conversations IS 'Stores conversation threads for employee communication.';
-COMMENT ON COLUMN Conversations.Title IS 'Title of the conversation.';
 
 CREATE TABLE Conversation_Participants (
     ID SERIAL PRIMARY KEY,
@@ -1478,12 +1016,6 @@ CREATE TABLE Conversation_Participants (
     CONSTRAINT fk_employee_id FOREIGN KEY (Employee_ID) REFERENCES Employee(ID),
     CONSTRAINT fk_center_id_part FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Conversation_Participants_insert BEFORE INSERT ON Conversation_Participants FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Conversation_Participants_update BEFORE UPDATE ON Conversation_Participants FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Conversation_Participants IS 'Stores participants in conversations.';
-COMMENT ON COLUMN Conversation_Participants.Employee_ID IS 'References the employee participating.';
 
 CREATE TABLE Messages (
     ID SERIAL PRIMARY KEY,
@@ -1505,12 +1037,6 @@ CREATE TABLE Messages (
     CONSTRAINT fk_center_id_msg FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Messages_insert BEFORE INSERT ON Messages FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Messages_update BEFORE UPDATE ON Messages FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Messages IS 'Stores messages within conversations.';
-COMMENT ON COLUMN Messages.Sender_ID IS 'References the employee who sent the message.';
-
 CREATE TABLE Folders (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255),
@@ -1525,12 +1051,6 @@ CREATE TABLE Folders (
     CONSTRAINT fk_employee_id_fold FOREIGN KEY (Employee_ID) REFERENCES Employee(ID),
     CONSTRAINT fk_center_id_fold FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
-
-CREATE TRIGGER Folders_insert BEFORE INSERT ON Folders FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Folders_update BEFORE UPDATE ON Folders FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Folders IS 'Stores folders for organizing employee files.';
-COMMENT ON COLUMN Folders.Employee_ID IS 'References the employee owning the folder.';
 
 CREATE TABLE Personal_Files (
     ID SERIAL PRIMARY KEY,
@@ -1551,169 +1071,45 @@ CREATE TABLE Personal_Files (
     CONSTRAINT fk_center_id_file FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
-CREATE TRIGGER Personal_Files_insert BEFORE INSERT ON Personal_Files FOR EACH ROW EXECUTE FUNCTION set_created_updated_by_insert();
-CREATE TRIGGER Personal_Files_update BEFORE UPDATE ON Personal_Files FOR EACH ROW EXECUTE FUNCTION set_updated_by_at_timestamptz();
-
-COMMENT ON TABLE Personal_Files IS 'Stores personal files for employees.';
-COMMENT ON COLUMN Personal_Files.Employee_ID IS 'References the employee owning the file.';
-
--- =========================
 -- Indexes
--- =========================
-CREATE INDEX HSEQ_Toolbox_Meeting_Tasks_i1 
-    ON HSEQ_Toolbox_Meeting_Tasks (HSEQ_Toolbox_Meeting_ID);
+CREATE INDEX HSEQ_Toolbox_Meeting_Tasks_i1 ON HSEQ_Toolbox_Meeting_Tasks (HSEQ_Toolbox_Meeting_ID);
+CREATE INDEX idx_service_rating_datestamp ON Service_Rating (Datestamp);
+CREATE INDEX idx_service_rating_recommend ON Service_Rating (Would_Recommend);
+CREATE INDEX idx_service_rating_positive ON Service_Rating (Positive_Impact);
+CREATE INDEX idx_supplier_profile_center ON Supplier_Profile (center_id);
+CREATE INDEX idx_supplier_evaluation_center ON Supplier_Evaluation (center_id);
+CREATE INDEX idx_supplier_document_center ON Supplier_Document (center_id);
+CREATE INDEX idx_supplier_evaluation_supplier ON Supplier_Evaluation (Supplier_ID);
+CREATE INDEX idx_supplier_document_supplier ON Supplier_Document (Supplier_ID);
+CREATE INDEX idx_applicant_details_file_number ON Applicant_Details (File_Number);
+CREATE INDEX idx_applicant_details_center_id ON Applicant_Details (center_id);
+CREATE INDEX idx_applicant_details_id_number ON Applicant_Details (ID_Number);
+CREATE INDEX idx_employee_center_id ON Employee (center_id);
+CREATE INDEX idx_employee_id_number ON Employee (ID_Number);
+CREATE INDEX idx_employee_username ON Employee (Username);
+CREATE INDEX idx_financial_assistance_file_type ON Financial_Assistance (File_ID, Assistance_Type);
+CREATE INDEX idx_food_assistance_file_id ON Food_Assistance (File_ID);
+CREATE INDEX idx_home_visit_file_id ON Home_Visit (File_ID);
+CREATE INDEX idx_comments_file_id ON Comments (File_ID);
+CREATE INDEX idx_relationships_file_id ON Relationships (File_ID);
+CREATE INDEX idx_programs_person_trained_id ON Programs (Person_Trained_ID);
+CREATE INDEX idx_employee_appraisal_employee_id ON Employee_Appraisal (Employee_ID);
+CREATE INDEX idx_employee_initiative_employee_id ON Employee_Initiative (Employee_ID);
+CREATE INDEX idx_employee_skills_employee_id ON Employee_Skills (Employee_ID);
+CREATE INDEX idx_inventory_items_supplier_id ON Inventory_Items (Supplier_ID);
+CREATE INDEX idx_inventory_transactions_item_id ON Inventory_Transactions (Item_ID);
+CREATE INDEX idx_supplier_profile_category_id ON Supplier_Profile (Category_ID);
+CREATE INDEX idx_conversations_center_id ON Conversations (center_id);
+CREATE INDEX idx_conversation_participants_conversation_id ON Conversation_Participants (Conversation_ID);
+CREATE INDEX idx_messages_conversation_id ON Messages (Conversation_ID);
+CREATE INDEX idx_financial_assessment_file_id ON Financial_Assessment (File_ID);
+CREATE INDEX idx_financial_assessment_center_id ON Financial_Assessment (center_id);
+CREATE INDEX idx_applicant_expense_assessment_id ON Applicant_Expense (Financial_Assessment_ID);
+CREATE INDEX idx_applicant_expense_type_id ON Applicant_Expense (Expense_Type_ID);
+CREATE INDEX idx_applicant_income_assessment_id ON Applicant_Income (Financial_Assessment_ID);
+CREATE INDEX idx_applicant_income_type_id ON Applicant_Income (Income_Type_ID);
 
-CREATE INDEX idx_service_rating_datestamp 
-    ON Service_Rating (Datestamp);
-CREATE INDEX idx_service_rating_recommend 
-    ON Service_Rating (Would_Recommend);
-CREATE INDEX idx_service_rating_positive 
-    ON Service_Rating (Positive_Impact);
-
-CREATE INDEX idx_supplier_profile_center 
-    ON Supplier_Profile(center_id);
-CREATE INDEX idx_supplier_evaluation_center 
-    ON Supplier_Evaluation(center_id);
-CREATE INDEX idx_supplier_document_center 
-    ON Supplier_Document(center_id);
-CREATE INDEX idx_supplier_evaluation_supplier 
-    ON Supplier_Evaluation(Supplier_ID);
-CREATE INDEX idx_supplier_document_supplier 
-    ON Supplier_Document(Supplier_ID);
-
--- Index on Applicant_Details.File_Number for fast lookups by file number
-CREATE INDEX idx_applicant_details_file_number 
-    ON Applicant_Details (File_Number);
-COMMENT ON INDEX idx_applicant_details_file_number IS 'Optimizes lookups and searches by applicant file number, commonly used in queries.';
-
--- Index on Applicant_Details.center_id for filtering by center
-CREATE INDEX idx_applicant_details_center_id 
-    ON Applicant_Details (center_id);
-COMMENT ON INDEX idx_applicant_details_center_id IS 'Speeds up queries filtering applicants by center, especially for multi-center organizations.';
-
--- Index on Applicant_Details.ID_Number for searches by ID number
-CREATE INDEX idx_applicant_details_id_number 
-    ON Applicant_Details (ID_Number);
-COMMENT ON INDEX idx_applicant_details_id_number IS 'Accelerates searches and joins on applicant ID number.';
-
--- Index on Employee.center_id for filtering employees by center
-CREATE INDEX idx_employee_center_id 
-    ON Employee (center_id);
-COMMENT ON INDEX idx_employee_center_id IS 'Improves performance for queries filtering employees by center.';
-
--- Index on Employee.ID_Number for searches by ID number
-CREATE INDEX idx_employee_id_number 
-    ON Employee (ID_Number);
-COMMENT ON INDEX idx_employee_id_number IS 'Optimizes searches and joins on employee ID number.';
-
--- Index on Employee.Username for authentication queries
-CREATE INDEX idx_employee_username 
-    ON Employee (Username);
-COMMENT ON INDEX idx_employee_username IS 'Speeds up authentication and lookup queries by employee username.';
-
--- Composite index on Financial_Assistance.File_ID and Assistance_Type for assistance queries
-CREATE INDEX idx_financial_assistance_file_type 
-    ON Financial_Assistance (File_ID, Assistance_Type);
-COMMENT ON INDEX idx_financial_assistance_file_type IS 'Enhances queries filtering financial assistance by applicant and assistance type.';
-
--- Index on Food_Assistance.File_ID for filtering by applicant
-CREATE INDEX idx_food_assistance_file_id 
-    ON Food_Assistance (File_ID);
-COMMENT ON INDEX idx_food_assistance_file_id IS 'Optimizes queries retrieving food assistance records for specific applicants.';
-
--- Index on Home_Visit.File_ID for filtering by applicant
-CREATE INDEX idx_home_visit_file_id 
-    ON Home_Visit (File_ID);
-COMMENT ON INDEX idx_home_visit_file_id IS 'Speeds up queries retrieving home visit records for specific applicants.';
-
--- Index on Comments.File_ID for applicant comment retrieval
-CREATE INDEX idx_comments_file_id 
-    ON Comments (File_ID);
-COMMENT ON INDEX idx_comments_file_id IS 'Improves performance for fetching comments related to an applicant.';
-
--- Index on Relationships.File_ID for dependent queries
-CREATE INDEX idx_relationships_file_id 
-    ON Relationships (File_ID);
-COMMENT ON INDEX idx_relationships_file_id IS 'Accelerates queries retrieving dependents for an applicant.';
-
--- Index on Programs.Person_Trained_ID for training program queries
-CREATE INDEX idx_programs_person_trained_id 
-    ON Programs (Person_Trained_ID);
-COMMENT ON INDEX idx_programs_person_trained_id IS 'Optimizes queries retrieving training programs for specific applicants.';
-
--- Index on Employee_Appraisal.Employee_ID for appraisal queries
-CREATE INDEX idx_employee_appraisal_employee_id 
-    ON Employee_Appraisal (Employee_ID);
-COMMENT ON INDEX idx_employee_appraisal_employee_id IS 'Speeds up retrieval of appraisals for specific employees.';
-
--- Index on Employee_Initiative.Employee_ID for initiative queries
-CREATE INDEX idx_employee_initiative_employee_id 
-    ON Employee_Initiative (Employee_ID);
-COMMENT ON INDEX idx_employee_initiative_employee_id IS 'Enhances queries retrieving initiatives proposed by specific employees.';
-
--- Index on Employee_Skills.Employee_ID for skill queries
-CREATE INDEX idx_employee_skills_employee_id 
-    ON Employee_Skills (Employee_ID);
-COMMENT ON INDEX idx_employee_skills_employee_id IS 'Optimizes queries retrieving skills for specific employees.';
-
--- Index on Inventory_Items.Supplier_ID for supplier-based inventory queries
-CREATE INDEX idx_inventory_items_supplier_id 
-    ON Inventory_Items (Supplier_ID);
-COMMENT ON INDEX idx_inventory_items_supplier_id IS 'Speeds up queries filtering inventory items by supplier.';
-
--- Index on Inventory_Transactions.Item_ID for transaction history
-CREATE INDEX idx_inventory_transactions_item_id 
-    ON Inventory_Transactions (Item_ID);
-COMMENT ON INDEX idx_inventory_transactions_item_id IS 'Improves performance for retrieving transaction history for specific inventory items.';
-
--- Index on Supplier_Profile.Category_ID for category-based queries
-CREATE INDEX idx_supplier_profile_category_id 
-    ON Supplier_Profile (Category_ID);
-COMMENT ON INDEX idx_supplier_profile_category_id IS 'Optimizes queries filtering suppliers by category.';
-
--- Index on Conversations.center_id for conversation retrieval by center
-CREATE INDEX idx_conversations_center_id 
-    ON Conversations (center_id);
-COMMENT ON INDEX idx_conversations_center_id IS 'Speeds up queries retrieving conversations for a specific center.';
-
--- Index on Conversation_Participants.Conversation_ID for participant lookups
-CREATE INDEX idx_conversation_participants_conversation_id 
-    ON Conversation_Participants (Conversation_ID);
-COMMENT ON INDEX idx_conversation_participants_conversation_id IS 'Enhances queries retrieving participants for a conversation.';
-
--- Index on Messages.Conversation_ID for message retrieval
-CREATE INDEX idx_messages_conversation_id 
-    ON Messages (Conversation_ID);
-COMMENT ON INDEX idx_messages_conversation_id IS 'Optimizes queries retrieving messages within a conversation.';
-
--- Index for common queries
-CREATE INDEX idx_financial_assessment_file_id 
-    ON Financial_Assessment (File_ID);
-COMMENT ON INDEX idx_financial_assessment_file_id IS 'Optimizes queries filtering financial assessments by applicant file ID.';
-
-CREATE INDEX idx_financial_assessment_center_id 
-    ON Financial_Assessment (center_id);
-COMMENT ON INDEX idx_financial_assessment_center_id IS 'Speeds up queries filtering financial assessments by center.';
-
-CREATE INDEX idx_applicant_expense_assessment_id 
-    ON Applicant_Expense (Financial_Assessment_ID);
-COMMENT ON INDEX idx_applicant_expense_assessment_id IS 'Optimizes queries retrieving expense entries for a financial assessment.';
-
-CREATE INDEX idx_applicant_expense_type_id 
-    ON Applicant_Expense (Expense_Type_ID);
-COMMENT ON INDEX idx_applicant_expense_type_id IS 'Speeds up queries filtering expenses by type.';
-
-CREATE INDEX idx_applicant_income_assessment_id 
-    ON Applicant_Income (Financial_Assessment_ID);
-COMMENT ON INDEX idx_applicant_income_assessment_id IS 'Optimizes queries retrieving income entries for a financial assessment.';
-
-CREATE INDEX idx_applicant_income_type_id 
-    ON Applicant_Income (Income_Type_ID);
-COMMENT ON INDEX idx_applicant_income_type_id IS 'Speeds up queries filtering income by type.';
-
--- =========================
 -- Views
--- =========================
 CREATE OR REPLACE VIEW Service_Rating_With_Score AS
 SELECT
     sr.*,
@@ -1738,207 +1134,210 @@ SELECT
     ), 2) AS average_score_out_of_5
 FROM Service_Rating sr;
 
-COMMENT ON VIEW Service_Rating_With_Score IS 'Calculates average score for service ratings.';
-COMMENT ON COLUMN Service_Rating_With_Score.average_score_out_of_5 IS 'Average of non-null rating fields, rounded to 2 decimal places.';
-
--- =========================
 -- Insert Statements
--- =========================
 INSERT INTO File_Status (Name) VALUES
-('Active'),
-('Inactive'),
-('Once Off');
+    ('Active'),
+    ('Inactive'),
+    ('Once Off');
 
 INSERT INTO File_Condition (Name) VALUES
-('Satisfactory'),
-('Caution'),
-('High Risk');
+    ('Satisfactory'),
+    ('Caution'),
+    ('High Risk');
 
 INSERT INTO Dwelling_Status (Name) VALUES
-('Fully Owned'),
-('Bonded Owned'),
-('Renting');
+    ('Fully Owned'),
+    ('Bonded Owned'),
+    ('Renting');
 
 INSERT INTO Race (Name) VALUES
-('African'),
-('Asian'),
-('Caucasian'),
-('Coloured'),
-('Malay');
+    ('African'),
+    ('Asian'),
+    ('Caucasian'),
+    ('Coloured'),
+    ('Malay');
 
 INSERT INTO Dwelling_Type (Name) VALUES
-('House'),
-('Flat'),
-('Hostel'),
-('Hotel'),
-('Backroom'),
-('Homeless/On Street'),
-('Old Age Home'),
-('Shack'),
-('Shelter');
+    ('House'),
+    ('Flat'),
+    ('Hostel'),
+    ('Hotel'),
+    ('Backroom'),
+    ('Homeless/On Street'),
+    ('Old Age Home'),
+    ('Shack'),
+    ('Shelter');
 
 INSERT INTO Marital_Status (Name) VALUES
-('Single'),
-('Nikah'),
-('Married Not Islamic'),
-('Talaq'),
-('Widow'),
-('Widower');
+    ('Single'),
+    ('Nikah'),
+    ('Married Not Islamic'),
+    ('Talaq'),
+    ('Widow'),
+    ('Widower');
 
 INSERT INTO Education_Level (Name) VALUES
-('Grade 1-7'),
-('Grade 8-11'),
-('Matric - NQF 4'),
-('Higher Certificate - NQF 5'),
-('Diploma - NQF 6'),
-('Degree - NQF 7'),
-('Honours Degree - NQF 8'),
-('Masters Degree - NQF 9'),
-('PhD - NQF 10'),
-('Doctorate - NQF 11');
+    ('Grade 1-7'),
+    ('Grade 8-11'),
+    ('Matric - NQF 4'),
+    ('Higher Certificate - NQF 5'),
+    ('Diploma - NQF 6'),
+    ('Degree - NQF 7'),
+    ('Honours Degree - NQF 8'),
+    ('Masters Degree - NQF 9'),
+    ('PhD - NQF 10'),
+    ('Doctorate - NQF 11');
 
 INSERT INTO Means_of_communication (Name) VALUES
-('Email'),
-('Verbally'),
-('Phone');
+    ('Email'),
+    ('Verbally'),
+    ('Phone');
 
 INSERT INTO Employment_Status (Name) VALUES
-('Unemployed'),
-('Student'),
-('Full Time Employed'),
-('Part-time Employed'),
-('Disabled Grant'),
-('Pensioner'),
-('Self Employed');
+    ('Unemployed'),
+    ('Student'),
+    ('Full Time Employed'),
+    ('Part-time Employed'),
+    ('Disabled Grant'),
+    ('Pensioner'),
+    ('Self Employed');
 
 INSERT INTO Gender (Name) VALUES
-('Male'),
-('Female');
+    ('Male'),
+    ('Female');
 
 INSERT INTO Training_Outcome (Name) VALUES
-('Completed'),
-('Certified'),
-('Failed'),
-('No Applicable');
+    ('Completed'),
+    ('Certified'),
+    ('Failed'),
+    ('No Applicable');
 
 INSERT INTO Training_Level (Name) VALUES
-('NQF 4'),
-('NQF 5'),
-('NQF 6'),
-('NQF 7'),
-('NQF 8'),
-('No Applicable');
+    ('NQF 4'),
+    ('NQF 5'),
+    ('NQF 6'),
+    ('NQF 7'),
+    ('NQF 8'),
+    ('No Applicable');
 
 INSERT INTO Blood_Type (Name) VALUES
-('A Positive'),
-('B Negative'),
-('AB Negative'),
-('AB Positive'),
-('B Positive'),
-('O Positive'),
-('O Negative'),
-('Rh-null');
+    ('A Positive'),
+    ('B Negative'),
+    ('AB Negative'),
+    ('AB Positive'),
+    ('B Positive'),
+    ('O Positive'),
+    ('O Negative'),
+    ('Rh-null');
 
 INSERT INTO Rating (Score) VALUES
-(1),
-(2),
-(3),
-(4),
-(5);
+    (1),
+    (2),
+    (3),
+    (4),
+    (5);
 
 INSERT INTO User_Types (Name) VALUES
-('Org. Caseworkers'),
-('Org. Admin'),
-('Org. Executives');
+    ('Org. Caseworkers'),
+    ('Org. Admin'),
+    ('Org. Executives');
 
 INSERT INTO Tasks_Status (Name) VALUES
-('Complete'),
-('Incomplete'),
-('In Progress');
+    ('Complete'),
+    ('Incomplete'),
+    ('In Progress');
 
 INSERT INTO Nationality (Name) VALUES
-('Angola'),
-('Congo'),
-('Equatorial Guinea'),
-('Kenya'),
-('Mozambique'),
-('Nigeria'),
-('Uganda'),
-('India'),
-('Botswana'),
-('Central African Republic'),
-('Ghana'),
-('Malawi'),
-('Pakistan'),
-('South African'),
-('Bangladesh'),
-('Somalian'),
-('Lesotho'),
-('Ivory Coast'),
-('Burundi');
+    ('Angola'),
+    ('Congo'),
+    ('Equatorial Guinea'),
+    ('Kenya'),
+    ('Mozambique'),
+    ('Nigeria'),
+    ('Uganda'),
+    ('India'),
+    ('Botswana'),
+    ('Central African Republic'),
+    ('Ghana'),
+    ('Malawi'),
+    ('Pakistan'),
+    ('South African'),
+    ('Bangladesh'),
+    ('Somalian'),
+    ('Lesotho'),
+    ('Ivory Coast'),
+    ('Burundi');
 
 INSERT INTO Born_Religion (Name) VALUES
-('African beliefs'),
-('Christianity'),
-('Hinduism'),
-('Islam'),
-('Judaism');
+    ('African beliefs'),
+    ('Christianity'),
+    ('Hinduism'),
+    ('Islam'),
+    ('Judaism');
 
 INSERT INTO Period_As_Muslim (Name) VALUES
-('1-3 Years'), 
-('3-7 Years'), 
-('7-14 Years');
+    ('1-3 Years'),
+    ('3-7 Years'),
+    ('7-14 Years');
 
--- Insert sample supplier categories
 INSERT INTO Supplier_Category (Name) VALUES
-('Food Supplier'),
-('Medical Supplier'),
-('Service Provider');
+    ('Food Supplier'),
+    ('Medical Supplier'),
+    ('Service Provider');
 
 INSERT INTO Training_Courses (Name) VALUES
-('First Aid'),
-('Fire Fighter'),
-('Time Management');
+    ('First Aid'),
+    ('Fire Fighter'),
+    ('Time Management');
 
 INSERT INTO Training_Institutions (Institute_Name, Seta_Number) VALUES
-('Mancosa', '17289'),
-('UNISA', '81213');
+    ('Mancosa', '17289'),
+    ('UNISA', '81213');
 
--- Sample data for other lookups to avoid FK errors (add more as needed)
 INSERT INTO Income_Type (Name) VALUES
-('Salary'),
-('Child Grant'),
-('Pension');
+    ('Salary'),
+    ('Child Grant'),
+    ('Pension');
 
 INSERT INTO Expense_Type (Name) VALUES
-('Rent'),
-('Utilities'),
-('Food');
+    ('Rent'),
+    ('Utilities'),
+    ('Food');
 
 INSERT INTO Assistance_Types (Name) VALUES
-('Food Voucher'),
-('Medical Aid'),
-('Education Grant');
+    ('Food Voucher'),
+    ('Medical Aid'),
+    ('Education Grant');
 
 INSERT INTO Suburb (Name) VALUES
-('Soweto'),
-('Sandton'),
-('Durban Central');
+    ('Soweto'),
+    ('Sandton'),
+    ('Durban Central');
 
 INSERT INTO Health_Conditions (Name) VALUES
-('None'),
-('Diabetes'),
-('Hypertension');
+    ('None'),
+    ('Diabetes'),
+    ('Hypertension');
 
 INSERT INTO Skills (Name) VALUES
-('Basic Literacy'),
-('Computer Skills'),
-('Driving');
+    ('Basic Literacy'),
+    ('Computer Skills'),
+    ('Driving');
 
 INSERT INTO Relationship_Types (Name) VALUES
-('Spouse'),
-('Child'),
-('Parent');
+    ('Spouse'),
+    ('Child'),
+    ('Parent');
+
+INSERT INTO Policy_Procedure_Type (Name) VALUES
+    ('Health and Safety'),
+    ('Compliance'),
+    ('Operational');
+
+INSERT INTO Policy_Procedure_Field (Name) VALUES
+    ('Compliance'),
+    ('Training'),
+    ('Safety Protocols');
 
 -- Update audit fields for existing data
 UPDATE File_Status SET Created_By = 'admin', Updated_By = 'admin', Updated_At = now();
@@ -1973,214 +1372,230 @@ UPDATE Relationship_Types SET Created_By = 'admin', Updated_By = 'admin', Update
 UPDATE Policy_Procedure_Type SET Created_By = 'admin', Updated_By = 'admin', Updated_At = now();
 UPDATE Policy_Procedure_Field SET Created_By = 'admin', Updated_By = 'admin', Updated_At = now();
 
--- Insert a Admin employee (password '12345' will be auto-hashed by trigger).
--- Assumes User_Types IDs: 1=Caseworkers, 2=Admin, 3=Executives (use 3 for superadmin privileges).
--- Set other fields minimally; adjust Center_ID/Suburb/etc. if needed after inserting a Center_Detail/Suburb.
-INSERT INTO Employee (
-    Name, Surname, Username, Password_Hash, User_Type,
-    Center_ID, Suburb, Nationality, Race, Gender, Highest_Education_Level,
-    Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related
-) VALUES (
-    'Super', 'Admin', 'admin', '12345', 3,  -- Auto-hashes password; User_Type=3 (Executives)
-    NULL, NULL, 14, 1, 1, 3,  -- Example FKs: South African (14), African (1), Male (1), Matric (3)
-    '+27123456789', '+27123456789', 1, null, NULL  -- Blood_Type A Positive (1)
-);
-
-
--- Insert into Center_Detail (depends on Suburb)
+-- Insert a Admin employee
+-- Insert into Center_Detail
 INSERT INTO Center_Detail (
     Organisation_Name, Date_of_Establishment, Contact_Number, Email_Address, Address, Area, NPO_Number, Created_By
 ) VALUES
-('Welfare Center Alpha', '2020-01-01', '+27123456789', 'center.alpha@example.com', '123 Main St, Soweto', 1, 'NPO-2020-001', 'admin');
+    ('Welfare Center Alpha', '2020-01-01', '+27123456789', 'center.alpha@example.com', '123 Main St, Soweto', 1, 'NPO-2020-001', 'admin');
 
--- Insert into Center_Audits (depends on Center_Detail)
+-- Insert into Center_Audits
 INSERT INTO Center_Audits (
     audit_date, audit_type, findings, recommendations, conducted_by, center_id, Created_By
 ) VALUES
-('2024-01-15', 'Financial Audit', 'Compliant with regulations', 'Improve record-keeping', 'Auditor Jane', 1, 'admin');
+    ('2024-01-15', 'Financial Audit', 'Compliant with regulations', 'Improve record-keeping', 'Auditor Jane', 1, 'admin');
 
--- Insert into Policy_and_Procedure (depends on Policy_Procedure_Type, File_Status, Policy_Procedure_Field)
+-- Insert into Policy_and_Procedure
 INSERT INTO Policy_and_Procedure (
     Name, Description, Type, Date_Of_Publication, Status, Field, Created_By
 ) VALUES
-('Employee Safety Policy', 'Safety guidelines for staff', 1, '2023-06-01', 1, 1, 'admin'); -- Type=1 (Health and Safety), Status=1 (Active), Field=1 (Compliance)
+    ('Employee Safety Policy', 'Safety guidelines for staff',
+     (SELECT ID FROM Policy_Procedure_Type WHERE Name = 'Health and Safety'),
+     '2023-06-01',
+     (SELECT ID FROM File_Status WHERE Name = 'Active'),
+     (SELECT ID FROM Policy_Procedure_Field WHERE Name = 'Compliance'),
+     'admin');
 
--- Insert into Employee_Appraisal (depends on Employee, Center_Detail)
+INSERT INTO Employee (
+    Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
+    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related
+) VALUES (
+    'Super', 'Admin', 'admin', '12345', 3,
+    1, NULL, 14, 1, 1, 3,
+    '+27123456789', '+27123456789', 1, NULL, NULL
+);
+
+-- Insert into Employee_Appraisal
 INSERT INTO Employee_Appraisal (
-    Employee_ID, Positions, Attendance, Job_Knowledge_Skills, Quality_of_Work, Initiative_And_Motivation, 
+    Employee_ID, Positions, Attendance, Job_Knowledge_Skills, Quality_of_Work, Initiative_And_Motivation,
     Teamwork, General_Conduct, Discipline, Special_Task, Overall_Comments, Room_for_Improvement, center_id, Created_By
 ) VALUES
-(1, 'Case Worker', 'Excellent', 'Proficient', 'High Quality', 'Proactive', 'Collaborative', 'Professional', 'Good', 'None', 'Excellent performance', 'Continue training', 1, 'admin');
+    (1, 'Case Worker', 'Excellent', 'Proficient', 'High Quality', 'Proactive', 'Collaborative', 'Professional', 'Good', 'None', 'Excellent performance', 'Continue training', 1, 'admin');
 
--- Insert into Employee_Initiative (depends on Employee, Center_Detail)
+-- Insert into Employee_Initiative
 INSERT INTO Employee_Initiative (
     Employee_ID, Idea, Details, Idea_Date, Status, center_id, Created_By
 ) VALUES
-(1, 'Streamline Application Process', 'Automate data entry', '2024-02-01', 'Under Review', 1, 'admin');
+    (1, 'Streamline Application Process', 'Automate data entry', '2024-02-01', 'Under Review', 1, 'admin');
 
--- Insert into Employee_Skills (depends on Employee, Training_Courses, Training_Institutions, Training_Outcome, Center_Detail)
+-- Insert into Employee_Skills
 INSERT INTO Employee_Skills (
     Employee_ID, Course, Institution, Date_Conducted, Date_Expired, Training_Outcome, center_id, Created_By
 ) VALUES
-(1, 1, 1, '2023-03-01', '2026-03-01', 2, 1, 'admin'); -- Course=1 (First Aid), Institution=1 (Mancosa), Outcome=2 (Certified)
+    (1, 1, 1, '2023-03-01', '2026-03-01', 2, 1, 'admin');
 
--- Insert into HSEQ_Toolbox_Meeting (depends on Center_Detail)
+-- Insert into HSEQ_Toolbox_Meeting
 INSERT INTO HSEQ_Toolbox_Meeting (
     Meeting_Date, Conducted_By, In_Attendance, Health_Discussions, Safety_Discussions, center_id, Created_By
 ) VALUES
-('2024-03-10', 'John Manager', 'Team Alpha, Team Beta', 'Hygiene protocols', 'Fire safety measures', 1, 'admin');
+    ('2024-03-10', 'John Manager', 'Team Alpha, Team Beta', 'Hygiene protocols', 'Fire safety measures', 1, 'admin');
 
--- Insert into HSEQ_Toolbox_Meeting_Tasks (depends on HSEQ_Toolbox_Meeting, Tasks_Status, Center_Detail)
+-- Insert into HSEQ_Toolbox_Meeting_Tasks
 INSERT INTO HSEQ_Toolbox_Meeting_Tasks (
     HSEQ_Toolbox_Meeting_ID, Task_Description, Completion_Date, Responsible, Status, Notes, center_id, Created_By
 ) VALUES
-(1, 'Install fire extinguishers', '2024-04-01', 'Safety Officer', 3, 'Urgent task', 1, 'admin'); -- Status=3 (In Progress)
+    (1, 'Install fire extinguishers', '2024-04-01', 'Safety Officer', 3, 'Urgent task', 1, 'admin');
 
--- Insert into Applicant_Details (depends on Race, Nationality, Gender, Born_Religion, Period_As_Muslim, File_Condition, File_Status, Education_Level, Marital_Status, Employment_Status, Suburb, Dwelling_Type, Dwelling_Status, Health, Skills, Center_Detail)
+-- Insert into Applicant_Details
 INSERT INTO Applicant_Details (
-    Name, Surname, ID_Number, Race, Nationality, Gender, Born_Religion_ID, Period_As_Muslim_ID, File_Number, 
-    File_Condition, File_Status, Date_Intake, Highest_Education_Level, Marital_Status, Employment_Status, 
+    Name, Surname, ID_Number, Race, Nationality, Gender, Born_Religion_ID, Period_As_Muslim_ID, File_Number,
+    File_Condition, File_Status, Date_Intake, Highest_Education_Level, Marital_Status, Employment_Status,
     Cell_Number, Email_Address, Suburb, Street_Address, Dwelling_Type, Dwelling_Status, Health, Skills, center_id, Created_By
 ) VALUES
-('Ahmed', 'Khan', '8705051234081', 2, 14, 1, 4, 1, 'APP-2024-001', 1, 1, '2024-01-10', 3, 2, 1, 
- '+27812345678', 'ahmed.khan@example.com', 1, '456 Oak St, Soweto', 1, 3, 1, 2, 1, 'admin'); -- Race=2 (Asian), Nationality=14 (South African), etc.
+    ('Ahmed', 'raza', '8705051234081', 2, 14, 1, 4, 1, 'APP-2024-001', 1, 1, '2024-01-10', 3, 2, 1,
+     '+27812345678', 'ahmed.raza@example.com', 1, '456 Oak St, Soweto', 1, 3, 1, 2, 1, 'admin');
 
--- Insert into Comments (depends on Applicant_Details, Center_Detail)
+-- Insert into Comments
 INSERT INTO Comments (
     File_ID, Comment, Comment_Date, center_id, Created_By
 ) VALUES
-(1, 'Initial assessment completed', '2024-01-11', 1, 'admin');
+    (1, 'Initial assessment completed', '2024-01-11', 1, 'admin');
 
--- Insert into Tasks (depends on Applicant_Details, Center_Detail)
+-- Insert into Tasks
 INSERT INTO Tasks (
     File_ID, Task_Description, Date_Required, Status, center_id, Created_By
 ) VALUES
-(1, 'Schedule home visit', '2024-02-15', 'In Progress', 1, 'admin');
+    (1, 'Schedule home visit', '2024-02-15', 'In Progress', 1, 'admin');
 
--- Insert into Relationships (depends on Applicant_Details, Relationship_Types, Employment_Status, Gender, Education_Level, Health_Conditions, Center_Detail)
+-- Insert into Relationships
 INSERT INTO Relationships (
-    File_ID, Relationship_Type, Name, Surname, ID_Number, Date_of_Birth, Employment_Status, Gender, 
+    File_ID, Relationship_Type, Name, Surname, ID_Number, Date_of_Birth, Employment_Status, Gender,
     Highest_Education, Health_Condition, center_id, Created_By
 ) VALUES
-(1, 2, 'Aisha', 'Khan', '1505051234082', '2015-05-05', 2, 2, 1, 1, 1, 'admin'); -- Type=2 (Child), Employment_Status=2 (Student), etc.
+    (1, 2, 'Aisha', 'raza', '1505051234082', '2015-05-05', 2, 2, 1, 1, 1, 'admin');
 
--- Insert into Home_Visit (depends on Applicant_Details, Center_Detail)
+-- Insert into Home_Visit
 INSERT INTO Home_Visit (
     File_ID, Visit_Date, Representative, Comments, center_id, Created_By
 ) VALUES
-(1, '2024-02-20', 'Case Worker Jane', 'Stable living conditions', 1, 'admin');
+    (1, '2024-02-20', 'Case Worker Jane', 'Stable living conditions', 1, 'admin');
 
--- Insert into Financial_Assistance (depends on Applicant_Details, Assistance_Types, Center_Detail)
+-- Insert into Financial_Assistance
 INSERT INTO Financial_Assistance (
     File_ID, Assistance_Type, Financial_Amount, Date_of_Assistance, center_id, Created_By
 ) VALUES
-(1, 1, 1000.00, '2024-02-25', 1, 'admin'); -- Assistance_Type=1 (Food Voucher)
+    (1, 1, 1000.00, '2024-02-25', 1, 'admin');
 
--- Insert into Food_Assistance (depends on Applicant_Details, Hampers, Center_Detail)
+-- Insert into Hampers
+INSERT INTO Hampers (Name, Created_By) VALUES
+    ('Basic Food Hamper', 'admin'),
+    ('Emergency Food Hamper', 'admin'),
+    ('Special Dietary Hamper', 'admin');
+
+-- Insert into Food_Assistance
 INSERT INTO Food_Assistance (
     File_ID, Distributed_Date, Hamper_Type, Financial_Cost, center_id, Created_By
 ) VALUES
-(1, '2024-02-28', 1, 250.00, 1, 'admin'); -- Hamper_Type=1 (assumed Basic Food Hamper from prior context)
+    (1, '2024-02-28',
+     (SELECT ID FROM Hampers WHERE Name = 'Basic Food Hamper'),
+     250.00, 1, 'admin');
 
--- Insert into Attachments (depends on Applicant_Details, Center_Detail)
+-- Insert into Attachments
 INSERT INTO Attachments (
     File_ID, Attachment_Name, Attachment_Details, center_id, Created_By
 ) VALUES
-(1, 'ID Document Scan', 'Applicant ID copy', 1, 'admin');
+    (1, 'ID Document Scan', 'Applicant ID copy', 1, 'admin');
 
--- Insert into Programs (depends on Applicant_Details, Training_Courses, Means_of_communication, Employee, Training_Level, Training_Institutions, Training_Outcome, Center_Detail)
+-- Insert into Programs
 INSERT INTO Programs (
-    Person_Trained_ID, Program_Name, Means_of_communication, Date_of_program, Communicated_by, 
+    Person_Trained_ID, Program_Name, Means_of_communication, Date_of_program, Communicated_by,
     Training_Level, Training_Provider, Program_Outcome, center_id, Created_By
 ) VALUES
-(1, 1, 1, '2024-03-01', 1, 1, 1, 2, 1, 'admin'); -- Program_Name=1 (First Aid), Means=1 (Email), Outcome=2 (Certified)
+    (1, 1, 1, '2024-03-01', 1, 1, 1, 2, 1, 'admin');
 
--- Insert into Financial_Assessment (depends on Applicant_Details, Center_Detail)
+-- Insert into Financial_Assessment
 INSERT INTO Financial_Assessment (
     File_ID, center_id, Total_Income, Total_Expenses, Disposable_Income, Created_By
 ) VALUES
-(1, 1, 1500.00, 1200.00, 300.00, 'admin');
+    (1, 1, 1500.00, 1200.00, 300.00, 'admin');
 
--- Insert into Applicant_Income (depends on Financial_Assessment, Income_Type)
+-- Insert into Applicant_Income
 INSERT INTO Applicant_Income (
     Financial_Assessment_ID, Income_Type_ID, Amount, Description, Created_By
 ) VALUES
-(1, 1, 1500.00, 'Part-time job salary', 'admin'); -- Income_Type=1 (Salary)
+    (1, 1, 1500.00, 'Part-time job salary', 'admin');
 
--- Insert into Applicant_Expense (depends on Financial_Assessment, Expense_Type)
+-- Insert into Applicant_Expense
 INSERT INTO Applicant_Expense (
     Financial_Assessment_ID, Expense_Type_ID, Amount, Description, Created_By
 ) VALUES
-(1, 1, 800.00, 'Monthly rent payment', 'admin'); -- Expense_Type=1 (Rent)
+    (1, 1, 800.00, 'Monthly rent payment', 'admin');
 
--- Insert into Service_Rating (depends on Center_Detail)
+-- Insert into Service_Rating
 INSERT INTO Service_Rating (
     Overall_Experience, Respect_And_Dignity, Communication_And_Clarity, Timeliness_Of_Support, 
     Fairness_And_Equality, Usefulness_Of_Service, Friendliness_Of_Staff, Positive_Impact, 
     Access_Ease, Would_Recommend, Appreciate_Most, How_To_Improve, Other_Comments, center_id, Created_By
 ) VALUES
-(4, 5, 4, 3, 5, 4, 5, TRUE, 4, TRUE, 'Friendly staff', 'Faster response times', 'Great service', 1, 'admin');
+    (4, 5, 4, 3, 4, 5, 4, TRUE, 4, TRUE, 'Friendly staff', 'Faster response times', 
+     'Great service overall', 1, 'admin');
 
--- Insert into Supplier_Profile (depends on Center_Detail, Supplier_Category)
+-- Insert into Supplier_Profile
 INSERT INTO Supplier_Profile (
-    center_id, Name, Registration_No, Contact_Person, Contact_Email, Contact_Phone, Address, Category_ID, Status, Created_By
+    center_id, Name, Registration_No, Contact_Person, Contact_Email, Contact_Phone, Address, 
+    Category_ID, Status, Created_By
 ) VALUES
-(1, 'Fresh Foods Ltd', 'REG-2024-001', 'Sam Supplier', 'sam@freshfoods.com', '+27123456788', '789 Food St, Sandton', 
- (SELECT ID FROM Supplier_Category WHERE Name = 'Food Supplier'), 'Active', 'admin');
+    (1, 'Fresh Foods Ltd', 'REG-2023-001', 'John Supplier', 'john@freshfoods.com', '+27123456780', 
+     '789 Market St, Sandton',
+     (SELECT ID FROM Supplier_Category WHERE Name = 'Food Supplier'), 'Active', 'admin');
 
--- Insert into Supplier_Evaluation (depends on Center_Detail, Supplier_Profile)
+-- Insert into Supplier_Evaluation
 INSERT INTO Supplier_Evaluation (
-    center_id, Supplier_ID, Eval_Date, Quality_Score, Delivery_Score, Cost_Score, OHS_Score, Env_Score, 
+    center_id, Supplier_ID, Eval_Date, Quality_Score, Delivery_Score, Cost_Score, OHS_Score, Env_Score,
     Quality_Wt, Delivery_Wt, Cost_Wt, OHS_Wt, Env_Wt, Overall_Score, Status, Notes, Expiry_Date, Created_By
 ) VALUES
-(1, (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), '2024-03-15', 4, 5, 3, 4, 5, 
- 0.2, 0.2, 0.2, 0.2, 0.2, 4.2, 'Approved', 'Reliable supplier', '2025-03-15', 'admin');
+    (1, (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), '2024-03-15', 4, 5, 3, 4, 4,
+     0.30, 0.25, 0.20, 0.15, 0.10, 4.10, 'Approved', 'Reliable supplier', '2025-03-15', 'admin');
 
--- Insert into Supplier_Document (depends on Center_Detail, Supplier_Profile)
+-- Insert into Supplier_Document
 INSERT INTO Supplier_Document (
     center_id, Supplier_ID, Doc_Type, Issued_At, Description, Created_By
 ) VALUES
-(1, (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), 'Tax Certificate', '2024-01-01', 'Annual tax compliance', 'admin');
+    (1, (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), 'Tax Clearance', 
+     '2024-01-01', 'Tax clearance certificate', 'admin');
 
--- Insert into Inventory_Items (depends on Hampers, Center_Detail, Supplier_Profile)
+-- Insert into Inventory_Items
 INSERT INTO Inventory_Items (
     Item_Name, Description, Hamper_Type, Quantity, Unit, Min_Stock, Cost_Per_Unit, Supplier_ID, center_id, Created_By
 ) VALUES
-('Canned Beans', '400g canned beans', 1, 200.00, 'units', 50.00, 5.50, 
- (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), 1, 'admin');
+    ('Rice 5kg', 'Long-grain white rice', 
+     (SELECT ID FROM Hampers WHERE Name = 'Basic Food Hamper'), 100.00, 'kg', 20.00, 15.00,
+     (SELECT ID FROM Supplier_Profile WHERE Name = 'Fresh Foods Ltd'), 1, 'admin');
 
--- Insert into Inventory_Transactions (depends on Inventory_Items, Employee, Center_Detail)
+-- Insert into Inventory_Transactions
 INSERT INTO Inventory_Transactions (
     Item_ID, Transaction_Type, Quantity, Transaction_Date, Notes, Employee_ID, center_id, Created_By
 ) VALUES
-(1, 'IN', 100.00, '2024-03-20', 'Received new stock', 1, 1, 'admin');
+    ((SELECT ID FROM Inventory_Items WHERE Item_Name = 'Rice 5kg'), 'IN', 50.00, '2024-03-20', 
+     'Restock from supplier', 1, 1, 'admin');
 
--- Insert into Conversations (depends on Center_Detail)
+-- Insert into Conversations
 INSERT INTO Conversations (
     Title, Type, center_id, Created_By
 ) VALUES
-('Weekly Staff Discussion', 'Group', 1, 'admin');
+    ('Team Coordination', 'Group', 1, 'admin');
 
--- Insert into Conversation_Participants (depends on Conversations, Employee, Center_Detail)
+-- Insert into Conversation_Participants
 INSERT INTO Conversation_Participants (
     Conversation_ID, Employee_ID, Joined_Date, center_id, Created_By
 ) VALUES
-(1, 1, '2024-03-25', 1, 'admin');
+    ((SELECT ID FROM Conversations WHERE Title = 'Team Coordination'), 1, '2024-03-21', 1, 'admin');
 
--- Insert into Messages (depends on Conversations, Employee, Center_Detail)
+-- Insert into Messages
 INSERT INTO Messages (
-    Conversation_ID, Sender_ID, Message_Text, center_id, Created_By
+    Conversation_ID, Sender_ID, Message_Text, Read_Status, center_id, Created_By
 ) VALUES
-(1, 1, 'Please review the new policy document', 1, 'admin');
+    ((SELECT ID FROM Conversations WHERE Title = 'Team Coordination'), 1, 
+     'Please review the new applicant process.', 'Unread', 1, 'admin');
 
--- Insert into Folders (depends on Employee, Center_Detail)
+-- Insert into Folders
 INSERT INTO Folders (
     Name, Employee_ID, center_id, Created_By
 ) VALUES
-('HR Documents', 1, 1, 'admin');
+    ('Case Files 2024', 1, 1, 'admin');
 
--- Insert into Personal_Files (depends on Folders, Employee, Center_Detail)
+-- Insert into Personal_Files
 INSERT INTO Personal_Files (
     Name, Folder_ID, Employee_ID, center_id, Created_By
 ) VALUES
-('Contract.pdf', 1, 1, 1, 'admin');
+    ('Performance Review Q1', (SELECT ID FROM Folders WHERE Name = 'Case Files 2024'), 1, 1, 'admin');

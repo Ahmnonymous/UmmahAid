@@ -154,6 +154,50 @@ class ReportsController {
             });
         }
     }
+
+    // Get Financial Assessment Report
+    static async getFinancialAssessment(req, res) {
+        try {
+            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const data = await ReportsModel.getFinancialAssessment(centerId);
+            
+            res.status(200).json({
+                success: true,
+                data: data,
+                count: data.length,
+                message: 'Financial assessment report retrieved successfully'
+            });
+        } catch (error) {
+            console.error('Error in getFinancialAssessment:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error retrieving financial assessment report',
+                error: error.message
+            });
+        }
+    }
+
+    // Get Skills Matrix Report
+    static async getSkillsMatrix(req, res) {
+        try {
+            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const data = await ReportsModel.getSkillsMatrix(centerId);
+            
+            res.status(200).json({
+                success: true,
+                data: data,
+                count: data.length,
+                message: 'Skills matrix report retrieved successfully'
+            });
+        } catch (error) {
+            console.error('Error in getSkillsMatrix:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error retrieving skills matrix report',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = ReportsController;

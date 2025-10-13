@@ -240,7 +240,7 @@ const TableContainer = ({
         isPagination && (
           <Row>
             <Col sm={12} md={5}>
-              <div className="dataTables_info">Showing {getState().pagination.pageSize} of {data.length} Results</div>
+              <div className="dataTables_info">Showing {getState().pagination.pageIndex * getState().pagination.pageSize + 1} to {Math.min((getState().pagination.pageIndex + 1) * getState().pagination.pageSize, data.length)} of {data.length} Results</div>
             </Col>
             <Col sm={12} md={7}>
               <div className={paginationWrapper}>
