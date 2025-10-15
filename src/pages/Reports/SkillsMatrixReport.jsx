@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Card, CardBody, Row, Col, Table, Spinner, Alert, Button, Input, Badge, Collapse, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem, FormGroup, Label } from 'reactstrap';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosApi from '../../helpers/api_helper';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
 import { GET_SKILLS_MATRIX_REPORT } from '../../helpers/url_helper';
 
@@ -32,7 +32,7 @@ const SkillsMatrixReport = () => {
             setLoading(true);
             const token = localStorage.getItem('authToken');
 
-            const response = await axios.get(GET_SKILLS_MATRIX_REPORT, {
+            const response = await axiosApi.get(GET_SKILLS_MATRIX_REPORT, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

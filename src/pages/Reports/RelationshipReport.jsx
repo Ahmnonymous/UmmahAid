@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Card, CardBody, Row, Col, Table, Spinner, Alert, Button, Input, Label, FormGroup, Badge, Collapse, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosApi from '../../helpers/api_helper';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
 import { GET_RELATIONSHIP_REPORT } from '../../helpers/url_helper';
 
@@ -34,7 +34,7 @@ const RelationshipReport = () => {
             setLoading(true);
             const token = localStorage.getItem('authToken');
 
-            const response = await axios.get(GET_RELATIONSHIP_REPORT, {
+            const response = await axiosApi.get(GET_RELATIONSHIP_REPORT, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

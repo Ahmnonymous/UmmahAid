@@ -23,7 +23,7 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
 import AvatarSelector from "../../components/AvatarSelector";
-import axios from "axios";
+import axiosApi from "../../helpers/api_helper";
 import { getUmmahAidUser } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 
@@ -143,7 +143,7 @@ const EmployeeDetails = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/employee`);
+      const response = await axiosApi.get(`${API_BASE_URL}/employee`);
       setEmployees(response.data || []);
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -165,14 +165,14 @@ const EmployeeDetails = () => {
         userTypesRes,
         departmentsRes,
       ] = await Promise.all([
-        axios.get(`${API_BASE_URL}/lookup/Nationality`),
-        axios.get(`${API_BASE_URL}/lookup/Race`),
-        axios.get(`${API_BASE_URL}/lookup/Education_Level`),
-        axios.get(`${API_BASE_URL}/lookup/Gender`),
-        axios.get(`${API_BASE_URL}/lookup/Suburb`),
-        axios.get(`${API_BASE_URL}/lookup/Blood_Type`),
-        axios.get(`${API_BASE_URL}/lookup/User_Types`),
-        axios.get(`${API_BASE_URL}/lookup/Departments`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Nationality`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Race`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Education_Level`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Gender`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Suburb`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Blood_Type`),
+        axiosApi.get(`${API_BASE_URL}/lookup/User_Types`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Departments`),
       ]);
 
       setNationalities(nationalitiesRes.data || []);
@@ -221,7 +221,7 @@ const EmployeeDetails = () => {
         updated_by: currentUser?.username || "system",
       };
 
-      await axios.put(
+      await axiosApi.put(
         `${API_BASE_URL}/employee/${editItem.id}`,
         payload
       );
@@ -304,7 +304,7 @@ const EmployeeDetails = () => {
 
       if (editItem) {
         payload.updated_by = currentUser?.username || "system";
-        await axios.put(
+        await axiosApi.put(
           `${API_BASE_URL}/employee/${editItem.id}`,
           payload
         );

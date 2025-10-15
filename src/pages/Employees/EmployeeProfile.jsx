@@ -25,7 +25,7 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
 import AvatarSelector from "../../components/AvatarSelector";
-import axios from "axios";
+import axiosApi from "../../helpers/api_helper";
 import { getUmmahAidUser } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 import profile1 from "/src/assets/images/profile-img.png";
@@ -188,8 +188,8 @@ const EmployeeProfile = () => {
       setLoading(true);
       const [employeeRes, appraisalsRes, initiativesRes, skillsRes] =
         await Promise.all([
-          axios.get(`${API_BASE_URL}/employee/${id}`),
-          axios
+          axiosApi.get(`${API_BASE_URL}/employee/${id}`),
+          axiosApi
             .get(
               `${API_BASE_URL}/employeeAppraisal?employee_id=${id}`
             )
@@ -378,7 +378,7 @@ const EmployeeProfile = () => {
     if (window.confirm("Are you sure you want to delete this appraisal?")) {
       try {
         setAppraisalModalOpen(false); // Close modal immediately
-        await axios.delete(
+        await axiosApi.delete(
           `${API_BASE_URL}/employeeappraisal/${item.id}`
         );
         showAlert("Appraisal has been deleted successfully", "success");
@@ -418,13 +418,13 @@ const EmployeeProfile = () => {
 
       if (editAppraisal && editAppraisal.id) {
         payload.updated_by = currentUser?.username || "system";
-        await axios.put(
+        await axiosApi.put(
           `${API_BASE_URL}/employeeAppraisal/${editAppraisal.id}`,
           payload
         );
       } else {
         payload.created_by = currentUser?.username || "system";
-        await axios.post(
+        await axiosApi.post(
           `${API_BASE_URL}/employeeAppraisal`,
           payload
         );
@@ -482,7 +482,7 @@ const EmployeeProfile = () => {
     if (window.confirm("Are you sure you want to delete this initiative?")) {
       try {
         setInitiativeModalOpen(false); // Close modal immediately
-        await axios.delete(
+        await axiosApi.delete(
           `${API_BASE_URL}/employeeInitiative/${item.id}`
         );
         showAlert("Initiative has been deleted successfully", "success");
@@ -513,14 +513,14 @@ const EmployeeProfile = () => {
 
       if (editInitiative && editInitiative.id) {
         payload.updated_by = currentUser?.username || "system";
-        await axios.put(
+        await axiosApi.put(
           `http://localhost:5000/api/employeeInitiative/${editInitiative.id}`,
           payload
         );
         showAlert("Initiative has been updated successfully", "success");
       } else {
         payload.created_by = currentUser?.username || "system";
-        await axios.post(
+        await axiosApi.post(
           "http://localhost:5000/api/employeeInitiative",
           payload
         );
@@ -609,7 +609,7 @@ const EmployeeProfile = () => {
     if (window.confirm("Are you sure you want to delete this skill?")) {
       try {
         setSkillsModalOpen(false); // Close modal immediately
-        await axios.delete(
+        await axiosApi.delete(
           `${API_BASE_URL}/employeeSkills/${item.id}`
         );
         showAlert("Skill has been deleted successfully", "success");
@@ -648,7 +648,7 @@ const EmployeeProfile = () => {
 
         if (editSkill && editSkill.id) {
           formData.append("updated_by", currentUser?.username || "system");
-          await axios.put(
+          await axiosApi.put(
             `${API_BASE_URL}/employeeSkills/${editSkill.id}`,
             formData,
             {
@@ -657,7 +657,7 @@ const EmployeeProfile = () => {
           );
         } else {
           formData.append("created_by", currentUser?.username || "system");
-          await axios.post(
+          await axiosApi.post(
             `${API_BASE_URL}/employeeSkills`,
             formData,
             {
@@ -681,13 +681,13 @@ const EmployeeProfile = () => {
 
         if (editSkill && editSkill.id) {
           payload.updated_by = currentUser?.username || "system";
-          await axios.put(
+          await axiosApi.put(
             `${API_BASE_URL}/employeeSkills/${editSkill.id}`,
             payload
           );
         } else {
           payload.created_by = currentUser?.username || "system";
-          await axios.post(`${API_BASE_URL}/employeeSkills`, payload);
+          await axiosApi.post(`${API_BASE_URL}/employeeSkills`, payload);
         }
       }
 
@@ -1050,7 +1050,7 @@ const EmployeeProfile = () => {
         updated_by: currentUser?.username || "system",
       };
 
-      await axios.put(`${API_BASE_URL}/employee/${id}`, payload);
+          await axiosApi.put(`${API_BASE_URL}/employee/${id}`, payload);
       setSelectedAvatar(avatarUrl);
       showAlert("Avatar has been updated successfully", "success");
       fetchEmployeeDetails();
@@ -1108,7 +1108,7 @@ const EmployeeProfile = () => {
       }
 
       console.log("Sending payload:", payload);
-      const response = await axios.put(
+      const response = await axiosApi.put(
         `${API_BASE_URL}/employee/${id}`,
         payload
       );

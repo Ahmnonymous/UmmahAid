@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Card, CardBody, Row, Col, Table, Spinner, Alert, Button, Input, Label, FormGroup, Badge, Collapse, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosApi from '../../helpers/api_helper';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
 import { GET_HOME_VISITS_REPORT } from '../../helpers/url_helper';
 
@@ -27,7 +27,7 @@ const HomeVisitsReport = () => {
             setLoading(true);
             const token = localStorage.getItem('authToken');
 
-            const response = await axios.get(GET_HOME_VISITS_REPORT, {
+            const response = await axiosApi.get(GET_HOME_VISITS_REPORT, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

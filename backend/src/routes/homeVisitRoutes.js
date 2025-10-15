@@ -11,10 +11,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.get('/', homeVisitController.getAll);
-router.get('/:id/view-attachment1', homeVisitController.viewAttachment1);
-router.get('/:id/download-attachment1', homeVisitController.downloadAttachment1);
-router.get('/:id/view-attachment2', homeVisitController.viewAttachment2);
-router.get('/:id/download-attachment2', homeVisitController.downloadAttachment2);
+router.get('/:id/view-attachment-1', homeVisitController.viewAttachment1);
+router.get('/:id/download-attachment-1', homeVisitController.downloadAttachment1);
+router.get('/:id/view-attachment-2', homeVisitController.viewAttachment2);
+router.get('/:id/download-attachment-2', homeVisitController.downloadAttachment2);
 router.get('/:id', homeVisitController.getById);
 router.post('/', upload.fields([{ name: 'attachment_1' }, { name: 'attachment_2' }]), homeVisitController.create);
 router.put('/:id', upload.fields([{ name: 'attachment_1' }, { name: 'attachment_2' }]), homeVisitController.update);

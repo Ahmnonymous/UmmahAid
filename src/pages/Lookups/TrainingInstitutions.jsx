@@ -22,7 +22,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
-import axios from "axios";
+import axiosApi from "../../helpers/api_helper";
 import { getUmmahAidUser } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 
@@ -79,7 +79,7 @@ const TrainingInstitutions = () => {
   const fetchInstitutions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/trainingInstitutions`);
+      const response = await axiosApi.get(`${API_BASE_URL}/trainingInstitutions`);
       setInstitutions(response.data || []);
     } catch (error) {
       console.error("Error fetching institutions:", error);
@@ -134,13 +134,13 @@ const TrainingInstitutions = () => {
       }
 
       if (editItem) {
-        await axios.put(
+        await axiosApi.put(
           `${API_BASE_URL}/trainingInstitutions/${editItem.id}`,
           payload
         );
         showAlert("Training institution has been updated successfully", "success");
       } else {
-        await axios.post(`${API_BASE_URL}/trainingInstitutions`, payload);
+        await axiosApi.post(`${API_BASE_URL}/trainingInstitutions`, payload);
         showAlert("Training institution has been added successfully", "primary");
       }
       fetchInstitutions();
@@ -155,7 +155,7 @@ const TrainingInstitutions = () => {
     if (!editItem) return;
 
     try {
-      await axios.delete(`${API_BASE_URL}/trainingInstitutions/${editItem.id}`);
+      await axiosApi.delete(`${API_BASE_URL}/trainingInstitutions/${editItem.id}`);
       showAlert("Training institution has been deleted successfully", "danger");
       fetchInstitutions();
       toggleModal();

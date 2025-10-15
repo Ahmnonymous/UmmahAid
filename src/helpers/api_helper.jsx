@@ -31,7 +31,58 @@ axiosApi.interceptors.request.use((config) => {
 // Response interceptor
 axiosApi.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error)
+  (error) => {
+    try {
+      const status = error?.response?.status;
+      const errorData = error?.response?.data;
+      
+      // Check both 'message' and 'msg' fields (backend uses both)
+      const errorMsg = (errorData?.message || errorData?.msg || error?.message || "").toString().toLowerCase();
+      
+      console.log("🔍 API Error:", { status, errorMsg, fullError: errorData });
+
+      const looksExpired =
+        errorMsg.includes("jwt exp") ||
+        errorMsg.includes("jwt expired") ||
+        errorMsg.includes("token expired") ||
+        errorMsg.includes("token is not valid") ||
+        errorMsg.includes("not valid") ||
+        errorMsg.includes("unauthorized") ||
+        errorMsg.includes("invalid token");
+
+      // Trigger logout on 401 OR any token-related error message
+      if (status === 401 || looksExpired) {
+        console.log("🔴 JWT expired or unauthorized detected!");
+        console.log("🔴 Status:", status, "| Message:", errorMsg);
+        
+        // Clear auth-related storage and force navigation to login
+        try {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("UmmahAidUser");
+          console.log("🗑️ Cleared authToken and UmmahAidUser");
+          
+          // Dispatch custom event to notify auth middleware immediately
+          window.dispatchEvent(new Event("authTokenRemoved"));
+          console.log("📢 Dispatched authTokenRemoved event");
+        } catch (e) {
+          console.error("Error clearing storage:", e);
+        }
+
+        // Avoid redirect loops if we're already on the login page
+        const isOnLogin = typeof window !== "undefined" && window.location.pathname.startsWith("/login");
+        if (!isOnLogin && typeof window !== "undefined") {
+          console.log("🔄 Redirecting to login page...");
+          window.location.replace("/login");
+        } else {
+          console.log("⚠️ Already on login page, skipping redirect");
+        }
+      }
+    } catch (e) {
+      console.error("Error in response interceptor:", e);
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 export async function get(url, config = {}) {
@@ -54,3 +105,4 @@ export async function del(url, config = {}) {
 
 // ✅ Add this to fix the "default export" issue
 export default axiosApi;
+

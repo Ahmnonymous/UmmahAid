@@ -50,6 +50,9 @@ frontend_rules:
   - Always use Skote DataTables with search/filter/pagination/export for tabular data.
   - Always use Skote Cards for dashboards/metrics.
   - Always load translation strings from `src/locales/`.
+  - Always use `import axiosApi from '../../helpers/api_helper';` instead of raw axios
+  - This ensures JWT auto-attach and auto-logout on token expiry (401/"Token is not valid")
+  - Raw axios should ONLY be used in backend/src/ (Node.js server code)
 
 backend_rules:
   - Place route definitions in backend/src/routes/.

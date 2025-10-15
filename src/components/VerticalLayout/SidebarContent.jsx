@@ -443,6 +443,13 @@ const SidebarContent = (props) => {
             <li className="menu-title">Pages</li>
             
             <li>
+              <Link to="/applicants">
+                <i className="bx bx-user-check"></i>
+                <span>{props.t("Applicant Details")}</span>
+              </Link>
+            </li>
+
+            <li>
               <Link to="/#" className="has-arrow ">
                 <i className="bx bx-cog"></i>
                 <span>{props.t("Administration")}</span>

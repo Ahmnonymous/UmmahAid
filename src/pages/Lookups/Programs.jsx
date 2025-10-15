@@ -22,7 +22,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
-import axios from "axios";
+import axiosApi from "../../helpers/api_helper";
 import { getUmmahAidUser } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 
@@ -93,7 +93,7 @@ const Programs = () => {
   const fetchPrograms = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/programs`);
+      const response = await axiosApi.get(`${API_BASE_URL}/programs`);
       setPrograms(response.data || []);
     } catch (error) {
       console.error("Error fetching programs:", error);
@@ -114,13 +114,13 @@ const Programs = () => {
         institutionsRes,
         outcomesRes,
       ] = await Promise.all([
-        axios.get(`${API_BASE_URL}/applicantDetails`),
-        axios.get(`${API_BASE_URL}/lookup/Training_Courses`),
-        axios.get(`${API_BASE_URL}/lookup/Means_of_communication`),
-        axios.get(`${API_BASE_URL}/employee`),
-        axios.get(`${API_BASE_URL}/lookup/Training_Level`),
-        axios.get(`${API_BASE_URL}/trainingInstitutions`),
-        axios.get(`${API_BASE_URL}/lookup/Training_Outcome`),
+        axiosApi.get(`${API_BASE_URL}/applicantDetails`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Training_Courses`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Means_of_communication`),
+        axiosApi.get(`${API_BASE_URL}/employee`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Training_Level`),
+        axiosApi.get(`${API_BASE_URL}/trainingInstitutions`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Training_Outcome`),
       ]);
 
       setApplicants(applicantsRes.data || []);
@@ -183,13 +183,13 @@ const Programs = () => {
       }
 
       if (editItem) {
-        await axios.put(
+        await axiosApi.put(
           `${API_BASE_URL}/programs/${editItem.id}`,
           payload
         );
         showAlert("Program has been updated successfully", "success");
       } else {
-        await axios.post(`${API_BASE_URL}/programs`, payload);
+        await axiosApi.post(`${API_BASE_URL}/programs`, payload);
         showAlert("Program has been added successfully", "primary");
       }
       fetchPrograms();
@@ -204,7 +204,7 @@ const Programs = () => {
     if (!editItem) return;
 
     try {
-      await axios.delete(`${API_BASE_URL}/programs/${editItem.id}`);
+      await axiosApi.delete(`${API_BASE_URL}/programs/${editItem.id}`);
       showAlert("Program has been deleted successfully", "danger");
       fetchPrograms();
       toggleModal();

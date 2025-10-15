@@ -853,6 +853,29 @@ CREATE TRIGGER Applicant_Expense_update_totals
     AFTER INSERT OR UPDATE OR DELETE ON Applicant_Expense
     FOR EACH ROW EXECUTE FUNCTION update_financial_assessment_totals();
 
+-- Ensure a minimal Financial_Assessment exists for every applicant
+CREATE OR REPLACE FUNCTION ensure_financial_assessment_for_applicant()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Create a placeholder assessment so that later income/expense rows
+    -- can automatically roll up via existing triggers
+    IF NOT EXISTS (
+        SELECT 1 FROM Financial_Assessment WHERE File_ID = NEW.ID
+    ) THEN
+        INSERT INTO Financial_Assessment (
+            File_ID, center_id, Total_Income, Total_Expenses, Disposable_Income, Created_By
+        ) VALUES (
+            NEW.ID, NEW.center_id, 0, 0, 0, 'Admin'
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER Applicant_Details_create_financial_assessment
+    AFTER INSERT ON Applicant_Details
+    FOR EACH ROW EXECUTE FUNCTION ensure_financial_assessment_for_applicant();
+
 CREATE TABLE Service_Rating (
     ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     Overall_Experience SMALLINT,
@@ -1502,24 +1525,6 @@ INSERT INTO Programs (
     Training_Level, Training_Provider, Program_Outcome, center_id, Created_By
 ) VALUES
     (1, 1, 1, '2024-03-01', 1, 1, 1, 2, 1, 'admin');
-
--- Insert into Financial_Assessment
-INSERT INTO Financial_Assessment (
-    File_ID, center_id, Total_Income, Total_Expenses, Disposable_Income, Created_By
-) VALUES
-    (1, 1, 1500.00, 1200.00, 300.00, 'admin');
-
--- Insert into Applicant_Income
-INSERT INTO Applicant_Income (
-    Financial_Assessment_ID, Income_Type_ID, Amount, Description, Created_By
-) VALUES
-    (1, 1, 1500.00, 'Part-time job salary', 'admin');
-
--- Insert into Applicant_Expense
-INSERT INTO Applicant_Expense (
-    Financial_Assessment_ID, Expense_Type_ID, Amount, Description, Created_By
-) VALUES
-    (1, 1, 800.00, 'Monthly rent payment', 'admin');
 
 -- Insert into Service_Rating
 INSERT INTO Service_Rating (

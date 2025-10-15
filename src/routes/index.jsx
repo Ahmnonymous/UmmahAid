@@ -51,6 +51,7 @@ import Logout from "../pages/Authentication/Logout";
 import Register from "../pages/Authentication/Register";
 import ForgetPwd from "../pages/Authentication/ForgetPassword";
 import Employees from "../pages/Employees/Employees";
+import ApplicantManagement from "../pages/Applicants/ApplicantManagement";
 
 // Lookups
 import Lookups from "../pages/Lookups/index";
@@ -351,6 +352,9 @@ const authProtectedRoutes = [
   { path: "/lookups/Employees", component: <EmployeeDetails /> },
   { path: "/employees/profile/:id", component: <EmployeeProfile /> },
   { path: "/lookups/:table", component: <LookupTableView /> },
+
+  // Applicants
+  { path: "/applicants", component: <ApplicantManagement /> },
 
   // Reports
   { path: "/reports/applicant-details", component: <ApplicantDetailsReport /> },
