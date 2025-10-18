@@ -196,12 +196,6 @@ const SidebarContent = (props) => {
                 <span>{props.t("Chat")}</span>
               </Link>
             </li>
-            <li>
-              <Link to="/apps-filemanager">
-                <i className="bx bx-file"></i>
-                <span>{props.t("File Manager")}</span>
-              </Link>
-            </li>
 
             <li>
               <Link to="/#" className="has-arrow">
@@ -446,6 +440,13 @@ const SidebarContent = (props) => {
               <Link to="/applicants">
                 <i className="bx bx-user-check"></i>
                 <span>{props.t("Applicant Details")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/apps-filemanager">
+                <i className="bx bx-folder"></i>
+                <span>{props.t("File Manager")}</span>
               </Link>
             </li>
 

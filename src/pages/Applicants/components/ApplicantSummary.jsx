@@ -22,6 +22,8 @@ import {
 } from "reactstrap";
 import classnames from "classnames";
 import { useForm, Controller } from "react-hook-form";
+import DeleteConfirmationModal from "../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../helpers/userStorage";
@@ -29,7 +31,16 @@ import { getUmmahAidUser } from "../../../helpers/userStorage";
 const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -126,17 +137,20 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
     }
   };
 
-  const handleDelete = async () => {
-    try {
+  const handleDelete = () => {
+    const applicantName = `${applicant.first_name || ''} ${applicant.last_name || ''}`.trim() || 'Unknown Applicant';
+    
+    showDeleteConfirmation({
+      id: applicant.id,
+      name: applicantName,
+      type: "applicant",
+      message: "This applicant and all associated data will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/applicantDetails/${applicant.id}`);
-      showAlert("Applicant has been deleted successfully", "danger");
+      showAlert("Applicant has been deleted successfully", "success");
       onUpdate();
-      setDeleteConfirm(false);
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting applicant:", error);
-      showAlert(error?.response?.data?.message || "Failed to delete applicant", "danger");
-    }
+    });
   };
 
   const getLookupName = (lookupArray, id) => {
@@ -767,7 +781,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              <Button color="danger" onClick={() => setDeleteConfirm(true)} type="button" disabled={isSubmitting}>
+              <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                 <i className="bx bx-trash me-1"></i> Delete
               </Button>
             </div>
@@ -794,25 +808,16 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal isOpen={deleteConfirm} toggle={() => setDeleteConfirm(false)} centered>
-        <ModalHeader toggle={() => setDeleteConfirm(false)}>Confirm Delete</ModalHeader>
-        <ModalBody>
-          <p>
-            Are you sure you want to delete this applicant? <strong>This action cannot be undone.</strong>
-          </p>
-          <p className="text-muted">
-            All related data (comments, tasks, relationships, etc.) will also be affected.
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="light" onClick={() => setDeleteConfirm(false)}>
-            Cancel
-          </Button>
-          <Button color="danger" onClick={handleDelete}>
-            <i className="bx bx-trash me-1"></i> Delete
-          </Button>
-        </ModalFooter>
-      </Modal>
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Applicant"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

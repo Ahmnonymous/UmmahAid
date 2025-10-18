@@ -15,6 +15,8 @@ import {
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -22,6 +24,16 @@ import { getUmmahAidUser } from "../../../../helpers/userStorage";
 const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -86,18 +98,22 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    const assistanceName = `${getLookupName(lookupData.assistanceTypes, editItem.assistance_type)} - ${editItem.amount || 'Unknown Amount'}`;
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: assistanceName,
+      type: "financial assistance",
+      message: "This financial assistance record will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/financialAssistance/${editItem.id}`);
-      showAlert("Financial assistance has been deleted successfully", "danger");
+      showAlert("Financial assistance has been deleted successfully", "success");
       onUpdate();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting financial assistance:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const getLookupName = (lookupArray, id) => {
@@ -108,16 +124,6 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
 
   const columns = useMemo(
     () => [
-      {
-        header: "Date",
-        accessorKey: "date_of_assistance",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
-      },
       {
         header: "Assistance Type",
         accessorKey: "assistance_type",
@@ -137,6 +143,16 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
             {getLookupName(lookupData.assistanceTypes, cell.getValue())}
           </span>
         ),
+      },
+      {
+        header: "Date",
+        accessorKey: "date_of_assistance",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
       },
       {
         header: "Amount",
@@ -284,6 +300,18 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Financial Assistance"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

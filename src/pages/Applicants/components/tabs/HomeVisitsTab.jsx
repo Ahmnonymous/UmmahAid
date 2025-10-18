@@ -15,6 +15,8 @@ import {
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -22,6 +24,16 @@ import { getUmmahAidUser } from "../../../../helpers/userStorage";
 const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -123,32 +135,26 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    const visitName = `Visit on ${editItem.visit_date || 'Unknown Date'} - ${editItem.visit_purpose || 'Unknown Purpose'}`;
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: visitName,
+      type: "home visit",
+      message: "This home visit record will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/homeVisit/${editItem.id}`);
-      showAlert("Home visit has been deleted successfully", "danger");
+      showAlert("Home visit has been deleted successfully", "success");
       onUpdate();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting home visit:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const columns = useMemo(
     () => [
-      {
-        header: "Visit Date",
-        accessorKey: "visit_date",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
-      },
       {
         header: "Representative",
         accessorKey: "representative",
@@ -168,6 +174,16 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
             {cell.getValue() || "-"}
           </span>
         ),
+      },
+      {
+        header: "Visit Date",
+        accessorKey: "visit_date",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
       },
       {
         header: "Comments",
@@ -427,6 +443,18 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Home Visit"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

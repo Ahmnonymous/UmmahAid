@@ -15,6 +15,8 @@ import {
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -22,6 +24,16 @@ import { getUmmahAidUser } from "../../../../helpers/userStorage";
 const TasksTab = ({ applicantId, tasks, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -92,18 +104,22 @@ const TasksTab = ({ applicantId, tasks, onUpdate, showAlert }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    const taskName = editItem.task_description || editItem.title || 'Unknown Task';
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: taskName,
+      type: "task",
+      message: "This task will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/tasks/${editItem.id}`);
-      showAlert("Task has been deleted successfully", "danger");
+      showAlert("Task has been deleted successfully", "success");
       onUpdate();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const columns = useMemo(
@@ -289,6 +305,18 @@ const TasksTab = ({ applicantId, tasks, onUpdate, showAlert }) => {
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Task"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

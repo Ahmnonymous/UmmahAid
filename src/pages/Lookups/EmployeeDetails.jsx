@@ -23,6 +23,8 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
 import AvatarSelector from "../../components/AvatarSelector";
+import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
 import { getUmmahAidUser } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
@@ -37,6 +39,16 @@ const EmployeeDetails = () => {
   const nameInputRef = useRef(null);
   const [avatarSelectorOpen, setAvatarSelectorOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("");
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   // Lookup data states
   const [nationalities, setNationalities] = useState([]);
@@ -248,24 +260,17 @@ const EmployeeDetails = () => {
     toggleModal();
   };
 
-  const handleDelete = async (item) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete employee: ${item.name} ${item.surname}?`
-      )
-    ) {
-      try {
-        await axios.delete(`${API_BASE_URL}/employee/${item.id}`);
-        showAlert("Employee has been deleted successfully", "success");
-        fetchEmployees();
-      } catch (error) {
-        console.error("Error deleting employee:", error);
-        showAlert(
-          error?.response?.data?.error || "Failed to delete employee",
-          "danger"
-        );
-      }
-    }
+  const handleDelete = (item) => {
+    showDeleteConfirmation({
+      id: item.id,
+      name: `${item.name} ${item.surname}`,
+      type: "employee",
+      message: "This employee will be permanently removed from the system."
+    }, async () => {
+      await axiosApi.delete(`${API_BASE_URL}/employee/${item.id}`);
+      showAlert("Employee has been deleted successfully", "success");
+      fetchEmployees();
+    });
   };
 
   const onSubmit = async (data) => {
@@ -1154,6 +1159,18 @@ const EmployeeDetails = () => {
           onSave={handleAvatarSave}
           gender={editItem?.gender || 1}
           currentAvatar={selectedAvatar}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          toggle={hideDeleteConfirmation}
+          onConfirm={confirmDelete}
+          title="Delete Employee"
+          message={deleteItem?.message}
+          itemName={deleteItem?.name}
+          itemType={deleteItem?.type}
+          loading={deleteLoading}
         />
       </Container>
     </div>

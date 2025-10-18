@@ -25,6 +25,23 @@ const personalFilesController = {
     try { 
       const fields = { ...req.body };
       
+      // Clean up empty strings for numeric fields
+      if (fields.folder_id === '' || fields.folder_id === 'null' || fields.folder_id === 'undefined') {
+        delete fields.folder_id;
+      } else if (fields.folder_id) {
+        fields.folder_id = parseInt(fields.folder_id);
+      }
+      
+      if (fields.employee_id === '' || fields.employee_id === 'null' || fields.employee_id === 'undefined') {
+        delete fields.employee_id;
+      } else if (fields.employee_id) {
+        fields.employee_id = parseInt(fields.employee_id);
+      }
+      
+      if (fields.center_id) {
+        fields.center_id = parseInt(fields.center_id);
+      }
+      
       // Handle file upload if present
       if (req.files && req.files.file && req.files.file.length > 0) {
         const file = req.files.file[0];
@@ -46,6 +63,23 @@ const personalFilesController = {
   update: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      
+      // Clean up empty strings for numeric fields
+      if (fields.folder_id === '' || fields.folder_id === 'null' || fields.folder_id === 'undefined') {
+        delete fields.folder_id;
+      } else if (fields.folder_id) {
+        fields.folder_id = parseInt(fields.folder_id);
+      }
+      
+      if (fields.employee_id === '' || fields.employee_id === 'null' || fields.employee_id === 'undefined') {
+        delete fields.employee_id;
+      } else if (fields.employee_id) {
+        fields.employee_id = parseInt(fields.employee_id);
+      }
+      
+      if (fields.center_id) {
+        fields.center_id = parseInt(fields.center_id);
+      }
       
       // Handle file upload if present
       if (req.files && req.files.file && req.files.file.length > 0) {

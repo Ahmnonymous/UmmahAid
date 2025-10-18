@@ -17,6 +17,8 @@ import {
   FormFeedback,
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -29,6 +31,16 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
   const [editExpenseItem, setEditExpenseItem] = useState(null);
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control: incomeControl,
@@ -193,34 +205,42 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
     }
   };
 
-  const handleDeleteIncome = async () => {
+  const handleDeleteIncome = () => {
     if (!editIncomeItem) return;
 
-    try {
+    const incomeName = `${getLookupName(lookupData.incomeTypes, editIncomeItem.income_type)} - ${editIncomeItem.amount || 'Unknown Amount'}`;
+    
+    showDeleteConfirmation({
+      id: editIncomeItem.id,
+      name: incomeName,
+      type: "income record",
+      message: "This income record will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/applicantIncome/${editIncomeItem.id}`);
-      showAlert("Income has been deleted successfully", "danger");
+      showAlert("Income has been deleted successfully", "success");
       fetchIncomeExpense();
       onUpdate();
       toggleIncomeModal();
-    } catch (error) {
-      console.error("Error deleting income:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
-  const handleDeleteExpense = async () => {
+  const handleDeleteExpense = () => {
     if (!editExpenseItem) return;
 
-    try {
+    const expenseName = `${getLookupName(lookupData.expenseTypes, editExpenseItem.expense_type)} - ${editExpenseItem.amount || 'Unknown Amount'}`;
+    
+    showDeleteConfirmation({
+      id: editExpenseItem.id,
+      name: expenseName,
+      type: "expense record",
+      message: "This expense record will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/applicantExpense/${editExpenseItem.id}`);
-      showAlert("Expense has been deleted successfully", "danger");
+      showAlert("Expense has been deleted successfully", "success");
       fetchIncomeExpense();
       onUpdate();
       toggleExpenseModal();
-    } catch (error) {
-      console.error("Error deleting expense:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const getLookupName = (lookupArray, id) => {
@@ -248,6 +268,10 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
 
   return (
     <>
+      <div className="mb-3 d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Finance</h5>
+      </div>
+    
       <Row>
         <Col lg={4}>
           <Card className="mini-stats-wid card-animate shadow-sm border-0">
@@ -601,6 +625,18 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Record"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

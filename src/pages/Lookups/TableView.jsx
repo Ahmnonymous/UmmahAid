@@ -23,6 +23,8 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getUmmahAidUser } from "../../helpers/userStorage";
@@ -48,6 +50,16 @@ const TableView = () => {
   // --- Lookup Dialog State ---
   const [alert, setAlert] = useState(null);
   const nameInputRef = useRef(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -166,7 +178,7 @@ const TableView = () => {
         `${formatTableName(table)} has been ${
           editItem ? "updated" : "added"
         } successfully.`,
-        editItem ? "success" : "primary"
+        "success"
       );
 
       setShowDialog(false);
@@ -181,7 +193,7 @@ const TableView = () => {
     try {
       await dispatch(deleteLookup(table, item.id));
       await dispatch(fetchLookup(table));
-      showAlert(`${formatTableName(table)} has been deleted successfully.`, "danger");
+      showAlert(`${formatTableName(table)} has been deleted successfully.`, "success");
       setShowDialog(false);
       setEditItem(null);
     } catch (err) {
@@ -190,9 +202,19 @@ const TableView = () => {
     }
   };
 
-  const handleDeleteClick = async () => {
+  const handleDeleteClick = () => {
     if (!editItem) return;
-    await handleDelete(editItem);
+
+    const itemName = editItem.name || editItem.title || `${formatTableName(table)} #${editItem.id}`;
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: itemName,
+      type: formatTableName(table).toLowerCase(),
+      message: `This ${formatTableName(table).toLowerCase()} will be permanently removed from the system.`
+    }, async () => {
+      await handleDelete(editItem);
+    });
   };
 
   const handleClose = () => {
@@ -414,6 +436,18 @@ const TableView = () => {
             </ModalFooter>
           </Form>
         </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          toggle={hideDeleteConfirmation}
+          onConfirm={confirmDelete}
+          title={`Delete ${formatTableName(table)}`}
+          message={deleteItem?.message}
+          itemName={deleteItem?.name}
+          itemType={deleteItem?.type}
+          loading={deleteLoading}
+        />
 
         <ToastContainer
           position="top-right"

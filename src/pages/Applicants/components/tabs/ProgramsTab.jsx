@@ -15,6 +15,8 @@ import {
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -22,6 +24,16 @@ import { getUmmahAidUser } from "../../../../helpers/userStorage";
 const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -127,18 +139,22 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    const programName = `${getLookupName(lookupData.programs, editItem.program_id)} - ${editItem.enrollment_date || 'Unknown Date'}`;
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: programName,
+      type: "program enrollment",
+      message: "This program enrollment will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/programs/${editItem.id}`);
-      showAlert("Program has been deleted successfully", "danger");
+      showAlert("Program has been deleted successfully", "success");
       onUpdate();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting program:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const getLookupName = (lookupArray, id) => {
@@ -485,6 +501,18 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Program Enrollment"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

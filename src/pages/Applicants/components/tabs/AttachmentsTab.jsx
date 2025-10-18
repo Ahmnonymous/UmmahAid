@@ -15,6 +15,8 @@ import {
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -22,6 +24,16 @@ import { getUmmahAidUser } from "../../../../helpers/userStorage";
 const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -112,18 +124,22 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    const attachmentName = editItem.file_filename || editItem.name || 'Unknown Attachment';
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: attachmentName,
+      type: "attachment",
+      message: "This attachment will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/attachments/${editItem.id}`);
-      showAlert("Attachment has been deleted successfully", "danger");
+      showAlert("Attachment has been deleted successfully", "success");
       onUpdate();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting attachment:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const columns = useMemo(
@@ -334,6 +350,18 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Attachment"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

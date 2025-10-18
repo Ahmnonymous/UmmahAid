@@ -15,6 +15,8 @@ import {
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
@@ -22,6 +24,16 @@ import { getUmmahAidUser } from "../../../../helpers/userStorage";
 const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -89,32 +101,26 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    const commentName = editItem.comment ? editItem.comment.substring(0, 50) + (editItem.comment.length > 50 ? '...' : '') : 'Unknown Comment';
+    
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: commentName,
+      type: "comment",
+      message: "This comment will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/comments/${editItem.id}`);
-      showAlert("Comment has been deleted successfully", "danger");
+      showAlert("Comment has been deleted successfully", "success");
       onUpdate();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
+    });
   };
 
   const columns = useMemo(
     () => [
-      {
-        header: "Date",
-        accessorKey: "comment_date",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
-      },
       {
         header: "Comment",
         accessorKey: "comment",
@@ -135,6 +141,16 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
             {cell.getValue() || "-"}
           </span>
         ),
+      },
+      {
+        header: "Date",
+        accessorKey: "comment_date",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
       },
       {
         header: "Created By",
@@ -249,6 +265,18 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
           </ModalFooter>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        toggle={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        title="Delete Comment"
+        message={deleteItem?.message}
+        itemName={deleteItem?.name}
+        itemType={deleteItem?.type}
+        loading={deleteLoading}
+      />
     </>
   );
 };

@@ -22,6 +22,8 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
+import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
+import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
 import { getUmmahAidUser } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
@@ -33,6 +35,16 @@ const TrainingInstitutions = () => {
   const [editItem, setEditItem] = useState(null);
   const [alert, setAlert] = useState(null);
   const nameInputRef = useRef(null);
+
+  // Delete confirmation hook
+  const {
+    deleteModalOpen,
+    deleteItem,
+    deleteLoading,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete
+  } = useDeleteConfirmation();
 
   const {
     control,
@@ -94,6 +106,57 @@ const TrainingInstitutions = () => {
     setTimeout(() => setAlert(null), 4000);
   };
 
+  const getAlertIcon = (color) => {
+    switch (color) {
+      case "success":
+        return "mdi mdi-check-all";
+      case "danger":
+        return "mdi mdi-block-helper";
+      case "warning":
+        return "mdi mdi-alert-outline";
+      case "info":
+        return "mdi mdi-alert-circle-outline";
+      case "primary":
+        return "mdi mdi-information";
+      default:
+        return "mdi mdi-information";
+    }
+  };
+
+  const getAlertBackground = (color) => {
+    switch (color) {
+      case "success":
+        return "#d4edda";
+      case "danger":
+        return "#f8d7da";
+      case "warning":
+        return "#fff3cd";
+      case "info":
+        return "#d1ecf1";
+      case "primary":
+        return "#cfe2ff";
+      default:
+        return "#f8f9fa";
+    }
+  };
+
+  const getAlertBorder = (color) => {
+    switch (color) {
+      case "success":
+        return "#c3e6cb";
+      case "danger":
+        return "#f5c6cb";
+      case "warning":
+        return "#ffeaa7";
+      case "info":
+        return "#bee5eb";
+      case "primary":
+        return "#b6d4fe";
+      default:
+        return "#dee2e6";
+    }
+  };
+
   const toggleModal = () => {
     setModalOpen(!modalOpen);
     if (modalOpen) {
@@ -141,7 +204,7 @@ const TrainingInstitutions = () => {
         showAlert("Training institution has been updated successfully", "success");
       } else {
         await axiosApi.post(`${API_BASE_URL}/trainingInstitutions`, payload);
-        showAlert("Training institution has been added successfully", "primary");
+        showAlert("Training institution has been added successfully", "success");
       }
       fetchInstitutions();
       toggleModal();
@@ -151,57 +214,20 @@ const TrainingInstitutions = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editItem) return;
 
-    try {
+    showDeleteConfirmation({
+      id: editItem.id,
+      name: editItem.Institute_Name || "Unknown Institution",
+      type: "training institution",
+      message: "This training institution will be permanently removed from the system."
+    }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/trainingInstitutions/${editItem.id}`);
-      showAlert("Training institution has been deleted successfully", "danger");
+      showAlert("Training institution has been deleted successfully", "success");
       fetchInstitutions();
       toggleModal();
-    } catch (error) {
-      console.error("Error deleting institution:", error);
-      showAlert(error?.response?.data?.message || "Delete failed", "danger");
-    }
-  };
-
-  const getAlertIcon = (color) => {
-    switch (color) {
-      case "success":
-        return "mdi mdi-check-all";
-      case "danger":
-        return "mdi mdi-block-helper";
-      case "primary":
-        return "mdi mdi-bullseye-arrow";
-      default:
-        return "mdi mdi-information";
-    }
-  };
-
-  const getAlertBackground = (color) => {
-    switch (color) {
-      case "success":
-        return "#d4edda";
-      case "danger":
-        return "#f8d7da";
-      case "primary":
-        return "#cce5ff";
-      default:
-        return "#f8f9fa";
-    }
-  };
-
-  const getAlertBorder = (color) => {
-    switch (color) {
-      case "success":
-        return "#c3e6cb";
-      case "danger":
-        return "#f5c6cb";
-      case "primary":
-        return "#b8daff";
-      default:
-        return "#dee2e6";
-    }
+    });
   };
 
   // Define table columns
@@ -575,6 +601,18 @@ const TrainingInstitutions = () => {
             </ModalFooter>
           </Form>
         </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          toggle={hideDeleteConfirmation}
+          onConfirm={confirmDelete}
+          title="Delete Training Institution"
+          message={deleteItem?.message}
+          itemName={deleteItem?.name}
+          itemType={deleteItem?.type}
+          loading={deleteLoading}
+        />
       </Container>
     </div>
   );

@@ -50,111 +50,74 @@ const DetailTabs = ({
     : financialAssessment || null;
 
   const tabs = [
-    { id: "all", label: "Show All", count: commentsForApplicant.length + tasksForApplicant.length + relationshipsForApplicant.length + homeVisitsForApplicant.length + financialAssistanceForApplicant.length + foodAssistanceForApplicant.length + attachmentsForApplicant.length + programsForApplicant.length + (financialAssessmentForApplicant ? 1 : 0), color: "secondary" },
-    { id: "1", label: "Comments", count: commentsForApplicant.length, color: "primary" },
-    { id: "2", label: "Tasks", count: tasksForApplicant.length, color: "info" },
-    { id: "3", label: "Relationships", count: relationshipsForApplicant.length, color: "success" },
-    { id: "4", label: "Home Visits", count: homeVisitsForApplicant.length, color: "warning" },
-    { id: "5", label: "Financial Aid", count: financialAssistanceForApplicant.length, color: "primary" },
-    { id: "6", label: "Food Aid", count: foodAssistanceForApplicant.length, color: "success" },
-    { id: "7", label: "Files", count: attachmentsForApplicant.length, color: "info" },
-    { id: "8", label: "Programs", count: programsForApplicant.length, color: "primary" },
-    { id: "9", label: "Finance", count: financialAssessmentForApplicant ? 1 : 0, color: "success" },
+    { id: "all", label: "Show All" },
+    { id: "comments", label: "Comments" },
+    { id: "tasks", label: "Tasks" },
+    { id: "relationships", label: "Relationships" },
+    { id: "homeVisits", label: "Home Visits" },
+    { id: "financialAid", label: "Financial Aid" },
+    { id: "foodAid", label: "Food Aid" },
+    { id: "files", label: "Files" },
+    { id: "programs", label: "Programs" },
+    { id: "finance", label: "Finance" },
   ];
 
   return (
     <Card>
-      <CardBody className="py-3">
-        <h5 className="card-title mb-3 fw-semibold font-size-15">
-          <i className="bx bx-detail font-size-16 align-middle me-2 text-primary"></i>
-          Applicant Details & History
-        </h5>
-        
-        <Nav pills className="nav-pills-custom mb-3 d-flex flex-wrap">
+      <CardBody className="py-4">
+        <Nav pills className="nav-pills-custom mb-1 d-flex flex-wrap border-bottom">
           {tabs.map((tab) => (
-            <NavItem key={tab.id} className="mb-1">
+            <NavItem key={tab.id} className="me-2 mb-3">
               <NavLink
                 className={classnames({ active: activeTab === tab.id })}
                 onClick={() => toggleTab(tab.id)}
-                style={{ cursor: "pointer", padding: "0.35rem 0.65rem", fontSize: "0.8rem" }}
+                style={{ cursor: "pointer", padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}
               >
                 <span>{tab.label}</span>
-                {tab.count > 0 && (
-                  <span className={`badge bg-soft-${tab.color} text-${tab.color} ms-1 font-size-10 px-1 py-0`}>
-                    {tab.count}
-                  </span>
-                )}
               </NavLink>
             </NavItem>
           ))}
         </Nav>
 
-        <TabContent activeTab={activeTab}>
+        <TabContent activeTab={activeTab} className="mt-3">
           <TabPane tabId="all">
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-comment-dots me-2"></i>Comments
-              </h5>
               <CommentsTab applicantId={applicantId} comments={commentsForApplicant} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-task me-2"></i>Tasks
-              </h5>
               <TasksTab applicantId={applicantId} tasks={tasksForApplicant} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-group me-2"></i>Relationships
-              </h5>
               <RelationshipsTab applicantId={applicantId} relationships={relationshipsForApplicant} lookupData={lookupData} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-home me-2"></i>Home Visits
-              </h5>
               <HomeVisitsTab applicantId={applicantId} homeVisits={homeVisitsForApplicant} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-dollar me-2"></i>Financial Assistance
-              </h5>
               <FinancialAssistanceTab applicantId={applicantId} financialAssistance={financialAssistanceForApplicant} lookupData={lookupData} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-food-menu me-2"></i>Food Assistance
-              </h5>
               <FoodAssistanceTab applicantId={applicantId} foodAssistance={foodAssistanceForApplicant} lookupData={lookupData} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-paperclip me-2"></i>Attachments
-              </h5>
               <AttachmentsTab applicantId={applicantId} attachments={attachmentsForApplicant} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-book-reader me-2"></i>Programs
-              </h5>
               <ProgramsTab applicantId={applicantId} programs={programsForApplicant} lookupData={lookupData} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
             
             <div className="border rounded p-3 mb-3">
-              <h5 className="text-primary mb-3">
-                <i className="bx bx-calculator me-2"></i>Financial Assessment
-              </h5>
               <FinancialAssessmentTab applicantId={applicantId} financialAssessment={financialAssessmentForApplicant} lookupData={lookupData} onUpdate={onUpdate} showAlert={showAlert} />
             </div>
           </TabPane>
-          <TabPane tabId="1">
+          <TabPane tabId="comments">
             <CommentsTab
               applicantId={applicantId}
               comments={commentsForApplicant}
@@ -163,7 +126,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="2">
+          <TabPane tabId="tasks">
             <TasksTab
               applicantId={applicantId}
               tasks={tasksForApplicant}
@@ -172,7 +135,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="3">
+          <TabPane tabId="relationships">
             <RelationshipsTab
               applicantId={applicantId}
               relationships={relationshipsForApplicant}
@@ -182,7 +145,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="4">
+          <TabPane tabId="homeVisits">
             <HomeVisitsTab
               applicantId={applicantId}
               homeVisits={homeVisitsForApplicant}
@@ -191,7 +154,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="5">
+          <TabPane tabId="financialAid">
             <FinancialAssistanceTab
               applicantId={applicantId}
               financialAssistance={financialAssistanceForApplicant}
@@ -201,7 +164,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="6">
+          <TabPane tabId="foodAid">
             <FoodAssistanceTab
               applicantId={applicantId}
               foodAssistance={foodAssistanceForApplicant}
@@ -211,7 +174,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="7">
+          <TabPane tabId="files">
             <AttachmentsTab
               applicantId={applicantId}
               attachments={attachmentsForApplicant}
@@ -220,7 +183,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="8">
+          <TabPane tabId="programs">
             <ProgramsTab
               applicantId={applicantId}
               programs={programsForApplicant}
@@ -230,7 +193,7 @@ const DetailTabs = ({
             />
           </TabPane>
 
-          <TabPane tabId="9">
+          <TabPane tabId="finance">
             <FinancialAssessmentTab
               applicantId={applicantId}
               financialAssessment={financialAssessmentForApplicant}
