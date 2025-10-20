@@ -129,21 +129,6 @@ const FileModal = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (!editItem) return;
-
-    if (window.confirm("Are you sure you want to delete this file?")) {
-      try {
-        await axiosApi.delete(`${API_BASE_URL}/personalFiles/${editItem.id}`);
-        showAlert("File has been deleted successfully", "success");
-        onUpdate();
-        toggle();
-      } catch (error) {
-        console.error("Error deleting file:", error);
-        showAlert(error?.response?.data?.message || "Delete failed", "danger");
-      }
-    }
-  };
 
   const handleFileChange = (e, onChange) => {
     const file = e.target.files[0];
@@ -273,21 +258,8 @@ const FileModal = ({
           )}
         </ModalBody>
 
-        <ModalFooter className="d-flex justify-content-between">
-          <div>
-            {editItem && (
-              <Button
-                color="danger"
-                onClick={handleDelete}
-                type="button"
-                disabled={isSubmitting}
-              >
-                <i className="bx bx-trash me-1"></i> Delete
-              </Button>
-            )}
-          </div>
-
-          <div>
+        <ModalFooter>
+          <div className="d-flex gap-2 w-100 justify-content-end">
             <Button
               color="light"
               onClick={toggle}

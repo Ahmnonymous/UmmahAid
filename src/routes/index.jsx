@@ -217,7 +217,7 @@ const authProtectedRoutes = [
   { path: "/chat", component: <Chat /> },
 
   //File Manager
-  { path: "/apps-filemanager", component: <FileManager /> },
+  { path: "/FileManager", component: <FileManager /> },
 
   // //calendar
   { path: "/calendar", component: <Calendar /> },

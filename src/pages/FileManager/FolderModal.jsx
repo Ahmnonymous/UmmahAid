@@ -76,21 +76,6 @@ const FolderModal = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (!editItem) return;
-
-    if (window.confirm("Are you sure you want to delete this folder? All files in this folder will be moved to root.")) {
-      try {
-        await axiosApi.delete(`${API_BASE_URL}/folders/${editItem.id}`);
-        showAlert("Folder has been deleted successfully", "success");
-        onUpdate();
-        toggle();
-      } catch (error) {
-        console.error("Error deleting folder:", error);
-        showAlert(error?.response?.data?.message || "Delete failed", "danger");
-      }
-    }
-  };
 
   // Get available parent folders (excluding current folder and its descendants)
   const getAvailableParentFolders = () => {
@@ -165,21 +150,8 @@ const FolderModal = ({
           </FormGroup>
         </ModalBody>
 
-        <ModalFooter className="d-flex justify-content-between">
-          <div>
-            {editItem && (
-              <Button
-                color="danger"
-                onClick={handleDelete}
-                type="button"
-                disabled={isSubmitting}
-              >
-                <i className="bx bx-trash me-1"></i> Delete
-              </Button>
-            )}
-          </div>
-
-          <div>
+        <ModalFooter>
+          <div className="d-flex gap-2 w-100 justify-content-end">
             <Button
               color="light"
               onClick={toggle}

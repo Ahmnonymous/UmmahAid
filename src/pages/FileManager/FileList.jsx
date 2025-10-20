@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, CardBody, Row, Col, Button, Input, Spinner, Badge } from "reactstrap";
+import { Card, CardBody, Row, Col, Button, Input, Spinner, Badge, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
 
 const FileList = ({
   folders,
@@ -181,33 +181,26 @@ const FileList = ({
                         <Card className="border hover-shadow mb-0">
                           <CardBody className="p-2">
                             <div className="text-end mb-1">
-                              <div className="dropdown">
-                                <button
+                              <UncontrolledDropdown>
+                                <DropdownToggle
+                                  tag="button"
                                   className="btn btn-link text-muted p-0"
-                                  type="button"
-                                  data-bs-toggle="dropdown"
                                 >
                                   <i className="bx bx-dots-vertical-rounded"></i>
-                                </button>
-                                <ul className="dropdown-menu dropdown-menu-end">
-                                  <li>
-                                    <button className="dropdown-item" onClick={() => onPreviewFile(file)}>
-                                      <i className="bx bx-show me-2"></i>Preview
-                                    </button>
-                                  </li>
-                                  <li>
-                                    <button className="dropdown-item" onClick={() => onEditFile(file)}>
-                                      <i className="bx bx-edit me-2"></i>Edit
-                                    </button>
-                                  </li>
-                                  <li><hr className="dropdown-divider" /></li>
-                                  <li>
-                                    <button className="dropdown-item text-danger" onClick={() => onDeleteFile(file.id)}>
-                                      <i className="bx bx-trash me-2"></i>Delete
-                                    </button>
-                                  </li>
-                                </ul>
-                              </div>
+                                </DropdownToggle>
+                                <DropdownMenu end>
+                                  <DropdownItem onClick={() => onPreviewFile(file)}>
+                                    <i className="bx bx-show me-2"></i>Preview
+                                  </DropdownItem>
+                                  <DropdownItem onClick={() => onEditFile(file)}>
+                                    <i className="bx bx-edit me-2"></i>Edit
+                                  </DropdownItem>
+                                  <DropdownItem divider />
+                                  <DropdownItem className="text-danger" onClick={() => onDeleteFile(file)}>
+                                    <i className="bx bx-trash me-2"></i>Delete
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </UncontrolledDropdown>
                             </div>
 
                             <div 
@@ -287,7 +280,7 @@ const FileList = ({
                               <Button
                                 color="danger"
                                 size="sm"
-                                onClick={() => onDeleteFile(file.id)}
+                                onClick={() => onDeleteFile(file)}
                               >
                                 <i className="bx bx-trash"></i>
                               </Button>

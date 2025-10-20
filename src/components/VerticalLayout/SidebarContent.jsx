@@ -444,7 +444,7 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
-              <Link to="/apps-filemanager">
+              <Link to="/filemanager">
                 <i className="bx bx-folder"></i>
                 <span>{props.t("File Manager")}</span>
               </Link>

@@ -275,7 +275,7 @@ const Navbar = (props) => {
                     <Link to="/chat" className="dropdown-item">
                       {props.t("Chat")}
                     </Link>
-                    <Link to="/apps-filemanager" className="dropdown-item">
+                    <Link to="/filemanager" className="dropdown-item">
                       {props.t("File Manager")}
                     </Link>
                     <div className="dropdown">

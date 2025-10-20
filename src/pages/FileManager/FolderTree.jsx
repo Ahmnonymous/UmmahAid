@@ -159,7 +159,7 @@ const FolderTree = ({
               className="p-0 text-decoration-none text-danger ms-2"
               onClick={(e) => {
                 e.stopPropagation();
-                onDeleteFolder(folder.id);
+                onDeleteFolder(folder);
               }}
               title="Delete Folder"
             >
