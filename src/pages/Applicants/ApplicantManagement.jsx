@@ -356,8 +356,6 @@ const ApplicantManagement = () => {
               onSearchChange={setSearchTerm}
               loading={loading}
               onRefresh={fetchApplicants}
-              showAlert={showAlert}
-              lookupData={lookupData}
             />
           </Col>
 

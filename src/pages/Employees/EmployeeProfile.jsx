@@ -85,6 +85,7 @@ const EmployeeProfile = () => {
   const [bloodTypes, setBloodTypes] = useState([]);
   const [userTypes, setUserTypes] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [centers, setCenters] = useState([]);
   const [trainingCourses, setTrainingCourses] = useState([]);
   const [trainingInstitutions, setTrainingInstitutions] = useState([]);
   const [trainingOutcomes, setTrainingOutcomes] = useState([]);
@@ -170,6 +171,7 @@ const EmployeeProfile = () => {
       User_Type: "",
       Department: "",
       HSEQ_Related: "N",
+      Center_ID: "",
     },
   });
 
@@ -194,12 +196,12 @@ const EmployeeProfile = () => {
               `${API_BASE_URL}/employeeAppraisal?employee_id=${id}`
             )
             .catch(() => ({ data: [] })),
-          axios
+          axiosApi
             .get(
               `${API_BASE_URL}/employeeInitiative?employee_id=${id}`
             )
             .catch(() => ({ data: [] })),
-          axios
+          axiosApi
             .get(`${API_BASE_URL}/employeeSkills?employee_id=${id}`)
             .catch(() => ({ data: [] })),
         ]);
@@ -227,41 +229,45 @@ const EmployeeProfile = () => {
         bloodTypesRes,
         userTypesRes,
         departmentsRes,
+        centersRes,
         coursesRes,
         institutionsRes,
         outcomesRes,
       ] = await Promise.all([
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Nationality`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Race`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Education_Level`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Gender`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Suburb`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Blood_Type`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/User_Types`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Departments`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
+          .get(`${API_BASE_URL}/centerDetail`)
+          .catch(() => ({ data: [] })),
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Training_Courses`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/trainingInstitutions`)
           .catch(() => ({ data: [] })),
-        axios
+        axiosApi
           .get(`${API_BASE_URL}/lookup/Training_Outcome`)
           .catch(() => ({ data: [] })),
       ]);
@@ -274,6 +280,7 @@ const EmployeeProfile = () => {
       setBloodTypes(bloodTypesRes.data || []);
       setUserTypes(userTypesRes.data || []);
       setDepartments(departmentsRes.data || []);
+      setCenters(centersRes.data || []);
       setTrainingCourses(coursesRes.data || []);
       setTrainingInstitutions(institutionsRes.data || []);
       setTrainingOutcomes(outcomesRes.data || []);
@@ -585,6 +592,7 @@ const EmployeeProfile = () => {
         User_Type: employee?.user_type ? String(employee.user_type) : "",
         Department: employee?.department ? String(employee.department) : "",
         HSEQ_Related: employee?.hseq_related || "N",
+        Center_ID: employee?.center_id ? String(employee.center_id) : "",
       });
       setSelectedAvatar(employee?.employee_avatar || "");
     }
@@ -1098,7 +1106,7 @@ const EmployeeProfile = () => {
         department: data.Department ? parseInt(data.Department) : null,
         hseq_related: data.HSEQ_Related,
         employee_avatar: selectedAvatar || null,
-        center_id: employee?.center_id || null,
+        center_id: data.Center_ID ? parseInt(data.Center_ID) : employee?.center_id || null,
         updated_by: currentUser?.username || "system",
       };
 
@@ -2364,6 +2372,7 @@ const EmployeeProfile = () => {
                           id="ID_Number"
                           placeholder="Enter 13-digit ID number"
                           invalid={!!employeeErrors.ID_Number}
+                          maxLength="13"
                           {...field}
                         />
                       )}
@@ -2763,10 +2772,43 @@ const EmployeeProfile = () => {
               <Row>
                 <Col md={6}>
                   <FormGroup>
-                    <Label for="User_Type">User Type</Label>
+                    <Label for="Center_ID">
+                      Center <span className="text-danger">*</span>
+                    </Label>
+                    <Controller
+                      name="Center_ID"
+                      control={employeeControl}
+                      rules={{ required: "Center is required" }}
+                      render={({ field }) => (
+                        <Input
+                          id="Center_ID"
+                          type="select"
+                          invalid={!!employeeErrors.Center_ID}
+                          {...field}
+                        >
+                          <option value="">Select Center</option>
+                          {centers.map((center) => (
+                            <option key={center.id} value={center.id}>
+                              {center.organisation_name}
+                            </option>
+                          ))}
+                        </Input>
+                      )}
+                    />
+                    {employeeErrors.Center_ID && (
+                      <FormFeedback>{employeeErrors.Center_ID.message}</FormFeedback>
+                    )}
+                  </FormGroup>
+                </Col>
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="User_Type">
+                      User Type <span className="text-danger">*</span>
+                    </Label>
                     <Controller
                       name="User_Type"
                       control={employeeControl}
+                      rules={{ required: "User Type is required" }}
                       render={({ field }) => (
                         <Input
                           id="User_Type"

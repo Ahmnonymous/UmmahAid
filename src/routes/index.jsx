@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 // Pages Component
-import Chat from "../pages/Chat/Chat";
+import Chat from "../pages/Chat";
 
 // // File Manager
 import FileManager from "../pages/FileManager/index";
@@ -52,6 +52,7 @@ import Register from "../pages/Authentication/Register";
 import ForgetPwd from "../pages/Authentication/ForgetPassword";
 import Employees from "../pages/Employees/Employees";
 import ApplicantManagement from "../pages/Applicants/ApplicantManagement";
+import CreateApplicant from "../pages/Applicants/CreateApplicant";
 
 // Lookups
 import Lookups from "../pages/Lookups/index";
@@ -355,6 +356,7 @@ const authProtectedRoutes = [
 
   // Applicants
   { path: "/applicants", component: <ApplicantManagement /> },
+  { path: "/applicants/create", component: <CreateApplicant /> },
 
   // Reports
   { path: "/reports/applicant-details", component: <ApplicantDetailsReport /> },

@@ -288,7 +288,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
         <div className="header-left">
           <div className="file-icon-badge bg-light">
             <i className={`bx ${getFileIcon(mimetype, filename)} text-${getFileColor(mimetype, filename)}`}></i>
-          </div>
+              </div>
           <div className="file-info">
             <h5 className="file-name mb-1">{file.name || filename || "Untitled"}</h5>
             <div className="file-meta">
@@ -303,7 +303,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
             </div>
           </div>
         </div>
-        
+
         <div className="header-right">
           {/* Zoom controls for images */}
           {isImage && (

@@ -59,6 +59,7 @@ const EmployeeDetails = () => {
   const [bloodTypes, setBloodTypes] = useState([]);
   const [userTypes, setUserTypes] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [centers, setCenters] = useState([]);
 
   const {
     control,
@@ -86,6 +87,7 @@ const EmployeeDetails = () => {
       User_Type: "",
       Department: "",
       HSEQ_Related: "N",
+      Center_ID: "",
     },
   });
 
@@ -115,6 +117,7 @@ const EmployeeDetails = () => {
 
   useEffect(() => {
     if (modalOpen) {
+      const currentUser = getUmmahAidUser();
       reset({
         Name: editItem?.name || "",
         Surname: editItem?.surname || "",
@@ -141,6 +144,7 @@ const EmployeeDetails = () => {
         User_Type: editItem?.user_type ? String(editItem.user_type) : "",
         Department: editItem?.department ? String(editItem.department) : "",
         HSEQ_Related: editItem?.hseq_related || "N",
+        Center_ID: editItem?.center_id ? String(editItem.center_id) : (currentUser?.center_id ? String(currentUser.center_id) : ""),
       });
       setSelectedAvatar(editItem?.employee_avatar || "");
       // Auto-focus on first input
@@ -176,6 +180,7 @@ const EmployeeDetails = () => {
         bloodTypesRes,
         userTypesRes,
         departmentsRes,
+        centersRes,
       ] = await Promise.all([
         axiosApi.get(`${API_BASE_URL}/lookup/Nationality`),
         axiosApi.get(`${API_BASE_URL}/lookup/Race`),
@@ -185,6 +190,7 @@ const EmployeeDetails = () => {
         axiosApi.get(`${API_BASE_URL}/lookup/Blood_Type`),
         axiosApi.get(`${API_BASE_URL}/lookup/User_Types`),
         axiosApi.get(`${API_BASE_URL}/lookup/Departments`),
+        axiosApi.get(`${API_BASE_URL}/centerDetail`),
       ]);
 
       setNationalities(nationalitiesRes.data || []);
@@ -195,6 +201,7 @@ const EmployeeDetails = () => {
       setBloodTypes(bloodTypesRes.data || []);
       setUserTypes(userTypesRes.data || []);
       setDepartments(departmentsRes.data || []);
+      setCenters(centersRes.data || []);
     } catch (error) {
       console.error("Error fetching lookup data:", error);
     }
@@ -300,6 +307,7 @@ const EmployeeDetails = () => {
         department: data.Department ? parseInt(data.Department) : null,
         hseq_related: data.HSEQ_Related,
         employee_avatar: selectedAvatar || null,
+        center_id: data.Center_ID ? parseInt(data.Center_ID) : null,
       };
 
       // Only include password_hash if password is provided (for new employees or password changes)
@@ -316,7 +324,7 @@ const EmployeeDetails = () => {
         showAlert("Employee has been updated successfully", "success");
       } else {
         payload.created_by = currentUser?.username || "system";
-        await axios.post(`${API_BASE_URL}/employee`, payload);
+        await axiosApi.post(`${API_BASE_URL}/employee`, payload);
         showAlert("Employee has been created successfully", "success");
       }
 
@@ -637,6 +645,7 @@ const EmployeeDetails = () => {
                             id="ID_Number"
                             placeholder="Enter 13-digit ID number"
                             invalid={!!errors.ID_Number}
+                            maxLength="13"
                             {...field}
                           />
                         )}
@@ -1037,10 +1046,43 @@ const EmployeeDetails = () => {
                 <Row>
                   <Col md={6}>
                     <FormGroup>
-                      <Label for="User_Type">User Type</Label>
+                      <Label for="Center_ID">
+                        Center <span className="text-danger">*</span>
+                      </Label>
+                      <Controller
+                        name="Center_ID"
+                        control={control}
+                        rules={{ required: "Center is required" }}
+                        render={({ field }) => (
+                          <Input
+                            id="Center_ID"
+                            type="select"
+                            invalid={!!errors.Center_ID}
+                            {...field}
+                          >
+                            <option value="">Select Center</option>
+                            {centers.map((center) => (
+                              <option key={center.id} value={center.id}>
+                                {center.organisation_name}
+                              </option>
+                            ))}
+                          </Input>
+                        )}
+                      />
+                      {errors.Center_ID && (
+                        <FormFeedback>{errors.Center_ID.message}</FormFeedback>
+                      )}
+                    </FormGroup>
+                  </Col>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="User_Type">
+                        User Type <span className="text-danger">*</span>
+                      </Label>
                       <Controller
                         name="User_Type"
                         control={control}
+                        rules={{ required: "User Type is required" }}
                         render={({ field }) => (
                           <Input
                             id="User_Type"

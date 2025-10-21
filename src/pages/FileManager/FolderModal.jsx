@@ -49,6 +49,12 @@ const FolderModal = ({
   const onSubmit = async (data) => {
     try {
       const currentUser = getUmmahAidUser();
+      
+      // Validate user session
+      if (!currentUser || !currentUser.center_id) {
+        showAlert("User session expired. Please login again.", "danger");
+        return;
+      }
 
       const payload = {
         name: data.name,
@@ -71,8 +77,28 @@ const FolderModal = ({
       toggle();
     } catch (error) {
       console.error("Error saving folder:", error);
-      console.error("Error details:", error.response);
-      showAlert(error?.response?.data?.error || error?.response?.data?.message || "Operation failed", "danger");
+      
+      // Provide specific error messages
+      let errorMessage = editItem ? "Failed to update folder" : "Failed to create folder";
+      
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle specific error types
+      if (errorMessage.includes("duplicate") || errorMessage.includes("unique constraint")) {
+        errorMessage = "A folder with this name already exists in this location.";
+      } else if (errorMessage.includes("invalid input syntax")) {
+        errorMessage = "Invalid data format. Please check the folder name.";
+      } else if (errorMessage.includes("foreign key constraint")) {
+        errorMessage = "Invalid parent folder selected.";
+      }
+      
+      showAlert(errorMessage, "danger");
     }
   };
 

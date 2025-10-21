@@ -47,6 +47,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    watch,
   } = useForm();
 
   useEffect(() => {
@@ -79,7 +80,8 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         Dwelling_Status: applicant.dwelling_status || "",
         Health: applicant.health || "",
         Skills: applicant.skills || "",
-        POPIA_Agreement: applicant.popia_agreement || "",
+        POPIA_Agreement: applicant.popia_agreement === "Y",
+        Signature: null,
       });
     }
   }, [applicant, modalOpen, reset]);
@@ -94,40 +96,86 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
   const onSubmit = async (data) => {
     try {
       const currentUser = getUmmahAidUser();
+      const hasSignature = data.Signature && data.Signature.length > 0;
 
-      const payload = {
-        name: data.Name,
-        surname: data.Surname,
-        id_number: data.ID_Number,
-        race: data.Race ? parseInt(data.Race) : null,
-        nationality: data.Nationality ? parseInt(data.Nationality) : null,
-        nationality_expiry_date: data.Nationality_Expiry_Date || null,
-        gender: data.Gender ? parseInt(data.Gender) : null,
-        born_religion_id: data.Born_Religion_ID ? parseInt(data.Born_Religion_ID) : null,
-        period_as_muslim_id: data.Period_As_Muslim_ID ? parseInt(data.Period_As_Muslim_ID) : null,
-        file_number: data.File_Number,
-        file_condition: data.File_Condition ? parseInt(data.File_Condition) : null,
-        file_status: data.File_Status ? parseInt(data.File_Status) : null,
-        date_intake: data.Date_Intake || null,
-        highest_education_level: data.Highest_Education_Level ? parseInt(data.Highest_Education_Level) : null,
-        marital_status: data.Marital_Status ? parseInt(data.Marital_Status) : null,
-        employment_status: data.Employment_Status ? parseInt(data.Employment_Status) : null,
-        cell_number: data.Cell_Number,
-        alternate_number: data.Alternate_Number,
-        email_address: data.Email_Address,
-        suburb: data.Suburb ? parseInt(data.Suburb) : null,
-        street_address: data.Street_Address,
-        dwelling_type: data.Dwelling_Type ? parseInt(data.Dwelling_Type) : null,
-        flat_name: data.Flat_Name,
-        flat_number: data.Flat_Number,
-        dwelling_status: data.Dwelling_Status ? parseInt(data.Dwelling_Status) : null,
-        health: data.Health ? parseInt(data.Health) : null,
-        skills: data.Skills ? parseInt(data.Skills) : null,
-        popia_agreement: data.POPIA_Agreement,
-        updated_by: currentUser?.username || "system",
-      };
+      if (hasSignature) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        formData.append("name", data.Name || "");
+        formData.append("surname", data.Surname || "");
+        formData.append("id_number", data.ID_Number || "");
+        
+        if (data.Race && data.Race !== "") formData.append("race", data.Race);
+        if (data.Nationality && data.Nationality !== "") formData.append("nationality", data.Nationality);
+        if (data.Nationality_Expiry_Date) formData.append("nationality_expiry_date", data.Nationality_Expiry_Date);
+        if (data.Gender && data.Gender !== "") formData.append("gender", data.Gender);
+        if (data.Born_Religion_ID && data.Born_Religion_ID !== "") formData.append("born_religion_id", data.Born_Religion_ID);
+        if (data.Period_As_Muslim_ID && data.Period_As_Muslim_ID !== "") formData.append("period_as_muslim_id", data.Period_As_Muslim_ID);
+        
+        formData.append("file_number", data.File_Number || "");
+        if (data.File_Condition && data.File_Condition !== "") formData.append("file_condition", data.File_Condition);
+        if (data.File_Status && data.File_Status !== "") formData.append("file_status", data.File_Status);
+        if (data.Date_Intake) formData.append("date_intake", data.Date_Intake);
+        if (data.Highest_Education_Level && data.Highest_Education_Level !== "") formData.append("highest_education_level", data.Highest_Education_Level);
+        if (data.Marital_Status && data.Marital_Status !== "") formData.append("marital_status", data.Marital_Status);
+        if (data.Employment_Status && data.Employment_Status !== "") formData.append("employment_status", data.Employment_Status);
+        
+        formData.append("cell_number", data.Cell_Number || "");
+        formData.append("alternate_number", data.Alternate_Number || "");
+        formData.append("email_address", data.Email_Address || "");
+        if (data.Suburb && data.Suburb !== "") formData.append("suburb", data.Suburb);
+        formData.append("street_address", data.Street_Address || "");
+        if (data.Dwelling_Type && data.Dwelling_Type !== "") formData.append("dwelling_type", data.Dwelling_Type);
+        formData.append("flat_name", data.Flat_Name || "");
+        formData.append("flat_number", data.Flat_Number || "");
+        if (data.Dwelling_Status && data.Dwelling_Status !== "") formData.append("dwelling_status", data.Dwelling_Status);
+        if (data.Health && data.Health !== "") formData.append("health", data.Health);
+        if (data.Skills && data.Skills !== "") formData.append("skills", data.Skills);
+        
+        formData.append("signature", data.Signature[0]);
+        formData.append("popia_agreement", data.POPIA_Agreement ? "Y" : "N");
+        formData.append("updated_by", currentUser?.username || "system");
 
-      await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, payload);
+        await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        // Use regular JSON payload
+        const payload = {
+          name: data.Name,
+          surname: data.Surname,
+          id_number: data.ID_Number,
+          race: data.Race && data.Race !== "" ? parseInt(data.Race) : null,
+          nationality: data.Nationality && data.Nationality !== "" ? parseInt(data.Nationality) : null,
+          nationality_expiry_date: data.Nationality_Expiry_Date || null,
+          gender: data.Gender && data.Gender !== "" ? parseInt(data.Gender) : null,
+          born_religion_id: data.Born_Religion_ID && data.Born_Religion_ID !== "" ? parseInt(data.Born_Religion_ID) : null,
+          period_as_muslim_id: data.Period_As_Muslim_ID && data.Period_As_Muslim_ID !== "" ? parseInt(data.Period_As_Muslim_ID) : null,
+          file_number: data.File_Number,
+          file_condition: data.File_Condition && data.File_Condition !== "" ? parseInt(data.File_Condition) : null,
+          file_status: data.File_Status && data.File_Status !== "" ? parseInt(data.File_Status) : null,
+          date_intake: data.Date_Intake || null,
+          highest_education_level: data.Highest_Education_Level && data.Highest_Education_Level !== "" ? parseInt(data.Highest_Education_Level) : null,
+          marital_status: data.Marital_Status && data.Marital_Status !== "" ? parseInt(data.Marital_Status) : null,
+          employment_status: data.Employment_Status && data.Employment_Status !== "" ? parseInt(data.Employment_Status) : null,
+          cell_number: data.Cell_Number || null,
+          alternate_number: data.Alternate_Number || null,
+          email_address: data.Email_Address || null,
+          suburb: data.Suburb && data.Suburb !== "" ? parseInt(data.Suburb) : null,
+          street_address: data.Street_Address || null,
+          dwelling_type: data.Dwelling_Type && data.Dwelling_Type !== "" ? parseInt(data.Dwelling_Type) : null,
+          flat_name: data.Flat_Name || null,
+          flat_number: data.Flat_Number || null,
+          dwelling_status: data.Dwelling_Status && data.Dwelling_Status !== "" ? parseInt(data.Dwelling_Status) : null,
+          health: data.Health && data.Health !== "" ? parseInt(data.Health) : null,
+          skills: data.Skills && data.Skills !== "" ? parseInt(data.Skills) : null,
+          popia_agreement: data.POPIA_Agreement ? "Y" : "N",
+          updated_by: currentUser?.username || "system",
+        };
+
+        await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, payload);
+      }
+      
       showAlert("Applicant has been updated successfully", "success");
       onUpdate();
       toggleModal();
@@ -764,14 +812,47 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       />
                     </FormGroup>
                   </Col>
-                  <Col md={8}>
+                  <Col md={12}>
                     <FormGroup>
-                      <Label>POPIA Agreement</Label>
+                      <Label>Signature/Attachment</Label>
                       <Controller
-                        name="POPIA_Agreement"
+                        name="Signature"
                         control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
+                        render={({ field: { onChange, value, ...field } }) => (
+                          <Input 
+                            type="file" 
+                            onChange={(e) => onChange(e.target.files)} 
+                            {...field} 
+                          />
+                        )}
                       />
+                      <small className="text-muted">Upload a new signature to replace the existing one (optional)</small>
+                      {applicant.signature_filename && (
+                        <div className="mt-2">
+                          <small className="text-success">
+                            <i className="bx bx-check-circle me-1"></i>
+                            Current file: {applicant.signature_filename}
+                          </small>
+                        </div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                  <Col md={12}>
+                    <FormGroup check>
+                      <Label check>
+                        <Controller
+                          name="POPIA_Agreement"
+                          control={control}
+                          render={({ field }) => (
+                            <Input 
+                              type="checkbox" 
+                              {...field} 
+                              checked={!!field.value}
+                            />
+                          )}
+                        />
+                        <span className="ms-2">I agree to the POPIA terms and conditions</span>
+                      </Label>
                     </FormGroup>
                   </Col>
                 </Row>

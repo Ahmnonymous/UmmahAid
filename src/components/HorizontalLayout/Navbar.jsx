@@ -29,6 +29,7 @@ const Navbar = (props) => {
   const [chart, setchart] = useState(false);
   const [icon, seticon] = useState(false);
   const [map, setmap] = useState(false);
+  const [pages, setpages] = useState(false);
   const [extra, setextra] = useState(false);
   const [invoice, setinvoice] = useState(false);
   const [auth, setauth] = useState(false);
@@ -271,12 +272,6 @@ const Navbar = (props) => {
                   <div className={classname("dropdown-menu", { show: app })}>
                     <Link to="/calendar" className="dropdown-item">
                       {props.t("Calendar")}
-                    </Link>
-                    <Link to="/chat" className="dropdown-item">
-                      {props.t("Chat")}
-                    </Link>
-                    <Link to="/filemanager" className="dropdown-item">
-                      {props.t("File Manager")}
                     </Link>
                     <div className="dropdown">
                       <Link
@@ -786,6 +781,34 @@ const Navbar = (props) => {
 
                       </div>
                     </div>
+                  </div>
+                </li>
+
+                <li className="nav-item dropdown">
+                  <Link
+                    className="nav-link  arrow-none"
+                    to="/#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setpages(!pages);
+                    }}
+                  >
+                    <i className="bx bx-copy-alt me-2"></i>
+                    {props.t("Pages")} <div className="arrow-down"></div>
+                  </Link>
+                  <div className={classname("dropdown-menu", { show: pages })}>
+                    <Link to="/applicants" className="dropdown-item">
+                      {props.t("Applicant Details")}
+                    </Link>
+                    <Link to="/applicants/create" className="dropdown-item">
+                      {props.t("Create Applicant")}
+                    </Link>
+                    <Link to="/FileManager" className="dropdown-item">
+                      {props.t("File Manager")}
+                    </Link>
+                    <Link to="/chat" className="dropdown-item">
+                      {props.t("Chat")}
+                    </Link>
                   </div>
                 </li>
 

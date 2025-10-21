@@ -35,6 +35,7 @@ const FileModal = ({
     formState: { errors, isSubmitting },
     reset,
     watch,
+    setValue,
   } = useForm({
     defaultValues: {
       name: "",
@@ -58,6 +59,12 @@ const FileModal = ({
   const onSubmit = async (data) => {
     try {
       const currentUser = getUmmahAidUser();
+      
+      // Validate user session
+      if (!currentUser || !currentUser.center_id) {
+        showAlert("User session expired. Please login again.", "danger");
+        return;
+      }
 
       // Create FormData for file upload
       const formData = new FormData();
@@ -122,8 +129,28 @@ const FileModal = ({
       toggle();
     } catch (error) {
       console.error("Error saving file:", error);
-      console.error("Error details:", error.response);
-      showAlert(error?.response?.data?.error || error?.response?.data?.message || "Operation failed", "danger");
+      
+      // Provide specific error messages
+      let errorMessage = editItem ? "Failed to update file" : "Failed to upload file";
+      
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle specific error types
+      if (errorMessage.includes("File too large")) {
+        errorMessage = "File size exceeds the maximum limit. Please select a smaller file.";
+      } else if (errorMessage.includes("duplicate")) {
+        errorMessage = "A file with this name already exists in this folder.";
+      } else if (errorMessage.includes("invalid input syntax")) {
+        errorMessage = "Invalid data format. Please check all fields.";
+      }
+      
+      showAlert(errorMessage, "danger");
     } finally {
       setUploadProgress(0);
     }
@@ -135,6 +162,14 @@ const FileModal = ({
     if (file) {
       setSelectedFile(file);
       onChange(e.target.files);
+      
+      // Auto-populate filename if name field is empty
+      const currentName = watch("name");
+      if (!currentName || currentName.trim() === "") {
+        // Extract filename without extension
+        const filename = file.name.split('.').slice(0, -1).join('.') || file.name;
+        setValue("name", filename);
+      }
     }
   };
 
@@ -219,14 +254,20 @@ const FileModal = ({
             />
             {errors.file && <FormFeedback>{errors.file.message}</FormFeedback>}
             
+            <small className="text-muted">
+              {editItem 
+                ? "Upload a new file to replace the existing one (optional). The filename will update the File Name field automatically." 
+                : "Select a file to upload. The filename will auto-populate the File Name field."}
+            </small>
+            
             {selectedFile && (
-              <div className="mt-2 p-2 border rounded bg-light">
+              <div className="mt-2 p-2 border rounded bg-success-subtle">
                 <div className="d-flex align-items-center">
-                  <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                  <i className="bx bx-check-circle font-size-24 text-success me-2"></i>
                   <div className="flex-grow-1">
-                    <div className="fw-medium">{selectedFile.name}</div>
+                    <div className="fw-medium text-success">{selectedFile.name}</div>
                     <small className="text-muted">
-                      {formatFileSize(selectedFile.size)}
+                      {formatFileSize(selectedFile.size)} • Ready to upload
                     </small>
                   </div>
                 </div>
@@ -236,7 +277,7 @@ const FileModal = ({
             {editItem && editItem.file_filename && !selectedFile && (
               <div className="mt-2 p-2 border rounded bg-light">
                 <div className="d-flex align-items-center">
-                  <i className="bx bx-file font-size-24 text-success me-2"></i>
+                  <i className="bx bx-file font-size-24 text-primary me-2"></i>
                   <div className="flex-grow-1">
                     <div className="fw-medium">{editItem.file_filename}</div>
                     <small className="text-muted">
