@@ -10,7 +10,6 @@ node_modules/
 backend/node_modules/
 backend/dist/
 backend/build/
-backend/src/uploads/
 backend/src/schema/migrations_backup/
 coverage/
 
