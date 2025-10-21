@@ -15,7 +15,6 @@ context:
     - backend/node_modules/
     - backend/dist/
     - backend/build/
-    - backend/src/uploads/
     - src/.vite/
     - dist/
     - build/
