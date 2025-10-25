@@ -3,10 +3,19 @@
 const tableName = 'HSEQ_Toolbox_Meeting_Tasks';
 
 const hseqToolboxMeetingTasksModel = {
-  getAll: async () => {
+  getAll: async (meetingId = null) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
+      let query = `SELECT * FROM ${tableName}`;
+      let params = [];
 
+      if (meetingId) {
+        query += ` WHERE hseq_toolbox_meeting_id = $1`;
+        params.push(meetingId);
+      }
+
+      query += ` ORDER BY completion_date DESC`;
+
+      const res = await pool.query(query, params);
       return res.rows;
     } catch (err) {
       throw new Error("Error fetching all records from HSEQ_Toolbox_Meeting_Tasks: " + err.message);

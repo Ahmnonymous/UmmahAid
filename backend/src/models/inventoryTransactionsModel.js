@@ -3,10 +3,19 @@
 const tableName = 'Inventory_Transactions';
 
 const inventoryTransactionsModel = {
-  getAll: async () => {
+  getAll: async (itemId = null) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
+      let query = `SELECT * FROM ${tableName}`;
+      let params = [];
 
+      if (itemId) {
+        query += ` WHERE item_id = $1`;
+        params.push(itemId);
+      }
+
+      query += ` ORDER BY transaction_date DESC`;
+
+      const res = await pool.query(query, params);
       return res.rows;
     } catch (err) {
       throw new Error("Error fetching all records from Inventory_Transactions: " + err.message);

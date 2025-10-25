@@ -7,15 +7,15 @@ import {
   Spinner,
 } from "reactstrap";
 
-const SupplierListPanel = ({
-  suppliers,
-  selectedSupplier,
-  onSelectSupplier,
+const CenterListPanel = ({
+  centers,
+  selectedCenter,
+  onSelectCenter,
   searchTerm,
   onSearchChange,
   loading,
   onRefresh,
-  onCreateClick,
+  onCreateNew,
 }) => {
 
   return (
@@ -26,16 +26,16 @@ const SupplierListPanel = ({
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>
               <h6 className="card-title mb-0 fw-semibold font-size-14">
-                <i className="bx bx-store me-2 text-primary"></i>
-                Suppliers List
+                <i className="bx bx-building me-2 text-primary"></i>
+                Centers List
               </h6>
             </div>
             <Button 
               color="primary" 
               size="sm" 
-              onClick={onCreateClick} 
+              onClick={onCreateNew} 
               className="btn-sm"
-              title="Create New Supplier"
+              title="Create New Center"
             >
               <i className="bx bx-plus font-size-12"></i>
             </Button>
@@ -45,7 +45,7 @@ const SupplierListPanel = ({
           <div className="position-relative">
             <Input
               type="text"
-              placeholder="Search by name or registration..."
+              placeholder="Search centers..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               className="form-control form-control-sm"
@@ -54,7 +54,7 @@ const SupplierListPanel = ({
           </div>
         </div>
 
-        {/* Supplier List - Fixed Height Scrollable */}
+        {/* Center List - Fixed Height Scrollable */}
         <div className="flex-grow-1 p-3" style={{ height: "calc(100vh - 200px)", overflowY: "auto" }}>
           {loading && (
             <div className="text-center py-4">
@@ -63,27 +63,27 @@ const SupplierListPanel = ({
             </div>
           )}
 
-          {!loading && suppliers.length === 0 && (
+          {!loading && centers.length === 0 && (
             <div className="text-center py-4">
               <i className="bx bx-search-alt font-size-24 text-muted mb-2"></i>
-              <h6 className="font-size-13 mb-1">No Suppliers Found</h6>
+              <h6 className="font-size-13 mb-1">No Centers Found</h6>
               <p className="text-muted mb-0 font-size-11">Try adjusting your search</p>
             </div>
           )}
 
-          {!loading && suppliers.length > 0 && (
+          {!loading && centers.length > 0 && (
             <div className="d-flex flex-column gap-2">
-              {suppliers.map((supplier, index) => {
-                const isSelected = selectedSupplier?.id === supplier.id;
+              {centers.map((center) => {
+                const isSelected = selectedCenter?.id === center.id;
                 return (
                   <div
-                    key={supplier.id}
+                    key={center.id}
                     className={`rounded border ${
                       isSelected 
                         ? 'border-primary bg-primary text-white shadow-sm' 
                         : 'border-light'
                     }`}
-                    onClick={() => onSelectSupplier(supplier)}
+                    onClick={() => onSelectCenter(center)}
                     style={{ 
                       cursor: "pointer",
                       transition: "all 0.2s ease",
@@ -108,12 +108,12 @@ const SupplierListPanel = ({
                         <h6 className={`mb-1 font-size-13 fw-semibold ${
                           isSelected ? 'text-white' : ''
                         }`} style={{ color: "inherit" }}>
-                          {supplier.name}
+                          {center.organisation_name || "Unnamed Center"}
                         </h6>
                         <p className={`mb-0 font-size-11 ${
                           isSelected ? 'text-white-50' : 'text-muted'
                         }`}>
-                          {supplier.registration_no || supplier.contact_person || "N/A"}
+                          {center.npo_number || "No NPO Number"}
                         </p>
                       </div>
                       {isSelected && (
@@ -133,4 +133,5 @@ const SupplierListPanel = ({
   );
 };
 
-export default SupplierListPanel;
+export default CenterListPanel;
+

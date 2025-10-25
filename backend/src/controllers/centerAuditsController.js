@@ -4,7 +4,8 @@ const fs = require('fs').promises;
 const centerAuditsController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await centerAuditsModel.getAll(); 
+      const centerId = req.query.center_id;
+      const data = await centerAuditsModel.getAll(centerId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

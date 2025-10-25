@@ -54,7 +54,18 @@ import Employees from "../pages/Employees/Employees";
 import ApplicantManagement from "../pages/Applicants/ApplicantManagement";
 import CreateApplicant from "../pages/Applicants/CreateApplicant";
 import SupplierManagement from "../pages/Suppliers/SupplierManagement";
-import CreateSupplier from "../pages/Suppliers/CreateSupplier";
+
+// Inventory
+import InventoryManagement from "../pages/Inventory/InventoryManagement";
+
+// Centers
+import CenterManagement from "../pages/Centers/CenterManagement";
+
+// Meetings
+import MeetingsManagement from "../pages/Meetings/MeetingsManagement";
+
+// Applicant Statistics
+import ApplicantStatistics from "../pages/ApplicantStatistics/index";
 
 // Lookups
 import Lookups from "../pages/Lookups/index";
@@ -362,7 +373,18 @@ const authProtectedRoutes = [
 
   // Suppliers
   { path: "/suppliers", component: <SupplierManagement /> },
-  { path: "/suppliers/create", component: <CreateSupplier /> },
+
+  // Inventory
+  { path: "/inventory", component: <InventoryManagement /> },
+
+  // Centers
+  { path: "/centers", component: <CenterManagement /> },
+
+  // Meetings
+  { path: "/meetings", component: <MeetingsManagement /> },
+
+  // Applicant Statistics
+  { path: "/applicant-statistics", component: <ApplicantStatistics /> },
 
   // Reports
   { path: "/reports/applicant-details", component: <ApplicantDetailsReport /> },

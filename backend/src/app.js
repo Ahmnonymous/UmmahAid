@@ -63,6 +63,9 @@ const personalFilesRoutes = require("./routes/personalFilesRoutes");
 // 🔹 Reports
 const reportsRoutes = require("./routes/reportsRoutes");
 
+// 🔹 Dashboard
+const dashboardRoutes = require("./routes/dashboardRoutes");
+
 // ===========================
 // 📦 ROUTE REGISTRATION
 // ===========================
@@ -121,6 +124,9 @@ app.use("/api/personalFiles", personalFilesRoutes);
 
 // 🔹 Reports
 app.use("/api/reports", reportsRoutes);
+
+// 🔹 Dashboard
+app.use("/api/dashboard", dashboardRoutes);
 
 // ✅ Server Start
 const PORT = process.env.PORT || 5000;

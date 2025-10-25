@@ -452,9 +452,30 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
-              <Link to="/suppliers/create">
-                <i className="bx bx-store-alt"></i>
-                <span>{props.t("Create Supplier")}</span>
+              <Link to="/inventory">
+                <i className="bx bx-box"></i>
+                <span>{props.t("Inventory Management")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/centers">
+                <i className="bx bx-building"></i>
+                <span>{props.t("Center Management")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/meetings">
+                <i className="bx bx-calendar"></i>
+                <span>{props.t("Meetings Management")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/applicant-statistics">
+                <i className="bx bx-bar-chart-alt-2"></i>
+                <span>{props.t("Applicant Statistics")}</span>
               </Link>
             </li>
 

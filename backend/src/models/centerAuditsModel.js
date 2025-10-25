@@ -3,9 +3,19 @@
 const tableName = 'Center_Audits';
 
 const centerAuditsModel = {
-  getAll: async () => {
+  getAll: async (centerId = null) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
+      let query = `SELECT * FROM ${tableName}`;
+      let params = [];
+
+      if (centerId) {
+        query += ` WHERE center_id = $1`;
+        params.push(centerId);
+      }
+
+      query += ` ORDER BY audit_date DESC`;
+
+      const res = await pool.query(query, params);
       res.rows = res.rows.map(r => { 
         if (r.attachments && r.attachments_filename) {
           r.attachments = 'exists';

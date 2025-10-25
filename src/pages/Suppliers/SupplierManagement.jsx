@@ -1,8 +1,25 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Container, Row, Col, Alert } from "reactstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Alert,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Form,
+  FormGroup,
+  Label,
+  Input,
+  FormFeedback,
+} from "reactstrap";
+import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
+import { getUmmahAidUser } from "../../helpers/userStorage";
 import SupplierListPanel from "./components/SupplierListPanel";
 import SupplierSummary from "./components/SupplierSummary";
 import SummaryMetrics from "./components/SummaryMetrics";
@@ -18,6 +35,7 @@ const SupplierManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [alert, setAlert] = useState(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Detail data states
   const [evaluations, setEvaluations] = useState([]);
@@ -26,6 +44,25 @@ const SupplierManagement = () => {
   // Lookup data states
   const [lookupData, setLookupData] = useState({
     supplierCategories: [],
+  });
+
+  // Create form
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm({
+    defaultValues: {
+      Name: "",
+      Registration_No: "",
+      Contact_Person: "",
+      Contact_Email: "",
+      Contact_Phone: "",
+      Address: "",
+      Category_ID: "",
+      Status: "Active",
+    },
   });
 
   // Fetch all suppliers on mount
@@ -161,6 +198,45 @@ const SupplierManagement = () => {
     }
   }, [selectedSupplier]);
 
+  const handleCreateSupplier = async (formData) => {
+    try {
+      const currentUser = getUmmahAidUser();
+
+      // Convert to lowercase for backend
+      const payload = {
+        name: formData.Name || "",
+        registration_no: formData.Registration_No || "",
+        contact_person: formData.Contact_Person || "",
+        contact_email: formData.Contact_Email || "",
+        contact_phone: formData.Contact_Phone || "",
+        address: formData.Address || "",
+        category_id: formData.Category_ID || null,
+        status: formData.Status || "Active",
+        created_by: currentUser?.username || "system",
+      };
+
+      await axiosApi.post(`${API_BASE_URL}/supplierProfile`, payload);
+      
+      showAlert("Supplier created successfully!", "success");
+      setCreateModalOpen(false);
+      reset();
+      fetchSuppliers();
+    } catch (error) {
+      console.error("Error creating supplier:", error);
+      showAlert(
+        error.response?.data?.error || "Failed to create supplier",
+        "danger"
+      );
+    }
+  };
+
+  const toggleCreateModal = () => {
+    setCreateModalOpen(!createModalOpen);
+    if (!createModalOpen) {
+      reset();
+    }
+  };
+
   const filteredSuppliers = suppliers.filter((supplier) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -212,6 +288,7 @@ const SupplierManagement = () => {
               onSearchChange={setSearchTerm}
               loading={loading}
               onRefresh={fetchSuppliers}
+              onCreateClick={toggleCreateModal}
             />
           </Col>
 
@@ -254,6 +331,222 @@ const SupplierManagement = () => {
             )}
           </Col>
         </Row>
+
+        {/* Create Supplier Modal */}
+        <Modal
+          isOpen={createModalOpen}
+          toggle={toggleCreateModal}
+          size="lg"
+          backdrop="static"
+        >
+          <ModalHeader toggle={toggleCreateModal}>
+            <i className="bx bx-plus-circle me-2 text-primary"></i>
+            Create New Supplier
+          </ModalHeader>
+          <Form onSubmit={handleSubmit(handleCreateSupplier)}>
+            <ModalBody>
+              <Row>
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Name">
+                      Supplier Name <span className="text-danger">*</span>
+                    </Label>
+                    <Controller
+                      name="Name"
+                      control={control}
+                      rules={{ required: "Supplier name is required" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="text"
+                          id="Name"
+                          placeholder="Enter supplier name"
+                          invalid={!!errors.Name}
+                        />
+                      )}
+                    />
+                    {errors.Name && (
+                      <FormFeedback>{errors.Name.message}</FormFeedback>
+                    )}
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Registration_No">Registration Number</Label>
+                    <Controller
+                      name="Registration_No"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="text"
+                          id="Registration_No"
+                          placeholder="Enter registration number"
+                        />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Contact_Person">Contact Person</Label>
+                    <Controller
+                      name="Contact_Person"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="text"
+                          id="Contact_Person"
+                          placeholder="Enter contact person"
+                        />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Contact_Email">Email</Label>
+                    <Controller
+                      name="Contact_Email"
+                      control={control}
+                      rules={{
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Invalid email address",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="email"
+                          id="Contact_Email"
+                          placeholder="Enter email"
+                          invalid={!!errors.Contact_Email}
+                        />
+                      )}
+                    />
+                    {errors.Contact_Email && (
+                      <FormFeedback>{errors.Contact_Email.message}</FormFeedback>
+                    )}
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Contact_Phone">Phone</Label>
+                    <Controller
+                      name="Contact_Phone"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="text"
+                          id="Contact_Phone"
+                          placeholder="Enter phone number"
+                        />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Category_ID">Category</Label>
+                    <Controller
+                      name="Category_ID"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="select"
+                          id="Category_ID"
+                        >
+                          <option value="">Select Category</option>
+                          {lookupData.supplierCategories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.description}
+                            </option>
+                          ))}
+                        </Input>
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={12}>
+                  <FormGroup>
+                    <Label for="Address">Address</Label>
+                    <Controller
+                      name="Address"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="textarea"
+                          id="Address"
+                          rows="3"
+                          placeholder="Enter address"
+                        />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Status">Status</Label>
+                    <Controller
+                      name="Status"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="select"
+                          id="Status"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </Input>
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+              </Row>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                type="button"
+                color="secondary"
+                onClick={toggleCreateModal}
+                disabled={isSubmitting}
+              >
+                <i className="bx bx-x me-1"></i>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-check me-1"></i>
+                    Create Supplier
+                  </>
+                )}
+              </Button>
+            </ModalFooter>
+          </Form>
+        </Modal>
       </Container>
     </div>
   );
