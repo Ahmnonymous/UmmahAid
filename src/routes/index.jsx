@@ -53,6 +53,8 @@ import ForgetPwd from "../pages/Authentication/ForgetPassword";
 import Employees from "../pages/Employees/Employees";
 import ApplicantManagement from "../pages/Applicants/ApplicantManagement";
 import CreateApplicant from "../pages/Applicants/CreateApplicant";
+import SupplierManagement from "../pages/Suppliers/SupplierManagement";
+import CreateSupplier from "../pages/Suppliers/CreateSupplier";
 
 // Lookups
 import Lookups from "../pages/Lookups/index";
@@ -357,6 +359,10 @@ const authProtectedRoutes = [
   // Applicants
   { path: "/applicants", component: <ApplicantManagement /> },
   { path: "/applicants/create", component: <CreateApplicant /> },
+
+  // Suppliers
+  { path: "/suppliers", component: <SupplierManagement /> },
+  { path: "/suppliers/create", component: <CreateSupplier /> },
 
   // Reports
   { path: "/reports/applicant-details", component: <ApplicantDetailsReport /> },

@@ -4,7 +4,8 @@ const fs = require('fs').promises;
 const supplierDocumentController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await supplierDocumentModel.getAll(); 
+      const supplierId = req.query.supplier_id;
+      const data = await supplierDocumentModel.getAll(req.user?.center_id, supplierId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -13,7 +14,7 @@ const supplierDocumentController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await supplierDocumentModel.getById(req.params.id); 
+      const data = await supplierDocumentModel.getById(req.params.id, req.user?.center_id); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -25,9 +26,16 @@ const supplierDocumentController = {
     try { 
       const fields = { ...req.body };
       
+      // Debug logging
+      console.log('Raw req.body:', req.body);
+      console.log('Received fields:', fields);
+      console.log('Files:', req.files);
+      console.log('supplier_id in fields:', fields.supplier_id);
+      console.log('Type of supplier_id:', typeof fields.supplier_id);
+      
       // Handle file upload if present
-      if (req.files && req.files.file && req.files.file.length > 0) {
-        const file = req.files.file[0];
+      if (req.file) {
+        const file = req.file;
         const buffer = await fs.readFile(file.path);
         fields.file = buffer;
         fields.file_filename = file.originalname;
@@ -36,9 +44,40 @@ const supplierDocumentController = {
         await fs.unlink(file.path);
       }
       
-      const data = await supplierDocumentModel.create(fields); 
+      // Map frontend field names to database column names
+      // PostgreSQL converts unquoted identifiers to lowercase
+      const mappedFields = {
+        supplier_id: fields.supplier_id,
+        doc_type: fields.doc_type,
+        file_filename: fields.file_filename,
+        description: fields.description,
+        issued_at: fields.issued_at,
+        created_by: fields.created_by,
+        updated_by: fields.updated_by,
+        file: fields.file,
+        file_mime: fields.file_mime,
+        file_size: fields.file_size,
+      };
+      
+      // Remove undefined values
+      Object.keys(mappedFields).forEach(key => {
+        if (mappedFields[key] === undefined) {
+          delete mappedFields[key];
+        }
+      });
+      
+      // Ensure required fields are present
+      if (!fields.supplier_id) {
+        console.log('ERROR: supplier_id is missing from fields:', fields);
+        return res.status(400).json({error: "supplier_id is required"});
+      }
+      
+      console.log('Final mappedFields before create:', mappedFields);
+      
+      const data = await supplierDocumentModel.create(mappedFields, req.user?.center_id); 
       res.status(201).json(data); 
     } catch(err){ 
+      console.error('Error in create:', err);
       res.status(500).json({error: "Error creating record in Supplier_Document: " + err.message}); 
     } 
   },
@@ -48,8 +87,8 @@ const supplierDocumentController = {
       const fields = { ...req.body };
       
       // Handle file upload if present
-      if (req.files && req.files.file && req.files.file.length > 0) {
-        const file = req.files.file[0];
+      if (req.file) {
+        const file = req.file;
         const buffer = await fs.readFile(file.path);
         fields.file = buffer;
         fields.file_filename = file.originalname;
@@ -58,7 +97,7 @@ const supplierDocumentController = {
         await fs.unlink(file.path);
       }
       
-      const data = await supplierDocumentModel.update(req.params.id, fields); 
+      const data = await supplierDocumentModel.update(req.params.id, fields, req.user?.center_id); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Supplier_Document: " + err.message}); 
@@ -67,7 +106,7 @@ const supplierDocumentController = {
   
   delete: async (req, res) => { 
     try { 
-      await supplierDocumentModel.delete(req.params.id); 
+      await supplierDocumentModel.delete(req.params.id, req.user?.center_id); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

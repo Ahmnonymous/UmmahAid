@@ -445,6 +445,20 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
+              <Link to="/suppliers">
+                <i className="bx bx-store"></i>
+                <span>{props.t("Supplier Details")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/suppliers/create">
+                <i className="bx bx-store-alt"></i>
+                <span>{props.t("Create Supplier")}</span>
+              </Link>
+            </li>
+
+            <li>
               <Link to="/FileManager">
                 <i className="bx bx-folder"></i>
                 <span>{props.t("File Manager")}</span>

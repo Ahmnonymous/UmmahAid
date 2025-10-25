@@ -1,11 +1,33 @@
 ﻿const pool = require('../config/db');
 
-const tableName = 'Supplier_Document';
+const tableName = 'supplier_document';
 
 const supplierDocumentModel = {
-  getAll: async () => {
+  getAll: async (centerId, supplierId = null) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
+      let query = `SELECT * FROM ${tableName}`;
+      let params = [];
+      let paramCount = 0;
+      
+      const conditions = [];
+      
+      if (centerId) {
+        paramCount++;
+        conditions.push(`center_id = $${paramCount}`);
+        params.push(centerId);
+      }
+      
+      if (supplierId) {
+        paramCount++;
+        conditions.push(`supplier_id = $${paramCount}`);
+        params.push(supplierId);
+      }
+      
+      if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+      
+      const res = await pool.query(query, params);
       res.rows = res.rows.map(r => { 
         if (r.file && r.file_filename) {
           r.file = 'exists';
@@ -20,10 +42,17 @@ const supplierDocumentModel = {
     }
   },
 
-  getById: async (id) => {
+  getById: async (id, centerId) => {
     try {
-      const query = `SELECT * FROM ${tableName} WHERE id = $1`;
-      const res = await pool.query(query, [id]);
+      let query = `SELECT * FROM ${tableName} WHERE id = $1`;
+      let params = [id];
+      
+      if (centerId) {
+        query += ` AND center_id = $2`;
+        params.push(centerId);
+      }
+      
+      const res = await pool.query(query, params);
       if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {
@@ -31,8 +60,13 @@ const supplierDocumentModel = {
     }
   },
 
-  create: async (fields) => {
+  create: async (fields, centerId) => {
     try {
+      // Add center_id if provided
+      if (centerId) {
+        fields.center_id = centerId;
+      }
+      
       const columns = Object.keys(fields).join(', ');
       const values = Object.values(fields);
       const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
@@ -44,12 +78,27 @@ const supplierDocumentModel = {
     }
   },
 
-  update: async (id, fields) => {
+  update: async (id, fields, centerId) => {
     try {
+      let query = `UPDATE ${tableName} SET `;
       const setClauses = Object.keys(fields).map((key, i) => `${key} = $${i + 1}`).join(', ');
+      query += setClauses;
+      
       const values = Object.values(fields);
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE id = $${values.length + 1} RETURNING *`;
-      const res = await pool.query(query, [...values, id]);
+      let paramIndex = values.length + 1;
+      
+      query += ` WHERE id = $${paramIndex}`;
+      values.push(id);
+      
+      if (centerId) {
+        paramIndex++;
+        query += ` AND center_id = $${paramIndex}`;
+        values.push(centerId);
+      }
+      
+      query += ` RETURNING *`;
+      
+      const res = await pool.query(query, values);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -57,10 +106,19 @@ const supplierDocumentModel = {
     }
   },
 
-  delete: async (id) => {
+  delete: async (id, centerId) => {
     try {
-      const query = `DELETE FROM ${tableName} WHERE id = $1 RETURNING *`;
-      const res = await pool.query(query, [id]);
+      let query = `DELETE FROM ${tableName} WHERE id = $1`;
+      let params = [id];
+      
+      if (centerId) {
+        query += ` AND center_id = $2`;
+        params.push(centerId);
+      }
+      
+      query += ` RETURNING *`;
+      
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
