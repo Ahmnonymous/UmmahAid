@@ -1261,9 +1261,11 @@ INSERT INTO Rating (Score) VALUES
     (5);
 
 INSERT INTO User_Types (Name) VALUES
-    ('Org. Caseworkers'),
+    ('App Admin'),
+    ('HQ'),
     ('Org. Admin'),
-    ('Org. Executives');
+    ('Org. Executives'),
+    ('Org. Caseworkers');
 
 INSERT INTO Tasks_Status (Name) VALUES
     ('Complete'),
@@ -1423,7 +1425,7 @@ INSERT INTO Employee (
     Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
     Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related
 ) VALUES (
-    'Super', 'Admin', 'admin', '12345', 3,
+    'Super', 'Admin', 'admin', '12345', 1,
     1, NULL, 14, 1, 1, 3,
     '+27123456789', '+27123456789', 1, NULL, NULL
 );

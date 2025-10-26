@@ -33,7 +33,7 @@ import { editProfile, resetProfileFlag } from "/src/store/actions";
 const UserProfile = (props) => {
 
   //meta title
-  document.title = "Profile | Skote - React Admin & Dashboard Template";
+  document.title = "Profile | UmmahAid - Admin & Dashboard";
 
   const dispatch = useDispatch();
 
@@ -96,7 +96,7 @@ const UserProfile = (props) => {
       <div className="page-content">
         <Container fluid>
           {/* Render Breadcrumb */}
-          <Breadcrumb title="Skote" breadcrumbItem="Profile" />
+          <Breadcrumb title="UmmahAid" breadcrumbItem="Profile" />
 
           <Row>
             <Col lg="12">

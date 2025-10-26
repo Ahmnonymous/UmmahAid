@@ -22,7 +22,8 @@ export const login = async (username, password) => {
 };
 
 export const logout = () => {
-  localStorage.removeItem("authToken");
-  // localStorage.removeItem("employee");
-  localStorage.removeItem("UmmahAidUser");
+  console.log("🔴 Logging out - clearing all localStorage");
+  // Clear ALL localStorage variables
+  localStorage.clear();
+  console.log("✅ All localStorage cleared");
 };

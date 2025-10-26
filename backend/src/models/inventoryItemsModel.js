@@ -3,22 +3,37 @@
 const tableName = 'Inventory_Items';
 
 const inventoryItemsModel = {
-  getAll: async () => {
+  getAll: async (centerId, isSuperAdmin) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
+      let query = `SELECT * FROM ${tableName}`;
+      let params = [];
 
+      // ✅ Apply tenant filter unless SuperAdmin
+      if (!isSuperAdmin && centerId) {
+        query += ` WHERE "center_id" = $1`;
+        params = [centerId];
+      }
+
+      const res = await pool.query(query, params);
       return res.rows;
     } catch (err) {
       throw new Error("Error fetching all records from Inventory_Items: " + err.message);
     }
   },
 
-  getById: async (id) => {
+  getById: async (id, centerId, isSuperAdmin) => {
     try {
-      const query = `SELECT * FROM ${tableName} WHERE "id" = $1`;
-      const res = await pool.query(query, [id]);
-      if (!res.rows[0]) return null;
+      let query = `SELECT * FROM ${tableName} WHERE "id" = $1`;
+      let params = [id];
 
+      // ✅ Apply tenant filter unless SuperAdmin
+      if (!isSuperAdmin && centerId) {
+        query += ` AND "center_id" = $2`;
+        params.push(centerId);
+      }
+
+      const res = await pool.query(query, params);
+      if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {
       throw new Error("Error fetching record by ID from Inventory_Items: " + err.message);
@@ -38,12 +53,24 @@ const inventoryItemsModel = {
     }
   },
 
-  update: async (id, fields) => {
+  update: async (id, fields, centerId, isSuperAdmin) => {
     try {
       const setClauses = Object.keys(fields).map((key, i) => `"${key}" = $${i + 1}`).join(', ');
       const values = Object.values(fields);
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE "id" = $${values.length + 1} RETURNING *`;
-      const res = await pool.query(query, [...values, id]);
+      let paramIndex = values.length + 1;
+      
+      let query = `UPDATE ${tableName} SET ${setClauses} WHERE "id" = $${paramIndex}`;
+      values.push(id);
+
+      // ✅ Apply tenant filter unless SuperAdmin
+      if (!isSuperAdmin && centerId) {
+        paramIndex++;
+        query += ` AND "center_id" = $${paramIndex}`;
+        values.push(centerId);
+      }
+
+      query += ` RETURNING *`;
+      const res = await pool.query(query, values);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -51,10 +78,19 @@ const inventoryItemsModel = {
     }
   },
 
-  delete: async (id) => {
+  delete: async (id, centerId, isSuperAdmin) => {
     try {
-      const query = `DELETE FROM ${tableName} WHERE "id" = $1 RETURNING *`;
-      const res = await pool.query(query, [id]);
+      let query = `DELETE FROM ${tableName} WHERE "id" = $1`;
+      let params = [id];
+
+      // ✅ Apply tenant filter unless SuperAdmin
+      if (!isSuperAdmin && centerId) {
+        query += ` AND "center_id" = $2`;
+        params.push(centerId);
+      }
+
+      query += ` RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {

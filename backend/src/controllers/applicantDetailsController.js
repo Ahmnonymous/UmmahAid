@@ -3,8 +3,11 @@ const fs = require('fs').promises;
 
 const applicantDetailsController = {
   getAll: async (req, res) => { 
-    try { 
-      const data = await applicantDetailsModel.getAll(); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await applicantDetailsModel.getAll(centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -12,8 +15,11 @@ const applicantDetailsController = {
   },
   
   getById: async (req, res) => { 
-    try { 
-      const data = await applicantDetailsModel.getById(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await applicantDetailsModel.getById(req.params.id, centerId, isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -24,6 +30,14 @@ const applicantDetailsController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      fields.created_by = username;
+      fields.updated_by = username;
+      
+      // ✅ Add center_id
+      fields.center_id = req.center_id || req.user?.center_id;
       
       // Handle file upload if present (signature)
       if (req.files && req.files.signature && req.files.signature.length > 0) {
@@ -47,6 +61,11 @@ const applicantDetailsController = {
     try { 
       const fields = { ...req.body };
       
+      // ✅ Add audit field (don't allow overwrite of created_by)
+      const username = req.user?.username || 'system';
+      fields.updated_by = username;
+      delete fields.created_by; // Prevent overwrite
+      
       // Handle file upload if present (signature)
       if (req.files && req.files.signature && req.files.signature.length > 0) {
         const file = req.files.signature[0];
@@ -58,7 +77,10 @@ const applicantDetailsController = {
         await fs.unlink(file.path);
       }
       
-      const data = await applicantDetailsModel.update(req.params.id, fields); 
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await applicantDetailsModel.update(req.params.id, fields, centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Applicant_Details: " + err.message}); 
@@ -66,8 +88,11 @@ const applicantDetailsController = {
   },
   
   delete: async (req, res) => { 
-    try { 
-      await applicantDetailsModel.delete(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      await applicantDetailsModel.delete(req.params.id, centerId, isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

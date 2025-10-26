@@ -16,8 +16,11 @@ const WelcomeComp = ({ loading }) => {
     return "User";
   };
 
-  const getUserRole = () => {
-    return currentUser?.user_type || "Employee";
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
   };
 
   // Get current date
@@ -28,90 +31,29 @@ const WelcomeComp = ({ loading }) => {
 
   return (
     <React.Fragment>
-      <Card className="overflow-hidden card-animate">
-        <div className="bg-primary bg-soft">
+      <Card className="overflow-hidden shadow-sm border-0" style={{ borderRadius: '12px' }}>
+        <div className="bg-primary bg-gradient" style={{ background: 'linear-gradient(135deg, #556ee6 0%, #6f42c1 100%)' }}>
           <Row>
-            <Col xs="7">
-              <div className="text-primary p-3">
-                <h5 className="text-primary fw-semibold mb-1">
+            <Col lg="8" md="7" xs="7">
+              <div className="text-white p-4">
+                <h6 className="text-white-50 mb-2 font-size-13 text-uppercase" style={{ letterSpacing: '0.5px' }}>
+                  {getGreeting()}
+                </h6>
+                <h4 className="text-white fw-bold mb-2">
                   Welcome back, {getUserName()}!
-                </h5>
-                <p className="mb-0 font-size-13 opacity-75">
+                </h4>
+                <p className="text-white-50 mb-0 font-size-14">
+                  <i className="bx bx-calendar me-1"></i>
                   {getCurrentDate()}
                 </p>
               </div>
             </Col>
-            <Col xs="5" className="align-self-end">
-              <img src={profileImg} alt="" className="img-fluid" />
+            <Col lg="4" md="5" xs="5" className="align-self-end">
+              <img src={profileImg} alt="" className="img-fluid" style={{ maxHeight: '140px' }} />
             </Col>
           </Row>
         </div>
-        <CardBody className="pt-0">
-          {loading ? (
-            <div className="text-center py-5">
-              <Spinner color="primary" />
-              <p className="text-muted font-size-12 mt-2">Loading profile...</p>
-            </div>
-          ) : (
-            <Row>
-              <Col sm="4">
-                <div className="avatar-md profile-user-wid mb-4">
-                  <img
-                    src={avatar1}
-                    alt=""
-                    className="img-thumbnail rounded-circle"
-                  />
-                </div>
-                <h5 className="font-size-15 text-truncate fw-semibold">{getUserName()}</h5>
-                <p className="text-muted mb-0 text-truncate font-size-13">{getUserRole()}</p>
-              </Col>
-
-              <Col sm="8">
-                <div className="pt-4">
-                  <Row>
-                    <Col xs="6">
-                      <div className="mb-3">
-                        <div className="d-flex align-items-center">
-                          <div className="avatar-xs me-2">
-                            <span className="avatar-title rounded-circle bg-primary bg-soft text-primary">
-                              <i className="bx bx-user font-size-16"></i>
-                            </span>
-                          </div>
-                          <div>
-                            <h6 className="mb-0 font-size-14">Applicants</h6>
-                            <p className="text-muted mb-0 font-size-11">Manage & Track</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Col>
-                    <Col xs="6">
-                      <div className="mb-3">
-                        <div className="d-flex align-items-center">
-                          <div className="avatar-xs me-2">
-                            <span className="avatar-title rounded-circle bg-success bg-soft text-success">
-                              <i className="bx bx-line-chart font-size-16"></i>
-                            </span>
-                          </div>
-                          <div>
-                            <h6 className="mb-0 font-size-14">Analytics</h6>
-                            <p className="text-muted mb-0 font-size-11">Real-time Data</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Col>
-                  </Row>
-                  <div className="mt-3">
-                    <Link to="/applicants" className="btn btn-primary btn-sm waves-effect waves-light">
-                      <i className="bx bx-user-circle me-1"></i>
-                      View All Applicants
-                    </Link>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          )}
-        </CardBody>
-      </Card>
+        </Card>
     </React.Fragment>
   );
 };

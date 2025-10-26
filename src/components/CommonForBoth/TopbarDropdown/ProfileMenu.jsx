@@ -23,9 +23,22 @@ const ProfileMenu = (props) => {
   const [menu, setMenu] = useState(false);
 
   const [username, setusername] = useState("Admin");
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    if (localStorage.getItem("authUser")) {
+    // Get user data from UmmahAidUser in localStorage
+    const userDataStr = localStorage.getItem("UmmahAidUser");
+    if (userDataStr) {
+      try {
+        const userData = JSON.parse(userDataStr);
+        setusername(userData.username || userData.email || "Admin");
+        setUserId(userData.user_id || userData.id);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+    // Fallback to authUser if UmmahAidUser not found
+    else if (localStorage.getItem("authUser")) {
       if (import.meta.env.VITE_APP_DEFAULTAUTH === "firebase") {
         const obj = JSON.parse(localStorage.getItem("authUser"));
         setusername(obj.email);
@@ -60,24 +73,13 @@ const ProfileMenu = (props) => {
           <i className="mdi mdi-chevron-down d-none d-xl-inline-block" />
         </DropdownToggle>
         <DropdownMenu className="dropdown-menu-end">
-          <DropdownItem tag="a" href="/profile">
-            {" "}
+          <Link 
+            to={userId ? `/employees/profile/${userId}` : "/profile"} 
+            className="dropdown-item"
+          >
             <i className="bx bx-user font-size-16 align-middle me-1" />
-            {props.t("Profile")}{" "}
-          </DropdownItem>
-          <DropdownItem tag="a" href="/crypto-wallet">
-            <i className="bx bx-wallet font-size-16 align-middle me-1" />
-            {props.t("My Wallet")}
-          </DropdownItem>
-          <DropdownItem tag="a" href="#">
-            <span className="badge bg-success float-end">11</span>
-            <i className="bx bx-wrench font-size-16 align-middle me-1" />
-            {props.t("Settings")}
-          </DropdownItem>
-          <DropdownItem tag="a" href="auth-lock-screen">
-            <i className="bx bx-lock-open font-size-16 align-middle me-1" />
-            {props.t("Lock screen")}
-          </DropdownItem>
+            {props.t("Profile")}
+          </Link>
           <div className="dropdown-divider" />
           <Link to="/logout" className="dropdown-item">
             <i className="bx bx-power-off font-size-16 align-middle me-1 text-danger" />

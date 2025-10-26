@@ -292,7 +292,7 @@ const SupplierManagement = () => {
             />
           </Col>
 
-          {/* Main Panel - Supplier Details */}
+          {/* Main Panel - Supplier Management */}
           <Col lg={9}>
             {selectedSupplier ? (
               <>

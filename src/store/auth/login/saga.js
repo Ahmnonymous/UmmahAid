@@ -22,8 +22,23 @@ function* loginUser({ payload: { username, password } }) {
   }
 }
 
-function* logoutUser() {
-  yield call(logout);
+function* logoutUser({ payload: { history } }) {
+  try {
+    console.log("🔴 Logout saga started");
+    yield call(logout);
+    console.log("✅ Logout complete, redirecting to login");
+    // Redirect to login page
+    if (history) {
+      history("/login");
+    } else {
+      // Fallback if history is not provided
+      window.location.href = "/login";
+    }
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+    // Even if there's an error, redirect to login
+    window.location.href = "/login";
+  }
 }
 
 function* authSaga() {

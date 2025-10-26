@@ -34,7 +34,7 @@ import lightlogo from "../../assets/images/logo-light.svg";
 
 const Login = (props) => {
   //meta title
-  document.title = "Login | UmmahAid";
+  document.title = "Login | UmmahAid - Admin & Dashboard";
 
   const dispatch = useDispatch();
 

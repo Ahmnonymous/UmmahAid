@@ -3,8 +3,11 @@ const fs = require('fs').promises;
 
 const programsController = {
   getAll: async (req, res) => { 
-    try { 
-      const data = await programsModel.getAll(); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await programsModel.getAll(centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -12,8 +15,11 @@ const programsController = {
   },
   
   getById: async (req, res) => { 
-    try { 
-      const data = await programsModel.getById(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await programsModel.getById(req.params.id, centerId, isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -25,8 +31,16 @@ const programsController = {
     try { 
       const fields = { ...req.body };
       
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      fields.created_by = username;
+      fields.updated_by = username;
+      
+      // ✅ Add center_id
+      fields.center_id = req.center_id || req.user?.center_id;
+      
       // Convert empty strings to null for numeric fields
-      const numericFields = ['person_trained_id', 'program_name', 'means_of_communication', 'communicated_by', 'training_level', 'training_provider', 'program_outcome', 'center_id'];
+      const numericFields = ['person_trained_id', 'program_name', 'means_of_communication', 'communicated_by', 'training_level', 'training_provider', 'program_outcome'];
       numericFields.forEach(field => {
         if (fields[field] === '' || fields[field] === undefined) {
           fields[field] = null;
@@ -65,8 +79,13 @@ const programsController = {
     try { 
       const fields = { ...req.body };
       
+      // ✅ Add audit field (don't allow overwrite of created_by)
+      const username = req.user?.username || 'system';
+      fields.updated_by = username;
+      delete fields.created_by; // Prevent overwrite
+      
       // Convert empty strings to null for numeric fields
-      const numericFields = ['person_trained_id', 'program_name', 'means_of_communication', 'communicated_by', 'training_level', 'training_provider', 'program_outcome', 'center_id'];
+      const numericFields = ['person_trained_id', 'program_name', 'means_of_communication', 'communicated_by', 'training_level', 'training_provider', 'program_outcome'];
       numericFields.forEach(field => {
         if (fields[field] === '' || fields[field] === undefined) {
           fields[field] = null;
@@ -94,7 +113,10 @@ const programsController = {
         await fs.unlink(file.path);
       }
       
-      const data = await programsModel.update(req.params.id, fields); 
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await programsModel.update(req.params.id, fields, centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Programs: " + err.message}); 
@@ -102,8 +124,11 @@ const programsController = {
   },
   
   delete: async (req, res) => { 
-    try { 
-      await programsModel.delete(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      await programsModel.delete(req.params.id, centerId, isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

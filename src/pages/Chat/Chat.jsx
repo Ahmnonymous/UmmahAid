@@ -19,7 +19,7 @@ import UserChat from "./UserChat";
 const Chat = () => {
 
   //meta title
-  document.title = "Chat | Skote - Vite React Admin & Dashboard Template";
+  document.title = "Chat | UmmahAid - Admin & Dashboard";
 
   const dispatch = useDispatch();
 
@@ -55,7 +55,7 @@ const Chat = () => {
       <div className="page-content">
         <Container fluid>
           {/* Render Breadcrumb */}
-          <Breadcrumbs title="Skote" breadcrumbItem="Chat" />
+          <Breadcrumbs title="UmmahAid" breadcrumbItem="Chat" />
 
           <Row>
             <Col lg="12">

@@ -1,6 +1,9 @@
 ﻿const express = require('express');
 const router = express.Router();
 const homeVisitController = require('../controllers/homeVisitController');
+const authMiddleware = require('../middlewares/authMiddleware');
+const roleMiddleware = require('../middlewares/roleMiddleware');
+const filterMiddleware = require('../middlewares/filterMiddleware');
 const multer = require('multer');
 const path = require('path');
 const uploadsDir = path.join(__dirname, '../uploads/Home_Visit');
@@ -9,6 +12,11 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, Date.now() + '_' + file.originalname)
 });
 const upload = multer({ storage });
+
+// ✅ Apply authentication, RBAC, and tenant filtering
+router.use(authMiddleware);
+router.use(roleMiddleware([1, 2, 3, 4, 5]));
+router.use(filterMiddleware);
 
 router.get('/', homeVisitController.getAll);
 router.get('/:id/view-attachment-1', homeVisitController.viewAttachment1);

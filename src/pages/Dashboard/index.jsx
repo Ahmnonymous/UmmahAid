@@ -91,7 +91,7 @@ const Dashboard = (props) => {
   }, [dispatch]);
 
   //meta title
-  document.title = "Dashboard | Skote - Vite React Admin & Dashboard Template";
+  document.title = "Dashboard | UmmahAid - Admin & Dashboard";
 
   return (
     <React.Fragment>

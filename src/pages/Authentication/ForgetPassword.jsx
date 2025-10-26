@@ -34,7 +34,7 @@ import lightlogo from "../../assets/images/logo-light.svg";
 const ForgetPasswordPage = (props) => {
   //meta title
   document.title =
-    "Forget Password | Skote - Vite React Admin & Dashboard Template";
+    "Forget Password | UmmahAid - Admin & Dashboard";
   const dispatch = useDispatch();
 
   const validation = useFormik({
@@ -82,7 +82,7 @@ const ForgetPasswordPage = (props) => {
                     <Col xs={7}>
                       <div className="text-primary p-4">
                         <h5 className="text-primary">Welcome Back !</h5>
-                        <p>Sign in to continue to Skote.</p>
+                        <p>Sign in to continue to UmmahAid.</p>
                       </div>
                     </Col>
                     <Col className="col-5 align-self-end">
@@ -181,8 +181,8 @@ const ForgetPasswordPage = (props) => {
                   </Link>{" "}
                 </p>
                 <p>
-                  © {new Date().getFullYear()} Skote. Crafted with{" "}
-                  <i className="mdi mdi-heart text-danger" /> by Themesbrand
+                  © {new Date().getFullYear()} UmmahAid. Crafted with{" "}
+                  <i className="mdi mdi-heart text-danger" /> by Uchakide Solutions
                 </p>
               </div>
             </Col>

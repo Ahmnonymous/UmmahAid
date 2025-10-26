@@ -36,7 +36,7 @@ import { API_BASE_URL } from "../../helpers/url_helper";
 
 const ApplicantStatistics = (props) => {
   // Meta title
-  document.title = "Applicant Statistics | UmmahAid";
+  document.title = "Dashboard | UmmahAid";
 
   // State
   const [loading, setLoading] = useState(true);
@@ -169,7 +169,7 @@ const ApplicantStatistics = (props) => {
           {/* Render Breadcrumb */}
           <Breadcrumbs
             title={props.t("Dashboard")}
-            breadcrumbItem={props.t("Applicant Statistics")}
+            breadcrumbItem={props.t("Dashboard")}
           />
 
           {/* Error Alert */}
