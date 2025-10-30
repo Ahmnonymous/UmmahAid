@@ -1,6 +1,7 @@
-// API Base URL from environment variables
-// Prefer VITE_API_URL used elsewhere; fall back to same-origin /api to avoid mixed content in prod
-export const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "/api";
+// API Base URL for client calls should be empty. The axios instance already
+// includes the /api prefix via baseURL (from VITE_API_URL). Keep this as
+// an empty string so `${API_BASE_URL}/route` resolves to `/route`.
+export const API_BASE_URL = "";
 
 //REGISTER
 export const POST_FAKE_REGISTER = "/post-fake-register";
