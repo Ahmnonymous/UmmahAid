@@ -1,5 +1,6 @@
 import axios from "axios";
 import accessToken from "./jwt-token-access/accessToken";
+import { toast } from "react-toastify";
 
 // base URL from .env with fallback
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -20,6 +21,8 @@ axiosApi.interceptors.request.use((config) => {
   return config;
 });
 
+// Track if we're already showing the session expiry alert to prevent multiple toasts
+let isSessionExpiredAlertShowing = false;
 
 // Response interceptor
 axiosApi.interceptors.response.use(
@@ -43,11 +46,24 @@ axiosApi.interceptors.response.use(
 
       // Trigger logout on 401 OR any token-related error message
       if (status === 401 || looksExpired) {
-        console.log("🔴 JWT expired or unauthorized detected!");
-        console.log("🔴 Status:", status, "| Message:", errorMsg);
+        // Show alert only if not already showing
+        if (!isSessionExpiredAlertShowing) {
+          isSessionExpiredAlertShowing = true;
+          
+          // Show session expired alert
+          toast.error("Your session has expired. Please login again.");
+          
+          console.log("🔴 JWT expired or unauthorized detected!");
+          console.log("🔴 Status:", status, "| Message:", errorMsg);
+        }
         
-        // Clear ALL localStorage and force navigation to login
+        // Clear ALL localStorage and force navigation to login after a short delay
         try {
+          // Reset the flag after a delay
+          setTimeout(() => {
+            isSessionExpiredAlertShowing = false;
+          }, 4000);
+          
           localStorage.clear();
           console.log("🗑️ Cleared all localStorage");
           
@@ -61,8 +77,11 @@ axiosApi.interceptors.response.use(
         // Avoid redirect loops if we're already on the login page
         const isOnLogin = typeof window !== "undefined" && window.location.pathname.startsWith("/login");
         if (!isOnLogin && typeof window !== "undefined") {
-          console.log("🔄 Redirecting to login page...");
-          window.location.replace("/login");
+          // Delay redirect slightly to let the alert be visible
+          setTimeout(() => {
+            console.log("🔄 Redirecting to login page...");
+            window.location.replace("/login");
+          }, 1500);
         } else {
           console.log("⚠️ Already on login page, skipping redirect");
         }

@@ -27,6 +27,10 @@ import fakeBackend from "./helpers/AuthType/fakeBackend";
 // Activating fake backend
 fakeBackend();
 
+// Import ToastContainer for global notifications
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 // const firebaseConfig = {
 //   apiKey: import.meta.env.VITE_APP_APIKEY,
 //   authDomain: import.meta.env.VITE_APP_AUTHDOMAIN,
@@ -68,6 +72,18 @@ const App = () => {  // Removed unused 'props' param
 
   return (
     <React.Fragment>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
         {publicRoutes.map((route, idx) => (
           <Route
