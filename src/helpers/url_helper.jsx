@@ -1,5 +1,6 @@
 // API Base URL from environment variables
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+// Prefer VITE_API_URL used elsewhere; fall back to same-origin /api to avoid mixed content in prod
+export const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "/api";
 
 //REGISTER
 export const POST_FAKE_REGISTER = "/post-fake-register";

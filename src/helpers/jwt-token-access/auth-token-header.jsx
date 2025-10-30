@@ -4,7 +4,7 @@ export const login = async (username, password) => {
   console.log("🔐 Starting login process for user:", username);
   console.log("🔐 Using API helper post function");
   try {
-    const res = await post("http://localhost:5000/api/auth/login", { username, password });
+    const res = await post("/auth/login", { username, password });
     console.log("✅ Login API response:", res);
     
     if (res.token) {

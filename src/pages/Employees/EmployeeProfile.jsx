@@ -521,14 +521,14 @@ const EmployeeProfile = () => {
       if (editInitiative && editInitiative.id) {
         payload.updated_by = currentUser?.username || "system";
         await axiosApi.put(
-          `http://localhost:5000/api/employeeInitiative/${editInitiative.id}`,
+          `/api/employeeInitiative/${editInitiative.id}`,
           payload
         );
         showAlert("Initiative has been updated successfully", "success");
       } else {
         payload.created_by = currentUser?.username || "system";
         await axiosApi.post(
-          "http://localhost:5000/api/employeeInitiative",
+          "/api/employeeInitiative",
           payload
         );
         showAlert("Initiative has been created successfully", "success");
@@ -987,7 +987,7 @@ const EmployeeProfile = () => {
           return attachment ? (
             <div className="d-flex gap-2">
               <a
-                href={`http://localhost:5000/api/employeeSkills/${rowId}/view-attachment`}
+                href={`/api/employeeSkills/${rowId}/view-attachment`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -998,7 +998,7 @@ const EmployeeProfile = () => {
                 ></i>
               </a>
               <a
-                href={`http://localhost:5000/api/employeeSkills/${rowId}/download-attachment`}
+                href={`/api/employeeSkills/${rowId}/download-attachment`}
                 download
                 title="Download"
               >

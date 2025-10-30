@@ -3,7 +3,8 @@ import accessToken from "./jwt-token-access/accessToken";
 import { toast } from "react-toastify";
 
 // base URL from .env with fallback
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Fallback to same-origin "/api" to avoid mixed-content in production when env isn't set
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const axiosApi = axios.create({
   baseURL: API_URL,
@@ -100,7 +101,9 @@ export async function get(url, config = {}) {
 
 export async function post(url, data, config = {}) {
   console.log("📤 POST request to:", url);
-  console.log("📤 Full URL will be:", API_URL + url);
+  const isAbsolute = /^https?:\/\//i.test(url);
+  const fullUrl = isAbsolute ? url : `${API_URL}${url}`;
+  console.log("📤 Full URL will be:", fullUrl);
   return axiosApi.post(url, data, { ...config }).then((res) => res.data);
 }
 
