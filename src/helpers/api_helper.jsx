@@ -3,8 +3,10 @@ import accessToken from "./jwt-token-access/accessToken";
 import { toast } from "react-toastify";
 
 // base URL from .env with fallback
-// Fallback to same-origin "/api" to avoid mixed-content in production when env isn't set
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+// Dev: default to http://localhost:5000/api if not provided
+// Prod: default to same-origin /api to avoid mixed-content
+const API_URL =
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000/api" : "/api");
 
 const axiosApi = axios.create({
   baseURL: API_URL,
@@ -18,6 +20,14 @@ axiosApi.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Normalize URL: if it's a relative path starting with "/",
+  // remove the leading slash so axios correctly appends to baseURL path (e.g., /api)
+  if (typeof config.url === "string") {
+    const isAbsolute = /^https?:\/\//i.test(config.url);
+    if (!isAbsolute && config.url.startsWith("/")) {
+      config.url = config.url.slice(1);
+    }
   }
   return config;
 });

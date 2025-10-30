@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import {
   Dropdown,
@@ -6,6 +6,8 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "reactstrap";
+import axiosApi from "../../../helpers/api_helper";
+import { API_BASE_URL } from "../../../helpers/url_helper";
 
 //i18n
 import { withTranslation } from "react-i18next";
@@ -24,6 +26,27 @@ const ProfileMenu = (props) => {
 
   const [username, setusername] = useState("Admin");
   const [userId, setUserId] = useState(null);
+  const [userAvatar, setUserAvatar] = useState(null);
+  const [userFullName, setUserFullName] = useState("");
+
+  const fetchEmployeeAvatar = useCallback(async (employeeId) => {
+    try {
+      const response = await axiosApi.get(`${API_BASE_URL}/employee/${employeeId}`);
+      const employee = response.data;
+      
+      if (employee?.employee_avatar) {
+        setUserAvatar(employee.employee_avatar);
+      }
+      
+      // Set full name for fallback avatar
+      if (employee?.name && employee?.surname) {
+        setUserFullName(`${employee.name} ${employee.surname}`);
+      }
+    } catch (error) {
+      console.error("Error fetching employee avatar:", error);
+      // Don't show error to user, just use default avatar
+    }
+  }, []);
 
   useEffect(() => {
     // Get user data from UmmahAidUser in localStorage
@@ -33,6 +56,11 @@ const ProfileMenu = (props) => {
         const userData = JSON.parse(userDataStr);
         setusername(userData.username || userData.email || "Admin");
         setUserId(userData.user_id || userData.id);
+        
+        // Fetch employee details to get avatar
+        if (userData.user_id || userData.id) {
+          fetchEmployeeAvatar(userData.user_id || userData.id);
+        }
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
@@ -50,7 +78,29 @@ const ProfileMenu = (props) => {
         setusername(obj.username);
       }
     }
-  }, [props.success]);
+  }, [props.success, userId, fetchEmployeeAvatar]);
+
+  // Listen for avatar update events
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      // Only refetch if we have a userId (is the logged-in user)
+      if (userId) {
+        fetchEmployeeAvatar(userId);
+      }
+    };
+
+    window.addEventListener("employeeAvatarUpdated", handleAvatarUpdate);
+    
+    return () => {
+      window.removeEventListener("employeeAvatarUpdated", handleAvatarUpdate);
+    };
+  }, [userId, fetchEmployeeAvatar]);
+
+  // Generate fallback avatar URL if no custom avatar
+  const avatarUrl = userAvatar || 
+    (userFullName 
+      ? `https://ui-avatars.com/api/?name=${encodeURIComponent(userFullName)}&size=40&background=1976d2&color=ffffff&bold=true`
+      : user1);
 
   return (
     <React.Fragment>
@@ -66,7 +116,7 @@ const ProfileMenu = (props) => {
         >
           <img
             className="rounded-circle header-profile-user"
-            src={user1}
+            src={avatarUrl}
             alt="Header Avatar"
           />
           <span className="d-none d-xl-inline-block ms-2 me-1">{username}</span>

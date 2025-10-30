@@ -1062,6 +1062,9 @@ const EmployeeProfile = () => {
       setSelectedAvatar(avatarUrl);
       showAlert("Avatar has been updated successfully", "success");
       fetchEmployeeDetails();
+      
+      // Dispatch custom event to notify other components (like ProfileMenu) to refresh
+      window.dispatchEvent(new Event("employeeAvatarUpdated"));
     } catch (error) {
       console.error("Error saving avatar:", error);
       showAlert(
@@ -1125,6 +1128,12 @@ const EmployeeProfile = () => {
       showAlert("Employee has been updated successfully", "success");
       setEmployeeModalOpen(false);
       fetchEmployeeDetails();
+      
+      // Dispatch custom event to notify other components (like ProfileMenu) to refresh
+      // Only if avatar was actually changed
+      if (payload.employee_avatar) {
+        window.dispatchEvent(new Event("employeeAvatarUpdated"));
+      }
     } catch (error) {
       console.error("Error updating employee:", error);
       console.error("Error response:", error?.response?.data);
