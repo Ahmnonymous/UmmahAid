@@ -11,9 +11,24 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE OR REPLACE FUNCTION hash_employee_password()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.Password_Hash IS NOT NULL AND NEW.Password_Hash !~ '^\$2[ayb]\$11\$.{53}$' THEN
-        NEW.Password_Hash := crypt(NEW.Password_Hash, gen_salt('bf'));
+    -- Only hash on INSERT when a plain password is provided
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.Password_Hash IS NOT NULL AND NEW.Password_Hash !~ '^\$2[aby]\$\d\d\$' THEN
+            NEW.Password_Hash := crypt(NEW.Password_Hash, gen_salt('bf'));
+        END IF;
+        RETURN NEW;
     END IF;
+
+    -- Only hash on UPDATE if the password actually changed and is not already bcrypt
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.Password_Hash IS DISTINCT FROM OLD.Password_Hash THEN
+            IF NEW.Password_Hash IS NOT NULL AND NEW.Password_Hash !~ '^\$2[aby]\$\d\d\$' THEN
+                NEW.Password_Hash := crypt(NEW.Password_Hash, gen_salt('bf'));
+            END IF;
+        END IF;
+        RETURN NEW;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
