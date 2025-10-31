@@ -18,7 +18,7 @@ import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
-import { API_BASE_URL } from "../../../../helpers/url_helper";
+import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
@@ -213,7 +213,7 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
           return filename ? (
             <div className="d-flex gap-2">
               <a
-                href={`${API_BASE_URL}/centerAudits/${rowId}/view-attachment`}
+                href={`${API_STREAM_BASE_URL}/centerAudits/${rowId}/view-attachment`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -224,7 +224,7 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
                 ></i>
               </a>
               <a
-                href={`${API_BASE_URL}/centerAudits/${rowId}/download-attachment`}
+                href={`${API_STREAM_BASE_URL}/centerAudits/${rowId}/download-attachment`}
                 download
                 title="Download"
               >

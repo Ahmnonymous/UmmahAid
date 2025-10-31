@@ -18,7 +18,7 @@ import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
-import { API_BASE_URL } from "../../../../helpers/url_helper";
+import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert }) => {
@@ -245,7 +245,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
           return attachment ? (
             <div className="d-flex gap-2">
               <a
-                href={`${API_BASE_URL}/programs/${rowId}/view-attachment`}
+                href={`${API_STREAM_BASE_URL}/programs/${rowId}/view-attachment`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -256,7 +256,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                 ></i>
               </a>
               <a
-                href={`${API_BASE_URL}/programs/${rowId}/download-attachment`}
+                href={`${API_STREAM_BASE_URL}/programs/${rowId}/download-attachment`}
                 download
                 title="Download"
               >

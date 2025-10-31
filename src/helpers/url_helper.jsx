@@ -3,6 +3,12 @@
 // an empty string so `${API_BASE_URL}/route` resolves to `/route`.
 export const API_BASE_URL = "";
 
+// Absolute base for non-axios navigation (anchors/iframes/window.open)
+// In dev, prefers VITE_API_URL if provided (e.g., http://localhost:5000/api)
+// In prod, defaults to same-origin '/api'
+export const API_STREAM_BASE_URL =
+  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL) || "/api";
+
 //REGISTER
 export const POST_FAKE_REGISTER = "/post-fake-register";
 

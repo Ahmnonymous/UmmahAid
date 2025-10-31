@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const centerAuditsController = {
   getAll: async (req, res) => { 
     try { 
-      const centerId = req.query.center_id;
+      const centerId = req.isMultiCenter ? (req.query.center_id || null) : (req.center_id || req.user?.center_id);
       const data = await centerAuditsModel.getAll(centerId); 
       res.json(data); 
     } catch(err){ 
@@ -25,6 +25,11 @@ const centerAuditsController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and tenant context
+      const username = req.user?.username || 'system';
+      fields.created_by = fields.created_by || username;
+      fields.updated_by = fields.updated_by || username;
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.attachments && req.files.attachments.length > 0) {
@@ -47,6 +52,10 @@ const centerAuditsController = {
   update: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and prevent created_by override
+      delete fields.created_by;
+      fields.updated_by = req.user?.username || 'system';
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.attachments && req.files.attachments.length > 0) {

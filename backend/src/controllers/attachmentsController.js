@@ -24,6 +24,11 @@ const attachmentsController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and tenant context
+      const username = req.user?.username || 'system';
+      fields.created_by = fields.created_by || username;
+      fields.updated_by = fields.updated_by || username;
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.file && req.files.file.length > 0) {
@@ -46,6 +51,10 @@ const attachmentsController = {
   update: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and prevent created_by override
+      delete fields.created_by;
+      fields.updated_by = req.user?.username || 'system';
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.file && req.files.file.length > 0) {
@@ -58,7 +67,7 @@ const attachmentsController = {
         await fs.unlink(file.path);
       }
       
-      const data = await attachmentsModel.update(req.params.id, fields); 
+      const data = await attachmentsModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Attachments: " + err.message}); 
@@ -76,7 +85,7 @@ const attachmentsController = {
 
   viewFile: async (req, res) => {
     try {
-      const record = await attachmentsModel.getById(req.params.id);
+      const record = await attachmentsModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
@@ -100,7 +109,7 @@ const attachmentsController = {
 
   downloadFile: async (req, res) => {
     try {
-      const record = await attachmentsModel.getById(req.params.id);
+      const record = await attachmentsModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   

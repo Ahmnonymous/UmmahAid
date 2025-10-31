@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Card, Input, Button, Row, Col, Spinner, UncontrolledTooltip } from "reactstrap";
 import SimpleBar from "simplebar-react";
-import { API_BASE_URL } from "../../helpers/url_helper";
+import { API_BASE_URL, API_STREAM_BASE_URL } from "../../helpers/url_helper";
 
 const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUser }) => {
   const [messageText, setMessageText] = useState("");
@@ -78,7 +78,7 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
   };
 
   const handleDownloadAttachment = (messageId) => {
-    window.open(`${API_BASE_URL}/messages/${messageId}/download-attachment`, "_blank");
+    window.open(`${API_STREAM_BASE_URL}/messages/${messageId}/download-attachment`, "_blank");
   };
 
   // Group messages by date

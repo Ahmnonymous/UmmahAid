@@ -18,7 +18,7 @@ import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
-import { API_BASE_URL } from "../../../../helpers/url_helper";
+import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }) => {
@@ -203,7 +203,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
           return filename ? (
             <div className="d-flex gap-2">
               <a
-                href={`${API_BASE_URL}/supplierDocument/${rowId}/view-file`}
+                href={`${API_STREAM_BASE_URL}/supplierDocument/${rowId}/view-file`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -214,7 +214,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                 ></i>
               </a>
               <a
-                href={`${API_BASE_URL}/supplierDocument/${rowId}/download-file`}
+                href={`${API_STREAM_BASE_URL}/supplierDocument/${rowId}/download-file`}
                 download
                 title="Download"
               >
@@ -323,14 +323,16 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
 
               <Col md={6}>
                 <FormGroup>
-                  <Label for="Issued_At">Issued Date</Label>
+                  <Label for="Issued_At">Issued Date <span className="text-danger">*</span></Label>
                   <Controller
                     name="Issued_At"
                     control={control}
+                    rules={{ required: "Issued date is required" }}
                     render={({ field }) => (
-                      <Input id="Issued_At" type="date" {...field} />
+                      <Input id="Issued_At" type="date" invalid={!!errors.Issued_At} {...field} />
                     )}
                   />
+                  {errors.Issued_At && <FormFeedback>{errors.Issued_At.message}</FormFeedback>}
                 </FormGroup>
               </Col>
 

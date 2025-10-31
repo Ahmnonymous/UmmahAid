@@ -1,3 +1,4 @@
+import { API_STREAM_BASE_URL } from "../../helpers/url_helper";
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -987,7 +988,7 @@ const EmployeeProfile = () => {
           return attachment ? (
             <div className="d-flex gap-2">
               <a
-                href={`/employeeSkills/${rowId}/view-attachment`}
+                href={`${API_STREAM_BASE_URL}/employeeSkills/${rowId}/view-attachment`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -998,7 +999,7 @@ const EmployeeProfile = () => {
                 ></i>
               </a>
               <a
-                href={`/employeeSkills/${rowId}/download-attachment`}
+                href={`${API_STREAM_BASE_URL}/employeeSkills/${rowId}/download-attachment`}
                 download
                 title="Download"
               >

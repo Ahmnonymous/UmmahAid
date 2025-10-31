@@ -18,7 +18,7 @@ import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
-import { API_BASE_URL } from "../../../../helpers/url_helper";
+import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
@@ -208,7 +208,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
           return attachment ? (
             <div className="d-flex gap-2">
               <a
-                href={`${API_BASE_URL}/homeVisit/${rowId}/view-attachment-1`}
+                href={`${API_STREAM_BASE_URL}/homeVisit/${rowId}/view-attachment-1`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -219,7 +219,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                 ></i>
               </a>
               <a
-                href={`${API_BASE_URL}/homeVisit/${rowId}/download-attachment-1`}
+                href={`${API_STREAM_BASE_URL}/homeVisit/${rowId}/download-attachment-1`}
                 download
                 title="Download"
               >
@@ -245,7 +245,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
           return attachment ? (
             <div className="d-flex gap-2">
               <a
-                href={`${API_BASE_URL}/homeVisit/${rowId}/view-attachment-2`}
+                href={`${API_STREAM_BASE_URL}/homeVisit/${rowId}/view-attachment-2`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View"
@@ -256,7 +256,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                 ></i>
               </a>
               <a
-                href={`${API_BASE_URL}/homeVisit/${rowId}/download-attachment-2`}
+                href={`${API_STREAM_BASE_URL}/homeVisit/${rowId}/download-attachment-2`}
                 download
                 title="Download"
               >

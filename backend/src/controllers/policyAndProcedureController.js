@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const policyAndProcedureController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await policyAndProcedureModel.getAll(); 
+      const data = await policyAndProcedureModel.getAll(req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -13,7 +13,7 @@ const policyAndProcedureController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await policyAndProcedureModel.getById(req.params.id); 
+      const data = await policyAndProcedureModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -24,6 +24,11 @@ const policyAndProcedureController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and tenant context
+      const username = req.user?.username || 'system';
+      fields.created_by = fields.created_by || username;
+      fields.updated_by = fields.updated_by || username;
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.file && req.files.file.length > 0) {
@@ -46,6 +51,10 @@ const policyAndProcedureController = {
   update: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and prevent created_by override
+      delete fields.created_by;
+      fields.updated_by = req.user?.username || 'system';
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.file && req.files.file.length > 0) {
@@ -58,7 +67,7 @@ const policyAndProcedureController = {
         await fs.unlink(file.path);
       }
       
-      const data = await policyAndProcedureModel.update(req.params.id, fields); 
+      const data = await policyAndProcedureModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Policy_and_Procedure: " + err.message}); 
@@ -67,7 +76,7 @@ const policyAndProcedureController = {
   
   delete: async (req, res) => { 
     try { 
-      await policyAndProcedureModel.delete(req.params.id); 
+      await policyAndProcedureModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

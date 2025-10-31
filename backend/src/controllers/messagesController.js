@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const messagesController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await messagesModel.getAll(); 
+      const data = await messagesModel.getAll(req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -13,7 +13,7 @@ const messagesController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await messagesModel.getById(req.params.id); 
+      const data = await messagesModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -24,6 +24,11 @@ const messagesController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and tenant context
+      const username = req.user?.username || 'system';
+      fields.created_by = fields.created_by || username;
+      fields.updated_by = fields.updated_by || username;
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.attachment && req.files.attachment.length > 0) {
@@ -46,6 +51,10 @@ const messagesController = {
   update: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and prevent created_by override
+      delete fields.created_by;
+      fields.updated_by = req.user?.username || 'system';
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.attachment && req.files.attachment.length > 0) {
@@ -58,7 +67,7 @@ const messagesController = {
         await fs.unlink(file.path);
       }
       
-      const data = await messagesModel.update(req.params.id, fields); 
+      const data = await messagesModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Messages: " + err.message}); 
@@ -67,7 +76,7 @@ const messagesController = {
   
   delete: async (req, res) => { 
     try { 
-      await messagesModel.delete(req.params.id); 
+      await messagesModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -76,7 +85,7 @@ const messagesController = {
 
   viewAttachment: async (req, res) => {
     try {
-      const record = await messagesModel.getById(req.params.id);
+      const record = await messagesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
@@ -100,7 +109,7 @@ const messagesController = {
 
   downloadAttachment: async (req, res) => {
     try {
-      const record = await messagesModel.getById(req.params.id);
+      const record = await messagesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   

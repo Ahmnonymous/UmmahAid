@@ -6,7 +6,7 @@ import {
   Alert,
   Badge,
 } from "reactstrap";
-import { API_BASE_URL } from "../../helpers/url_helper";
+import { API_BASE_URL, API_STREAM_BASE_URL } from "../../helpers/url_helper";
 
 const FilePreview = ({ isOpen, toggle, file }) => {
   const [loading, setLoading] = useState(false);
@@ -166,7 +166,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
       return (
         <div className="preview-image-container">
           <img
-            src={`${API_BASE_URL}/personalFiles/${file.id}/view-file`}
+            src={`${API_STREAM_BASE_URL}/personalFiles/${file.id}/view-file`}
             alt={file.name}
             className="preview-image"
             style={{ transform: `scale(${zoom / 100})` }}
@@ -184,7 +184,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
       return (
         <div className="preview-pdf-container">
           <iframe
-            src={`${API_BASE_URL}/personalFiles/${file.id}/view-file`}
+            src={`${API_STREAM_BASE_URL}/personalFiles/${file.id}/view-file`}
             title={file.name}
             className="preview-iframe"
           />
@@ -197,7 +197,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
       return (
         <div className="preview-text-container">
           <iframe
-            src={`${API_BASE_URL}/personalFiles/${file.id}/view-file`}
+            src={`${API_STREAM_BASE_URL}/personalFiles/${file.id}/view-file`}
             title={file.name}
             className="preview-iframe"
           />
@@ -214,7 +214,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
           </div>
           <audio controls className="audio-player">
             <source
-              src={`${API_BASE_URL}/personalFiles/${file.id}/view-file`}
+              src={`${API_STREAM_BASE_URL}/personalFiles/${file.id}/view-file`}
               type={mimetype}
             />
             Your browser does not support the audio element.
@@ -229,7 +229,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
         <div className="preview-video-container">
           <video controls className="preview-video">
             <source
-              src={`${API_BASE_URL}/personalFiles/${file.id}/view-file`}
+              src={`${API_STREAM_BASE_URL}/personalFiles/${file.id}/view-file`}
               type={mimetype}
             />
             Your browser does not support the video element.
@@ -250,7 +250,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
           color="primary"
           onClick={() => {
             window.open(
-              `${API_BASE_URL}/personalFiles/${file.id}/download-file`,
+              `${API_STREAM_BASE_URL}/personalFiles/${file.id}/download-file`,
               "_blank"
             );
           }}
@@ -264,7 +264,7 @@ const FilePreview = ({ isOpen, toggle, file }) => {
 
   const handleDownload = () => {
     window.open(
-      `${API_BASE_URL}/personalFiles/${file.id}/download-file`,
+      `${API_STREAM_BASE_URL}/personalFiles/${file.id}/download-file`,
       "_blank"
     );
   };

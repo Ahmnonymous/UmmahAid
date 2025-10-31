@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const personalFilesController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await personalFilesModel.getAll(); 
+      const data = await personalFilesModel.getAll(req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -13,7 +13,7 @@ const personalFilesController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await personalFilesModel.getById(req.params.id); 
+      const data = await personalFilesModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -24,6 +24,11 @@ const personalFilesController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and tenant context
+      const username = req.user?.username || 'system';
+      fields.created_by = fields.created_by || username;
+      fields.updated_by = fields.updated_by || username;
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Clean up empty strings for numeric fields
       if (fields.folder_id === '' || fields.folder_id === 'null' || fields.folder_id === 'undefined') {
@@ -63,6 +68,10 @@ const personalFilesController = {
   update: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      // ✅ Enforce audit fields and prevent created_by override
+      delete fields.created_by;
+      fields.updated_by = req.user?.username || 'system';
+      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Clean up empty strings for numeric fields
       if (fields.folder_id === '' || fields.folder_id === 'null' || fields.folder_id === 'undefined') {
@@ -92,7 +101,7 @@ const personalFilesController = {
         await fs.unlink(file.path);
       }
       
-      const data = await personalFilesModel.update(req.params.id, fields); 
+      const data = await personalFilesModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Personal_Files: " + err.message}); 
@@ -101,7 +110,7 @@ const personalFilesController = {
   
   delete: async (req, res) => { 
     try { 
-      await personalFilesModel.delete(req.params.id); 
+      await personalFilesModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -110,7 +119,7 @@ const personalFilesController = {
 
   viewFile: async (req, res) => {
     try {
-      const record = await personalFilesModel.getById(req.params.id);
+      const record = await personalFilesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
@@ -134,7 +143,7 @@ const personalFilesController = {
 
   downloadFile: async (req, res) => {
     try {
-      const record = await personalFilesModel.getById(req.params.id);
+      const record = await personalFilesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
