@@ -138,7 +138,9 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
       await axiosApi.delete(`${API_BASE_URL}/attachments/${editItem.id}`);
       showAlert("Attachment has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -170,23 +172,6 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
         enableSorting: false,
         enableColumnFilter: false,
         cell: (cell) => cell.getValue() || "-",
-      },
-      {
-        header: "Created By",
-        accessorKey: "created_by",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => cell.getValue() || "-",
-      },
-      {
-        header: "Created At",
-        accessorKey: "created_at",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
       },
       {
         header: "File",
@@ -223,6 +208,40 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
           ) : (
             "-"
           );
+        },
+      },
+      {
+        header: "Created By",
+        accessorKey: "created_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Created On",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
         },
       },
     ],

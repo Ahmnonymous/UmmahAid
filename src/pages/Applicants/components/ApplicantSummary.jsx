@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardBody,
@@ -31,6 +31,70 @@ import { getUmmahAidUser } from "../../../helpers/userStorage";
 const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
+  const signatureCanvasRef = useRef(null);
+  const [isSigning, setIsSigning] = useState(false);
+  const [signatureDrawn, setSignatureDrawn] = useState(false);
+  const [hideExistingSignature, setHideExistingSignature] = useState(false);
+  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState("");
+
+  const getCanvasPos = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const startSignature = (e) => {
+    e.preventDefault();
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    const { x, y } = getCanvasPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsSigning(true);
+    setSignatureDrawn(true);
+  };
+
+  const drawSignature = (e) => {
+    if (!isSigning) return;
+    e.preventDefault();
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const { x, y } = getCanvasPos(e, canvas);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const endSignature = (e) => {
+    if (!isSigning) return;
+    e.preventDefault();
+    setIsSigning(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureDrawn(false);
+  };
+
+  const dataURLToBlob = (dataURL) => {
+    const parts = dataURL.split(",");
+    const byteString = atob(parts[1]);
+    const mimeString = parts[0].match(/:(.*?);/)[1];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+  };
 
   // Delete confirmation hook
   const {
@@ -83,7 +147,27 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         POPIA_Agreement: applicant.popia_agreement === "Y",
         Signature: null,
       });
+      setHideExistingSignature(false);
+      // Load existing signature preview via authenticated request
+      const hasExisting = applicant && (applicant.signature === 'exists' || applicant.signature_filename);
+      if (hasExisting) {
+        axiosApi
+          .get(`${API_BASE_URL}/applicantDetails/${applicant.id}/download-signature`, { responseType: 'blob' })
+          .then((res) => {
+            const url = URL.createObjectURL(res.data);
+            setSignaturePreviewUrl(url);
+          })
+          .catch(() => {
+            setSignaturePreviewUrl("");
+            setHideExistingSignature(true);
+          });
+      } else {
+        setSignaturePreviewUrl("");
+      }
     }
+    return () => {
+      if (signaturePreviewUrl) URL.revokeObjectURL(signaturePreviewUrl);
+    };
   }, [applicant, modalOpen, reset]);
 
   const toggleModal = () => {
@@ -96,7 +180,12 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
   const onSubmit = async (data) => {
     try {
       const currentUser = getUmmahAidUser();
-      const hasSignature = data.Signature && data.Signature.length > 0;
+      let signatureBlob = null;
+      if (signatureCanvasRef.current && signatureDrawn) {
+        const dataUrl = signatureCanvasRef.current.toDataURL("image/png");
+        signatureBlob = dataURLToBlob(dataUrl);
+      }
+      const hasSignature = !!signatureBlob;
 
       if (hasSignature) {
         // Use FormData for file upload
@@ -132,7 +221,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         if (data.Health && data.Health !== "") formData.append("health", data.Health);
         if (data.Skills && data.Skills !== "") formData.append("skills", data.Skills);
         
-        formData.append("signature", data.Signature[0]);
+        formData.append("signature", signatureBlob, "signature.png");
         formData.append("popia_agreement", data.POPIA_Agreement ? "Y" : "N");
         formData.append("updated_by", currentUser?.username || "system");
 
@@ -197,7 +286,9 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
       await axiosApi.delete(`${API_BASE_URL}/applicantDetails/${applicant.id}`);
       showAlert("Applicant has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -423,8 +514,27 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="ID_Number"
                         control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
+                        rules={{
+                          pattern: {
+                            value: /^\d{13}$/,
+                            message: "ID Number must be exactly 13 digits",
+                          },
+                        }}
+                        render={({ field }) => (
+                          <Input
+                            type="text"
+                            maxLength={13}
+                            onInput={(e) => {
+                              e.target.value = (e.target.value || "").replace(/\D/g, "").slice(0, 13);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.ID_Number}
+                          />
+                        )}
                       />
+                      {errors.ID_Number && <FormFeedback>{errors.ID_Number.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -465,16 +575,23 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       />
                     </FormGroup>
                   </Col>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Label>Nationality Expiry Date</Label>
-                      <Controller
-                        name="Nationality_Expiry_Date"
-                        control={control}
-                        render={({ field }) => <Input type="date" {...field} />}
-                      />
-                    </FormGroup>
-                  </Col>
+                  {(() => {
+                    const selectedNationalityId = watch("Nationality");
+                    const selected = lookupData.nationality.find((n) => String(n.id) === String(selectedNationalityId));
+                    const isSouthAfrican = (selected?.name || "").toLowerCase() === "south african";
+                    return !isSouthAfrican ? (
+                      <Col md={4}>
+                        <FormGroup>
+                          <Label>Passport Expiry Date</Label>
+                          <Controller
+                            name="Nationality_Expiry_Date"
+                            control={control}
+                            render={({ field }) => <Input type="date" {...field} />}
+                          />
+                        </FormGroup>
+                      </Col>
+                    ) : null;
+                  })()}
                   <Col md={4}>
                     <FormGroup>
                       <Label>Gender</Label>
@@ -662,16 +779,6 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       />
                     </FormGroup>
                   </Col>
-                  <Col md={12}>
-                    <FormGroup>
-                      <Label>Street Address</Label>
-                      <Controller
-                        name="Street_Address"
-                        control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
-                      />
-                    </FormGroup>
-                  </Col>
                   <Col md={4}>
                     <FormGroup>
                       <Label>Suburb</Label>
@@ -688,6 +795,16 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                             ))}
                           </Input>
                         )}
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md={12}>
+                    <FormGroup>
+                      <Label>Street Address</Label>
+                      <Controller
+                        name="Street_Address"
+                        control={control}
+                        render={({ field }) => <Input type="text" {...field} />}
                       />
                     </FormGroup>
                   </Col>
@@ -814,27 +931,46 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                   </Col>
                   <Col md={12}>
                     <FormGroup>
-                      <Label>Signature/Attachment</Label>
-                      <Controller
-                        name="Signature"
-                        control={control}
-                        render={({ field: { onChange, value, ...field } }) => (
-                          <Input 
-                            type="file" 
-                            onChange={(e) => onChange(e.target.files)} 
-                            {...field} 
-                          />
-                        )}
-                      />
-                      <small className="text-muted">Upload a new signature to replace the existing one (optional)</small>
-                      {applicant.signature_filename && (
-                        <div className="mt-2">
-                          <small className="text-success">
-                            <i className="bx bx-check-circle me-1"></i>
-                            Current file: {applicant.signature_filename}
-                          </small>
-                        </div>
-                      )}
+                      <Label>Signature</Label>
+                      {/* Existing signature preview (if available) */}
+                      {(() => {
+                        const hasExisting = !!signaturePreviewUrl && !hideExistingSignature && !signatureDrawn;
+                        if (!hasExisting) return null;
+                        return (
+                          <div className="mb-2">
+                            <small className="text-muted d-block mb-1">Current signature</small>
+                            <img
+                              src={signaturePreviewUrl}
+                              alt="Current signature"
+                              style={{ maxWidth: '100%', maxHeight: 200, border: '1px solid #eee', background: '#fff' }}
+                              onError={() => setHideExistingSignature(true)}
+                            />
+                          </div>
+                        );
+                      })()}
+                      <div
+                        className="border rounded position-relative"
+                        style={{ width: "100%", height: 200, background: "#fff" }}
+                      >
+                        <canvas
+                          ref={signatureCanvasRef}
+                          width={800}
+                          height={200}
+                          style={{ width: "100%", height: "200px", touchAction: "none", cursor: "crosshair" }}
+                          onMouseDown={startSignature}
+                          onMouseMove={drawSignature}
+                          onMouseUp={endSignature}
+                          onMouseLeave={endSignature}
+                          onTouchStart={startSignature}
+                          onTouchMove={drawSignature}
+                          onTouchEnd={endSignature}
+                        />
+                      </div>
+                      <div className="mt-2 d-flex gap-2">
+                        <Button type="button" color="secondary" onClick={clearSignature} size="sm">
+                          Clear
+                        </Button>
+                      </div>
                     </FormGroup>
                   </Col>
                   <Col md={12}>
@@ -844,10 +980,13 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                           name="POPIA_Agreement"
                           control={control}
                           render={({ field }) => (
-                            <Input 
-                              type="checkbox" 
-                              {...field} 
+                            <Input
+                              type="checkbox"
                               checked={!!field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              innerRef={field.ref}
                             />
                           )}
                         />

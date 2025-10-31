@@ -1,20 +1,26 @@
 import React from "react";
 import { Row, Col, Card, CardBody } from "reactstrap";
 
-const SummaryMetrics = ({ financialAssistance, foodAssistance, homeVisits, programs }) => {
+const SummaryMetrics = ({ applicantId, financialAssistance, foodAssistance, homeVisits, programs }) => {
+  // Ensure metrics reflect ONLY the selected applicant
+  const faForApplicant = (financialAssistance || []).filter((x) => String(x.file_id) === String(applicantId));
+  const foodForApplicant = (foodAssistance || []).filter((x) => String(x.file_id) === String(applicantId));
+  const visitsForApplicant = (homeVisits || []).filter((x) => String(x.file_id) === String(applicantId));
+  const programsForApplicant = (programs || []).filter((x) => String(x.person_trained_id) === String(applicantId));
+
   // Calculate totals
-  const totalFinancialAssistance = financialAssistance.reduce(
+  const totalFinancialAssistance = faForApplicant.reduce(
     (sum, item) => sum + (parseFloat(item.financial_amount) || 0),
     0
   );
 
-  const totalFoodAssistance = foodAssistance.reduce(
+  const totalFoodAssistance = foodForApplicant.reduce(
     (sum, item) => sum + (parseFloat(item.financial_cost) || 0),
     0
   );
 
-  const homeVisitCount = homeVisits.length;
-  const programCount = programs.length;
+  const homeVisitCount = visitsForApplicant.length;
+  const programCount = programsForApplicant.length;
 
   const metrics = [
     {

@@ -48,6 +48,7 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
         Assistance_Type: editItem?.assistance_type || "",
         Financial_Amount: editItem?.financial_amount || "",
         Date_of_Assistance: editItem?.date_of_assistance || "",
+        Assisted_By: editItem?.assisted_by || "",
       });
     }
   }, [editItem, modalOpen, reset]);
@@ -78,6 +79,7 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
         assistance_type: data.Assistance_Type ? parseInt(data.Assistance_Type) : null,
         financial_amount: data.Financial_Amount ? parseFloat(data.Financial_Amount) : 0,
         date_of_assistance: data.Date_of_Assistance || null,
+        assisted_by: data.Assisted_By ? parseInt(data.Assisted_By) : null,
       };
 
       if (editItem) {
@@ -112,7 +114,9 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
       await axiosApi.delete(`${API_BASE_URL}/financialAssistance/${editItem.id}`);
       showAlert("Financial assistance has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -165,11 +169,43 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
         },
       },
       {
-        header: "Created By",
-        accessorKey: "created_by",
+        header: "Assisted By",
+        accessorKey: "assisted_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const empId = cell.getValue();
+          const emp = (lookupData.employees || []).find((e) => e.id == empId);
+          return emp ? `${emp.name || ''} ${emp.surname || ''}`.trim() : "-";
+        },
+      },
+      
+      {
+        header: "Created On",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
       },
     ],
     [lookupData]
@@ -265,6 +301,26 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
                     name="Date_of_Assistance"
                     control={control}
                     render={({ field }) => <Input id="Date_of_Assistance" type="date" {...field} />}
+                  />
+                </FormGroup>
+              </Col>
+
+              <Col md={6}>
+                <FormGroup>
+                  <Label for="Assisted_By">Assisted By</Label>
+                  <Controller
+                    name="Assisted_By"
+                    control={control}
+                    render={({ field }) => (
+                      <Input id="Assisted_By" type="select" {...field}>
+                        <option value="">Select Employee</option>
+                        {(lookupData.employees || []).map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {(emp.name || "")} {(emp.surname || "")}
+                          </option>
+                        ))}
+                      </Input>
+                    )}
                   />
                 </FormGroup>
               </Col>

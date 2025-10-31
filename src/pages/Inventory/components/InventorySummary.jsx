@@ -145,7 +145,9 @@ const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
       await axiosApi.delete(`${API_BASE_URL}/inventoryItems/${item.id}`);
       showAlert("Inventory item has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -162,14 +164,14 @@ const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
               <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
                 <i className="bx bx-edit-alt me-1"></i> Edit
               </Button>
-              <Button
+              {/* <Button
                 color="danger"
                 size="sm"
                 onClick={handleDelete}
                 className="btn-sm"
               >
                 <i className="bx bx-trash me-1"></i> Delete
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>

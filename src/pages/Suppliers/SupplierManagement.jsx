@@ -338,6 +338,7 @@ const SupplierManagement = () => {
           toggle={toggleCreateModal}
           size="lg"
           backdrop="static"
+          centered
         >
           <ModalHeader toggle={toggleCreateModal}>
             <i className="bx bx-plus-circle me-2 text-primary"></i>
@@ -468,7 +469,7 @@ const SupplierManagement = () => {
                           <option value="">Select Category</option>
                           {lookupData.supplierCategories.map((cat) => (
                             <option key={cat.id} value={cat.id}>
-                              {cat.description}
+                              {cat.name}
                             </option>
                           ))}
                         </Input>
@@ -520,16 +521,17 @@ const SupplierManagement = () => {
             <ModalFooter>
               <Button
                 type="button"
-                color="secondary"
+                color="light"
                 onClick={toggleCreateModal}
                 disabled={isSubmitting}
+                className="me-2"
               >
                 <i className="bx bx-x me-1"></i>
                 Cancel
               </Button>
               <Button
                 type="submit"
-                color="primary"
+                color="success"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -539,7 +541,7 @@ const SupplierManagement = () => {
                   </>
                 ) : (
                   <>
-                    <i className="bx bx-check me-1"></i>
+                    <i className="bx bx-save me-1"></i>
                     Create Supplier
                   </>
                 )}

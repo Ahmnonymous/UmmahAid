@@ -1,6 +1,17 @@
 const ReportsModel = require('../models/reportsModel');
 
 class ReportsController {
+    // Center Audits Report
+    static async getCenterAudits(req, res) {
+        try {
+            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id;
+            const data = await ReportsModel.getCenterAudits(centerId);
+            res.status(200).json({ success: true, data, count: data.length, message: 'Center audits report retrieved successfully' });
+        } catch (error) {
+            console.error('Error in getCenterAudits:', error);
+            res.status(500).json({ success: false, message: 'Error retrieving center audits report', error: error.message });
+        }
+    }
     // Get Applicant Details Report
     static async getApplicantDetails(req, res) {
         try {

@@ -241,7 +241,7 @@ const TotalFinancialAssistanceReport = () => {
                             <CardBody>
                                 <div className="d-flex">
                                     <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Total Assistance Given</p>
+                                        <p className="text-muted fw-medium mb-2">Combined Assistance Given</p>
                                         <h4 className="mb-0">{formatCurrency(grandTotal)}</h4>
                                     </div>
                                     <div className="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">

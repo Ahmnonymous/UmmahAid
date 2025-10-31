@@ -48,6 +48,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
         Distributed_Date: editItem?.distributed_date || "",
         Hamper_Type: editItem?.hamper_type || "",
         Financial_Cost: editItem?.financial_cost || "",
+        Assisted_By: editItem?.assisted_by || "",
       });
     }
   }, [editItem, modalOpen, reset]);
@@ -78,6 +79,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
         distributed_date: data.Distributed_Date || null,
         hamper_type: data.Hamper_Type ? parseInt(data.Hamper_Type) : null,
         financial_cost: data.Financial_Cost ? parseFloat(data.Financial_Cost) : 0,
+        assisted_by: data.Assisted_By ? parseInt(data.Assisted_By) : null,
       };
 
       if (editItem) {
@@ -112,7 +114,9 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
       await axiosApi.delete(`${API_BASE_URL}/foodAssistance/${editItem.id}`);
       showAlert("Food assistance has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -165,11 +169,43 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
         },
       },
       {
-        header: "Created By",
-        accessorKey: "created_by",
+        header: "Assisted By",
+        accessorKey: "assisted_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const empId = cell.getValue();
+          const emp = (lookupData.employees || []).find((e) => e.id == empId);
+          return emp ? `${emp.name || ''} ${emp.surname || ''}`.trim() : "-";
+        },
+      },
+      
+      {
+        header: "Created On",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
       },
     ],
     [lookupData]
@@ -262,6 +298,26 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
                     name="Financial_Cost"
                     control={control}
                     render={({ field }) => <Input id="Financial_Cost" type="number" step="0.01" {...field} />}
+                  />
+                </FormGroup>
+              </Col>
+
+              <Col md={6}>
+                <FormGroup>
+                  <Label for="Assisted_By">Assisted By</Label>
+                  <Controller
+                    name="Assisted_By"
+                    control={control}
+                    render={({ field }) => (
+                      <Input id="Assisted_By" type="select" {...field}>
+                        <option value="">Select Employee</option>
+                        {(lookupData.employees || []).map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {(emp.name || "")} {(emp.surname || "")}
+                          </option>
+                        ))}
+                      </Input>
+                    )}
                   />
                 </FormGroup>
               </Col>

@@ -83,7 +83,7 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
 
   const getSuburbName = (suburbId) => {
     if (!suburbId || !lookupData.suburbs) return "-";
-    const suburb = lookupData.suburbs.find(s => s.id === suburbId);
+    const suburb = lookupData.suburbs.find(s => String(s.id) === String(suburbId));
     return suburb ? suburb.name : "-";
   };
 
@@ -183,8 +183,11 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
     }, async () => {
       await axiosApi.delete(`${API_BASE_URL}/centerDetail/${center.id}`);
       showAlert("Center has been deleted successfully", "success");
+      // If edit modal is open, close it; avoid toggling which could open it unintentionally
+      if (modalOpen) {
+        setModalOpen(false);
+      }
       onUpdate();
-      toggleModal();
     });
   };
 
@@ -201,14 +204,14 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
               <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
                 <i className="bx bx-edit-alt me-1"></i> Edit
               </Button>
-              <Button
+              {/* <Button
                 color="danger"
                 size="sm"
                 onClick={handleDelete}
                 className="btn-sm"
               >
                 <i className="bx bx-trash me-1"></i> Delete
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>

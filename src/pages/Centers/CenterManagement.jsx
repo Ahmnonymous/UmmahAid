@@ -22,6 +22,7 @@ import {
 } from "reactstrap";
 import classnames from "classnames";
 import { useForm, Controller } from "react-hook-form";
+import { validateTabsAndNavigate } from "../../helpers/tabValidation";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
@@ -58,7 +59,9 @@ const CenterManagement = () => {
     handleSubmit: handleCreateSubmit,
     formState: { errors: createErrors, isSubmitting: createIsSubmitting },
     reset: resetCreateForm,
-  } = useForm();
+    trigger: createTrigger,
+    getValues: createGetValues,
+  } = useForm({ shouldUnregister: false });
 
   // Fetch all centers on mount
   useEffect(() => {
@@ -300,6 +303,24 @@ const CenterManagement = () => {
     }
   };
 
+  // Cross-tab validation for create-center modal
+  const createRequiredFields = ["Organisation_Name"];
+  const createFieldTabMap = { Organisation_Name: "1" };
+
+  const handleValidatedCreateSubmit = async () => {
+    const ok = await validateTabsAndNavigate({
+      requiredFields: createRequiredFields,
+      fieldTabMap: createFieldTabMap,
+      trigger: (fields, opts) => createTrigger(fields, opts),
+      getValues: (name) => createGetValues(name),
+      setActiveTab: setCreateActiveTab,
+      showAlert,
+    });
+    if (!ok) return;
+    // Now run full RHF validation and submit
+    return handleCreateSubmit(onCreateSubmit)();
+  };
+
   return (
     <div className="page-content">
       <Container fluid>
@@ -391,7 +412,7 @@ const CenterManagement = () => {
             Create New Center
           </ModalHeader>
 
-          <Form onSubmit={handleCreateSubmit(onCreateSubmit)}>
+          <Form onSubmit={(e) => { e.preventDefault(); handleValidatedCreateSubmit(); }}>
             <ModalBody>
               <Nav tabs>
                 <NavItem>

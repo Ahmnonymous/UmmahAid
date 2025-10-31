@@ -41,7 +41,7 @@ const DeleteConfirmationModal = ({
           
           {/* Main Message */}
           <div className="delete-message mb-3">
-            <p className="text-dark mb-2">
+            <p className="text-body mb-2">
               {message || `Are you sure you want to delete this ${itemType}?`}
             </p>
             
@@ -151,7 +151,6 @@ const DeleteConfirmationModal = ({
         }
         
         .alert-warning {
-          background-color: #fff3cd;
           border-radius: 8px;
           padding: 12px;
         }

@@ -220,7 +220,9 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
       showAlert("Income has been deleted successfully", "success");
       fetchIncomeExpense();
       onUpdate();
-      toggleIncomeModal();
+      if (incomeModalOpen) {
+        setIncomeModalOpen(false);
+      }
     });
   };
 
@@ -239,7 +241,9 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
       showAlert("Expense has been deleted successfully", "success");
       fetchIncomeExpense();
       onUpdate();
-      toggleExpenseModal();
+      if (expenseModalOpen) {
+        setExpenseModalOpen(false);
+      }
     });
   };
 

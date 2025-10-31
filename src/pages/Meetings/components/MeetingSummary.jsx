@@ -111,7 +111,9 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
       await axiosApi.delete(`${API_BASE_URL}/hseqToolboxMeeting/${meeting.id}`);
       showAlert("Meeting has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 

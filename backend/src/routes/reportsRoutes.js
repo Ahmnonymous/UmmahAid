@@ -39,6 +39,12 @@ router.get('/home-visits',
     ReportsController.getHomeVisits.bind(ReportsController)
 );
 
+// Center Audits Report
+router.get('/center-audits',
+    roleMiddleware([1, 2, 3, 4]),
+    ReportsController.getCenterAudits.bind(ReportsController)
+);
+
 // Relationship Report
 router.get('/relationship-report', 
     roleMiddleware([1, 2, 3, 4]), // App Admin, HQ, Org Admin, Org Executives

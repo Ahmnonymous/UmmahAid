@@ -18,7 +18,7 @@ const DetailTabs = ({
     }
   };
 
-  const auditsForCenter = (audits || []).filter((x) => x.center_id === centerId);
+  const auditsForCenter = (audits || []).filter((x) => String(x.center_id) === String(centerId));
 
   const tabs = [
     { id: "all", label: "Show All" },

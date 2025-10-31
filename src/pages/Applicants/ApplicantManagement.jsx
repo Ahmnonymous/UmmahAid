@@ -365,6 +365,7 @@ const ApplicantManagement = () => {
               <>
                 {/* Summary Metrics */}
                 <SummaryMetrics
+                  applicantId={selectedApplicant.id}
                   financialAssistance={financialAssistance}
                   foodAssistance={foodAssistance}
                   homeVisits={homeVisits}

@@ -141,7 +141,9 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
       await axiosApi.delete(`${API_BASE_URL}/supplierProfile/${supplier.id}`);
       showAlert("Supplier has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 

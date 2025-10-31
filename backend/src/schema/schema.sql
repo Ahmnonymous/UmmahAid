@@ -746,6 +746,7 @@ CREATE TABLE Financial_Assistance (
     Assistance_Type BIGINT,
     Financial_Amount DECIMAL(12,2),
     Date_of_Assistance DATE,
+    Assisted_By BIGINT,
     Created_By VARCHAR(255),
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     Updated_By VARCHAR(255),
@@ -753,6 +754,7 @@ CREATE TABLE Financial_Assistance (
     center_id BIGINT,
     CONSTRAINT fk_file_id_fin FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID),
     CONSTRAINT fk_assistance_type FOREIGN KEY (Assistance_Type) REFERENCES Assistance_Types(ID),
+    CONSTRAINT fk_financial_assistance_assisted_by FOREIGN KEY (Assisted_By) REFERENCES Employee(ID),
     CONSTRAINT fk_center_id_fin FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
@@ -762,6 +764,7 @@ CREATE TABLE Food_Assistance (
     Distributed_Date DATE,
     Hamper_Type BIGINT,
     Financial_Cost DECIMAL(12,2),
+    Assisted_By BIGINT,
     Created_By VARCHAR(255),
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     Updated_By VARCHAR(255),
@@ -769,6 +772,7 @@ CREATE TABLE Food_Assistance (
     center_id BIGINT,
     CONSTRAINT fk_file_id_food FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID),
     CONSTRAINT fk_hamper_type FOREIGN KEY (Hamper_Type) REFERENCES Hampers(ID),
+    CONSTRAINT fk_food_assistance_assisted_by FOREIGN KEY (Assisted_By) REFERENCES Employee(ID),
     CONSTRAINT fk_center_id_food FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
@@ -1126,7 +1130,9 @@ CREATE INDEX idx_employee_center_id ON Employee (center_id);
 CREATE INDEX idx_employee_id_number ON Employee (ID_Number);
 CREATE INDEX idx_employee_username ON Employee (Username);
 CREATE INDEX idx_financial_assistance_file_type ON Financial_Assistance (File_ID, Assistance_Type);
+CREATE INDEX idx_financial_assistance_assisted_by ON Financial_Assistance (Assisted_By);
 CREATE INDEX idx_food_assistance_file_id ON Food_Assistance (File_ID);
+CREATE INDEX idx_food_assistance_assisted_by ON Food_Assistance (Assisted_By);
 CREATE INDEX idx_home_visit_file_id ON Home_Visit (File_ID);
 CREATE INDEX idx_comments_file_id ON Comments (File_ID);
 CREATE INDEX idx_relationships_file_id ON Relationships (File_ID);

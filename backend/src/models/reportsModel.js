@@ -1,6 +1,36 @@
 const db = require('../config/db');
 
 class ReportsModel {
+    // Center Audits Report
+    static async getCenterAudits(centerId = null) {
+        try {
+            let query = `
+                SELECT 
+                    ca.id,
+                    ca.audit_date,
+                    ca.audit_type,
+                    ca.findings,
+                    ca.recommendations,
+                    ca.conducted_by,
+                    ca.created_by,
+                    ca.created_at,
+                    ca.updated_by,
+                    ca.updated_at,
+                    ca.center_id
+                FROM center_audits ca
+            `;
+            const params = [];
+            if (centerId) {
+                query += ` WHERE ca.center_id = $1`;
+                params.push(centerId);
+            }
+            query += ` ORDER BY ca.audit_date DESC`;
+            const result = await db.query(query, params);
+            return result.rows;
+        } catch (error) {
+            throw new Error(`Error fetching center audits: ${error.message}`);
+        }
+    }
     // Applicant Details Report
     static async getApplicantDetails(centerId = null) {
         try {

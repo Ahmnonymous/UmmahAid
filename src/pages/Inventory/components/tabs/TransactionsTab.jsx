@@ -137,7 +137,9 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
       await axiosApi.delete(`${API_BASE_URL}/inventoryTransactions/${editItem.id}`);
       showAlert("Transaction has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -197,12 +199,33 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
           return notes.length > 50 ? `${notes.substring(0, 50)}...` : notes || "-";
         },
       },
+      
       {
-        header: "Created By",
-        accessorKey: "created_by",
+        header: "Created On",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
       },
     ],
     [lookupData.employees]

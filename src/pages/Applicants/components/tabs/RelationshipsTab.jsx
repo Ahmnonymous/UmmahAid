@@ -124,7 +124,9 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
       await axiosApi.delete(`${API_BASE_URL}/relationships/${editItem.id}`);
       showAlert("Relationship has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -183,6 +185,40 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => getLookupName(lookupData.employmentStatus, cell.getValue()),
+      },
+      {
+        header: "Created By",
+        accessorKey: "created_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Created On",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
       },
     ],
     [lookupData]
@@ -285,8 +321,28 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                   <Controller
                     name="ID_Number"
                     control={control}
-                    render={({ field }) => <Input id="ID_Number" type="text" {...field} />}
+                    rules={{
+                      pattern: {
+                        value: /^\d{13}$/,
+                        message: "ID Number must be exactly 13 digits",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <Input
+                        id="ID_Number"
+                        type="text"
+                        maxLength={13}
+                        onInput={(e) => {
+                          e.target.value = (e.target.value || "").replace(/\D/g, "").slice(0, 13);
+                          field.onChange(e);
+                        }}
+                        value={field.value}
+                        onBlur={field.onBlur}
+                        invalid={!!errors.ID_Number}
+                      />
+                    )}
                   />
+                  {errors.ID_Number && <FormFeedback>{errors.ID_Number.message}</FormFeedback>}
                 </FormGroup>
               </Col>
 

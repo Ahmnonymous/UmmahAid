@@ -417,8 +417,25 @@ const Programs = () => {
         cell: (cell) => cell.getValue() || "-",
       },
       {
-        header: "Created At",
+        header: "Created On",
         accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => {

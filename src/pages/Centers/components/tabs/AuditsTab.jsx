@@ -150,7 +150,9 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
       await axiosApi.delete(`${API_BASE_URL}/centerAudits/${editItem.id}`);
       showAlert("Audit has been deleted successfully", "success");
       onUpdate();
-      toggleModal();
+      if (modalOpen) {
+        setModalOpen(false);
+      }
     });
   };
 
@@ -201,13 +203,6 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
         cell: (cell) => cell.getValue() || "-",
       },
       {
-        header: "Created By",
-        accessorKey: "created_by",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => cell.getValue() || "-",
-      },
-      {
         header: "Attachment",
         accessorKey: "attachments_filename",
         enableSorting: false,
@@ -242,6 +237,40 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
           ) : (
             "-"
           );
+        },
+      },
+      {
+        header: "Created By",
+        accessorKey: "created_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Created On",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated On",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const v = cell.getValue();
+          return v ? new Date(v).toLocaleDateString() : "-";
         },
       },
     ],
