@@ -4,8 +4,7 @@ const fs = require('fs').promises;
 const centerAuditsController = {
   getAll: async (req, res) => { 
     try { 
-      const centerId = req.isMultiCenter ? (req.query.center_id || null) : (req.center_id || req.user?.center_id);
-      const data = await centerAuditsModel.getAll(centerId); 
+      const data = await centerAuditsModel.getAll(req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -14,7 +13,7 @@ const centerAuditsController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await centerAuditsModel.getById(req.params.id); 
+      const data = await centerAuditsModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -23,13 +22,13 @@ const centerAuditsController = {
   },
   
   create: async (req, res) => { 
-    try { 
-      const fields = { ...req.body };
-      // ✅ Enforce audit fields and tenant context
+    try {
+      // ✅ Add audit fields
       const username = req.user?.username || 'system';
-      fields.created_by = fields.created_by || username;
-      fields.updated_by = fields.updated_by || username;
-      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
+      req.body.created_by = username;
+      req.body.updated_by = username;
+      
+      const fields = { ...req.body };
       
       // Handle file upload if present
       if (req.files && req.files.attachments && req.files.attachments.length > 0) {
@@ -50,12 +49,12 @@ const centerAuditsController = {
   },
   
   update: async (req, res) => { 
-    try { 
+    try {
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      req.body.updated_by = username;
+      
       const fields = { ...req.body };
-      // ✅ Enforce audit fields and prevent created_by override
-      delete fields.created_by;
-      fields.updated_by = req.user?.username || 'system';
-      fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Handle file upload if present
       if (req.files && req.files.attachments && req.files.attachments.length > 0) {
@@ -68,7 +67,7 @@ const centerAuditsController = {
         await fs.unlink(file.path);
       }
       
-      const data = await centerAuditsModel.update(req.params.id, fields); 
+      const data = await centerAuditsModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Center_Audits: " + err.message}); 
@@ -77,7 +76,7 @@ const centerAuditsController = {
   
   delete: async (req, res) => { 
     try { 
-      await centerAuditsModel.delete(req.params.id); 
+      await centerAuditsModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -86,31 +85,42 @@ const centerAuditsController = {
 
   viewAttachment: async (req, res) => {
     try {
-      const record = await centerAuditsModel.getById(req.params.id);
+      const record = await centerAuditsModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachments) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachments_mime || "application/octet-stream";
       const filename = record.attachments_filename || "attachment";
   
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.attachments_size);
-  
       let buffer = record.attachments;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown attachment encoding");
+        }
       }
+  
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("Attachment buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
   
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing attachment:", err);
       res.status(500).json({ error: "Error viewing attachment: " + err.message });
     }
   },
 
   downloadAttachment: async (req, res) => {
     try {
-      const record = await centerAuditsModel.getById(req.params.id);
+      const record = await centerAuditsModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachments) return res.status(404).send("No attachment found");
   

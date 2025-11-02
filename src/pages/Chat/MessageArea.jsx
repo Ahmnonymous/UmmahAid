@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Card, Input, Button, Row, Col, Spinner, UncontrolledTooltip } from "reactstrap";
 import SimpleBar from "simplebar-react";
+import { useRole } from "../../helpers/useRole";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../helpers/url_helper";
 
 const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUser }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [messageText, setMessageText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const scrollRef = useRef(null);
@@ -77,8 +79,8 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const handleDownloadAttachment = (messageId) => {
-    window.open(`${API_STREAM_BASE_URL}/messages/${messageId}/download-attachment`, "_blank");
+  const handleViewAttachment = (messageId) => {
+    window.open(`${API_STREAM_BASE_URL}/messages/${messageId}/view-attachment`, "_blank");
   };
 
   // Group messages by date
@@ -213,9 +215,9 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
                                         color="link"
                                         size="sm"
                                         className="p-0 ms-2"
-                                        onClick={() => handleDownloadAttachment(message.id)}
+                                        onClick={() => handleViewAttachment(message.id)}
                                       >
-                                        <i className="bx bx-download font-size-18 text-primary"></i>
+                                        <i className="bx bx-show font-size-18 text-primary"></i>
                                       </Button>
                                     </div>
                                   </div>
@@ -270,7 +272,7 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
             </div>
           )}
 
-          {/* Input Area - WhatsApp Style */}
+          {/* Input Area - WhatsApp Style - Org Executive can send messages */}
           <div className="p-2 chat-input-section border-top bg-body" style={{ flexShrink: 0 }}>
             <Row className="g-2 align-items-end">
               <Col className="col-auto">

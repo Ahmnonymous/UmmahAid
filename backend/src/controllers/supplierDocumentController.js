@@ -5,7 +5,7 @@ const supplierDocumentController = {
   getAll: async (req, res) => { 
     try { 
       const supplierId = req.query.supplier_id;
-      const data = await supplierDocumentModel.getAll(req.user?.center_id, supplierId); 
+      const data = await supplierDocumentModel.getAll(req.center_id, supplierId, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -14,7 +14,7 @@ const supplierDocumentController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await supplierDocumentModel.getById(req.params.id, req.user?.center_id); 
+      const data = await supplierDocumentModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -23,15 +23,13 @@ const supplierDocumentController = {
   },
   
   create: async (req, res) => { 
-    try { 
-      const fields = { ...req.body };
+    try {
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      req.body.created_by = username;
+      req.body.updated_by = username;
       
-      // Debug logging
-      console.log('Raw req.body:', req.body);
-      console.log('Received fields:', fields);
-      console.log('Files:', req.files);
-      console.log('supplier_id in fields:', fields.supplier_id);
-      console.log('Type of supplier_id:', typeof fields.supplier_id);
+      const fields = { ...req.body };
       
       // Handle file upload if present
       if (req.file) {
@@ -68,13 +66,10 @@ const supplierDocumentController = {
       
       // Ensure required fields are present
       if (!fields.supplier_id) {
-        console.log('ERROR: supplier_id is missing from fields:', fields);
         return res.status(400).json({error: "supplier_id is required"});
       }
       
-      console.log('Final mappedFields before create:', mappedFields);
-      
-      const data = await supplierDocumentModel.create(mappedFields, req.user?.center_id); 
+      const data = await supplierDocumentModel.create(mappedFields, req.center_id); 
       res.status(201).json(data); 
     } catch(err){ 
       console.error('Error in create:', err);
@@ -83,7 +78,11 @@ const supplierDocumentController = {
   },
   
   update: async (req, res) => { 
-    try { 
+    try {
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      req.body.updated_by = username;
+      
       const fields = { ...req.body };
       
       // Handle file upload if present
@@ -97,7 +96,7 @@ const supplierDocumentController = {
         await fs.unlink(file.path);
       }
       
-      const data = await supplierDocumentModel.update(req.params.id, fields, req.user?.center_id); 
+      const data = await supplierDocumentModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Supplier_Document: " + err.message}); 
@@ -106,7 +105,7 @@ const supplierDocumentController = {
   
   delete: async (req, res) => { 
     try { 
-      await supplierDocumentModel.delete(req.params.id, req.user?.center_id); 
+      await supplierDocumentModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -115,31 +114,42 @@ const supplierDocumentController = {
 
   viewFile: async (req, res) => {
     try {
-      const record = await supplierDocumentModel.getById(req.params.id);
+      const record = await supplierDocumentModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
       const mimeType = record.file_mime || "application/octet-stream";
       const filename = record.file_filename || "document";
   
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.file_size);
-  
       let buffer = record.file;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown file encoding");
+        }
       }
+  
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("File buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
   
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing file:", err);
       res.status(500).json({ error: "Error viewing file: " + err.message });
     }
   },
 
   downloadFile: async (req, res) => {
     try {
-      const record = await supplierDocumentModel.getById(req.params.id);
+      const record = await supplierDocumentModel.getById(req.params.id, req.center_id, req.isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   

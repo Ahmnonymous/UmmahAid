@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Card, CardBody, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap";
 import classnames from "classnames";
+import { useRole } from "../../../helpers/useRole";
 import CommentsTab from "./tabs/CommentsTab";
 import TasksTab from "./tabs/TasksTab";
 import RelationshipsTab from "./tabs/RelationshipsTab";
@@ -26,6 +27,7 @@ const DetailTabs = ({
   onUpdate,
   showAlert,
 }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [activeTab, setActiveTab] = useState("all");
 
   const toggleTab = (tab) => {

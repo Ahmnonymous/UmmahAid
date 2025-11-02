@@ -25,11 +25,13 @@ import classnames from "classnames";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../helpers/userStorage";
 
 const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
 
@@ -155,11 +157,14 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
             <h5 className="card-title mb-0 fw-semibold font-size-16">
               <i className="bx bx-store me-2 text-primary"></i>
               Supplier Summary
+              {isOrgExecutive && <span className="ms-2 badge bg-info">Read Only</span>}
             </h5>
             <div className="d-flex gap-2">
-              <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
-                <i className="bx bx-edit-alt me-1"></i> Edit
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
+                  <i className="bx bx-edit-alt me-1"></i> Edit
+                </Button>
+              )}
               {/* <Button
                 color="danger"
                 size="sm"
@@ -276,6 +281,7 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
                             id="Name"
                             type="text"
                             invalid={!!errors.Name}
+                            disabled={isOrgExecutive}
                             {...field}
                           />
                         )}
@@ -290,7 +296,7 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
                         name="Registration_No"
                         control={control}
                         render={({ field }) => (
-                          <Input id="Registration_No" type="text" {...field} />
+                          <Input id="Registration_No" type="text" disabled={isOrgExecutive} {...field} />
                         )}
                       />
                     </FormGroup>

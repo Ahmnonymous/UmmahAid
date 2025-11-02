@@ -21,8 +21,10 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { useRole } from "../../../../helpers/useRole";
 
 const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -78,6 +80,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
   };
 
   const handleEdit = (item) => {
+    // Allow Org Executive to view (open modal) but they'll only see Cancel button
     setEditItem(item);
     setModalOpen(true);
   };
@@ -240,16 +243,19 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
         },
       },
     ],
-    []
+    [isOrgExecutive]
   );
 
   return (
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Evaluations</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Evaluation
-        </Button>
+        {/* Hide Add button for Org Executive (view-only) */}
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Evaluation
+          </Button>
+        )}
       </div>
 
       {evaluations.length === 0 ? (
@@ -290,7 +296,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     control={control}
                     rules={{ required: "Evaluation date is required" }}
                     render={({ field }) => (
-                      <Input id="Eval_Date" type="date" invalid={!!errors.Eval_Date} {...field} />
+                      <Input id="Eval_Date" type="date" invalid={!!errors.Eval_Date} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Eval_Date && <FormFeedback>{errors.Eval_Date.message}</FormFeedback>}
@@ -304,7 +310,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Status"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Status" type="select" {...field}>
+                      <Input id="Status" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Status</option>
                         <option value="Pending">Pending</option>
                         <option value="Approved">Approved</option>
@@ -322,7 +328,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Quality_Score"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Quality_Score" type="number" min="1" max="5" {...field} />
+                      <Input id="Quality_Score" type="number" min="1" max="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -335,7 +341,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Delivery_Score"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Delivery_Score" type="number" min="1" max="5" {...field} />
+                      <Input id="Delivery_Score" type="number" min="1" max="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -348,7 +354,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Cost_Score"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Cost_Score" type="number" min="1" max="5" {...field} />
+                      <Input id="Cost_Score" type="number" min="1" max="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -361,7 +367,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="OHS_Score"
                     control={control}
                     render={({ field }) => (
-                      <Input id="OHS_Score" type="number" min="1" max="5" {...field} />
+                      <Input id="OHS_Score" type="number" min="1" max="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -374,7 +380,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Env_Score"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Env_Score" type="number" min="1" max="5" {...field} />
+                      <Input id="Env_Score" type="number" min="1" max="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -387,7 +393,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Overall_Score"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Overall_Score" type="number" step="0.01" {...field} />
+                      <Input id="Overall_Score" type="number" step="0.01" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -400,7 +406,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Expiry_Date"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Expiry_Date" type="date" {...field} />
+                      <Input id="Expiry_Date" type="date" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -413,7 +419,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                     name="Notes"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Notes" type="textarea" rows="5" {...field} />
+                      <Input id="Notes" type="textarea" rows="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -423,7 +429,8 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {/* Hide Delete button for Org Executive (view-only) */}
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -434,7 +441,9 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
+              {/* Hide Save button for Org Executive (view-only) */}
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" />
@@ -446,6 +455,7 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
                   </>
                 )}
               </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

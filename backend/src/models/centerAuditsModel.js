@@ -3,12 +3,13 @@
 const tableName = 'Center_Audits';
 
 const centerAuditsModel = {
-  getAll: async (centerId = null) => {
+  getAll: async (centerId = null, isMultiCenter = false) => {
     try {
       let query = `SELECT * FROM ${tableName}`;
       let params = [];
 
-      if (centerId) {
+      // ✅ Apply tenant filtering: App Admin/HQ see all, others see only their center
+      if (centerId && !isMultiCenter) {
         query += ` WHERE center_id = $1`;
         params.push(centerId);
       }
@@ -30,10 +31,19 @@ const centerAuditsModel = {
     }
   },
 
-  getById: async (id) => {
+  getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      const query = `SELECT * FROM ${tableName} WHERE id = $1`;
-      const res = await pool.query(query, [id]);
+      let where = `id = $1`;
+      const params = [id];
+      
+      // ✅ Apply tenant filtering: App Admin/HQ see all, others see only their center
+      if (centerId && !isMultiCenter) {
+        where += ` AND center_id = $2`;
+        params.push(centerId);
+      }
+      
+      const query = `SELECT * FROM ${tableName} WHERE ${where}`;
+      const res = await pool.query(query, params);
       if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {
@@ -54,12 +64,21 @@ const centerAuditsModel = {
     }
   },
 
-  update: async (id, fields) => {
+  update: async (id, fields, centerId = null, isMultiCenter = false) => {
     try {
       const setClauses = Object.keys(fields).map((key, i) => `${key} = $${i + 1}`).join(', ');
       const values = Object.values(fields);
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE id = $${values.length + 1} RETURNING *`;
-      const res = await pool.query(query, [...values, id]);
+      let where = `id = $${values.length + 1}`;
+      const params = [...values, id];
+      
+      // ✅ Apply tenant filtering: App Admin/HQ can update any, others only their center
+      if (centerId && !isMultiCenter) {
+        where += ` AND center_id = $${values.length + 2}`;
+        params.push(centerId);
+      }
+      
+      const query = `UPDATE ${tableName} SET ${setClauses} WHERE ${where} RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -67,10 +86,19 @@ const centerAuditsModel = {
     }
   },
 
-  delete: async (id) => {
+  delete: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      const query = `DELETE FROM ${tableName} WHERE id = $1 RETURNING *`;
-      const res = await pool.query(query, [id]);
+      let where = `id = $1`;
+      const params = [id];
+      
+      // ✅ Apply tenant filtering: App Admin/HQ can delete any, others only their center
+      if (centerId && !isMultiCenter) {
+        where += ` AND center_id = $2`;
+        params.push(centerId);
+      }
+      
+      const query = `DELETE FROM ${tableName} WHERE ${where} RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {

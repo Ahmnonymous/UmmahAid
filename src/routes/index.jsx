@@ -77,6 +77,10 @@ import TrainingInstitutions from "../pages/Lookups/TrainingInstitutions";
 import Programs from "../pages/Lookups/Programs";
 import EmployeeDetails from "../pages/Lookups/EmployeeDetails";
 import EmployeeProfile from "../pages/Employees/EmployeeProfile";
+import PolicyAndProcedure from "../pages/Lookups/PolicyAndProcedure";
+
+// Policy Library
+import PolicyLibrary from "../pages/PolicyLibrary";
 
 // Reports
 import ReportsMenu from "../pages/Reports/ReportsMenu";
@@ -207,6 +211,7 @@ import PagesFaqs from "../pages/Utility/pages-faqs";
 import PagesPricing from "../pages/Utility/pages-pricing";
 import Pages404 from "../pages/Utility/pages-404";
 import Pages500 from "../pages/Utility/pages-500";
+import PagesUnauthorized from "../pages/Utility/pages-unauthorized";
 
 // //Contacts
 import ContactsGrid from "../pages/Contacts/contacts-grid";
@@ -216,8 +221,8 @@ import UiProgressbar from "../pages/Ui/UiProgressbar";
 // import UiProgressbar from "../../src/pages/Ui/UiProgressbar"
 
 const authProtectedRoutes = [
-  // Dashboard - Using Applicant Statistics
-  { path: "/dashboard", component: <ApplicantStatistics /> },
+  // ✅ Dashboard - All staff roles (1,2,3,4,5)
+  { path: "/dashboard", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantStatistics /></ProtectedRoute> },
   { path: "/dashboard-saas", component: <DashboardSaas /> },
   { path: "/dashboard-crypto", component: <DashboardCrypto /> },
   { path: "/blog", component: <Blog /> },
@@ -231,11 +236,14 @@ const authProtectedRoutes = [
   { path: "/crypto-orders", component: <CryptoOrders /> },
   { path: "/crypto-kyc-application", component: <CryptoKYCApplication /> },
 
-  //chat
-  { path: "/chat", component: <Chat /> },
+  // ✅ Chat - All users (roles 1,2,3,4,5)
+  { path: "/chat", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><Chat /></ProtectedRoute> },
 
-  //File Manager
-  { path: "/FileManager", component: <FileManager /> },
+  // ✅ Policy Library - All users (roles 1,2,3,4,5)
+  { path: "/policy-library", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><PolicyLibrary /></ProtectedRoute> },
+
+  // ✅ File Manager - All users (roles 1,2,3,4,5)
+  { path: "/FileManager", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><FileManager /></ProtectedRoute> },
 
   // //calendar
   { path: "/calendar", component: <Calendar /> },
@@ -361,11 +369,15 @@ const authProtectedRoutes = [
   { path: "/pages-timeline", component: <PagesTimeline /> },
   { path: "/pages-faqs", component: <PagesFaqs /> },
   { path: "/pages-pricing", component: <PagesPricing /> },
+  
+  // ✅ Unauthorized page
+  { path: "/unauthorized", component: <PagesUnauthorized /> },
 
 
-  // ✅ Applicants - All staff roles (1,2,3,4,5)
+  // ✅ Applicants - All staff roles (1,2,3,4,5) can view
   { path: "/applicants", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantManagement /></ProtectedRoute> },
-  { path: "/applicants/create", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><CreateApplicant /></ProtectedRoute> },
+  // ✅ Create Applicant - Only Caseworker (role 5) can create applicants
+  { path: "/applicants/create", component: <ProtectedRoute allowedRoles={[5]}><CreateApplicant /></ProtectedRoute> },
 
   // ✅ Suppliers - All except Caseworkers (1,2,3,4)
   { path: "/suppliers", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><SupplierManagement /></ProtectedRoute> },
@@ -379,26 +391,27 @@ const authProtectedRoutes = [
   // ✅ Meetings - HQ & Org Admins (2,3)
   { path: "/meetings", component: <ProtectedRoute allowedRoles={[2, 3]}><MeetingsManagement /></ProtectedRoute> },
 
-  // ✅ Lookups - All staff
-  { path: "/lookups", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><Lookups /></ProtectedRoute> },
-  { path: "/lookups/Training_Institutions", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><TrainingInstitutions /></ProtectedRoute> },
-  { path: "/lookups/Programs", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><Programs /></ProtectedRoute> },
-  { path: "/lookups/Employees", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><EmployeeDetails /></ProtectedRoute> },
+  // ✅ Lookups - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded from frontend)
+  { path: "/lookups", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><Lookups /></ProtectedRoute> },
+  { path: "/lookups/Training_Institutions", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><TrainingInstitutions /></ProtectedRoute> },
+  { path: "/lookups/Programs", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><Programs /></ProtectedRoute> },
+  { path: "/lookups/policy-and-procedure", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><PolicyAndProcedure /></ProtectedRoute> },
+  { path: "/lookups/Employees", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><EmployeeDetails /></ProtectedRoute> }, // App Admin, HQ, and Org Admin
   { path: "/employees/profile/:id", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><EmployeeProfile /></ProtectedRoute> },
-  { path: "/lookups/:table", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><LookupTableView /></ProtectedRoute> },
+  { path: "/lookups/:table", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><LookupTableView /></ProtectedRoute> },
 
   // ✅ Applicant Statistics (backward compatibility) - All staff
   { path: "/applicant-statistics", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantStatistics /></ProtectedRoute> },
 
-  // ✅ Reports - All except Caseworkers (1,2,3,4)
-  { path: "/reports/applicant-details", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><ApplicantDetailsReport /></ProtectedRoute> },
-  { path: "/reports/total-financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><TotalFinancialAssistanceReport /></ProtectedRoute> },
-  { path: "/reports/financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><FinancialAssistanceReport /></ProtectedRoute> },
-  { path: "/reports/food-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><FoodAssistanceReport /></ProtectedRoute> },
-  { path: "/reports/home-visits", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><HomeVisitsReport /></ProtectedRoute> },
-  { path: "/reports/applicant-programs", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><ApplicantProgramsReport /></ProtectedRoute> },
-  { path: "/reports/relationship-report", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><RelationshipReport /></ProtectedRoute> },
-  { path: "/reports/skills-matrix", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><SkillsMatrixReport /></ProtectedRoute> },
+  // ✅ Reports - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded)
+  { path: "/reports/applicant-details", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><ApplicantDetailsReport /></ProtectedRoute> },
+  { path: "/reports/total-financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><TotalFinancialAssistanceReport /></ProtectedRoute> },
+  { path: "/reports/financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><FinancialAssistanceReport /></ProtectedRoute> },
+  { path: "/reports/food-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><FoodAssistanceReport /></ProtectedRoute> },
+  { path: "/reports/home-visits", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><HomeVisitsReport /></ProtectedRoute> },
+  { path: "/reports/applicant-programs", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><ApplicantProgramsReport /></ProtectedRoute> },
+  { path: "/reports/relationship-report", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><RelationshipReport /></ProtectedRoute> },
+  { path: "/reports/skills-matrix", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><SkillsMatrixReport /></ProtectedRoute> },
 
   //   // this route should be at the end of all other routes
   //   // eslint-disable-next-line react/display-name

@@ -246,18 +246,6 @@ const FilePreview = ({ isOpen, toggle, file }) => {
         <p className="text-muted mb-3">
           This file type cannot be previewed in the browser
         </p>
-        <Button
-          color="primary"
-          onClick={() => {
-            window.open(
-              `${API_STREAM_BASE_URL}/personalFiles/${file.id}/download-file`,
-              "_blank"
-            );
-          }}
-        >
-          <i className="bx bx-download me-2"></i>
-          Download to View
-        </Button>
       </div>
     );
   };

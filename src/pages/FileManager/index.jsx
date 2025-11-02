@@ -64,17 +64,10 @@ const FileManager = () => {
         axiosApi.get(`${API_BASE_URL}/personalFiles`)
       ]);
 
-      // Filter by center_id for tenant isolation
-      const userFolders = currentUser?.center_id 
-        ? foldersResponse.data.filter(f => f.center_id === currentUser.center_id)
-        : foldersResponse.data;
-      
-      const userFiles = currentUser?.center_id
-        ? filesResponse.data.filter(f => f.center_id === currentUser.center_id)
-        : filesResponse.data;
-
-      setFolders(userFolders);
-      setFiles(userFiles);
+      // ✅ Backend now handles filtering - App Admin sees all, others see only their center
+      // No frontend filtering needed (backend enforces it)
+      setFolders(foldersResponse.data);
+      setFiles(filesResponse.data);
     } catch (error) {
       console.error("Error fetching data:", error);
       showAlert("Failed to load files and folders", "danger");

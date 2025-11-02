@@ -107,20 +107,28 @@ const centerDetailController = {
       const mimeType = record.logo_mime || "image/png";
       const filename = record.logo_filename || "logo";
   
-      // ✅ Set headers properly
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.logo_size);
-  
-      // ✅ Convert from hex (if coming as hex string)
       let buffer = record.logo;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64"); // or 'hex' depending on your model
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown logo encoding");
+        }
       }
   
-      // ✅ Send binary content directly
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("Logo buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
+  
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing logo:", err);
       res.status(500).json({ error: "Error viewing logo: " + err.message });
     }
   },
@@ -173,20 +181,28 @@ const centerDetailController = {
       const mimeType = record.qr_code_service_url_mime || "image/png";
       const filename = record.qr_code_service_url_filename || "qr_code";
   
-      // ✅ Set headers properly
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.qr_code_service_url_size);
-  
-      // ✅ Convert from hex (if coming as hex string)
       let buffer = record.qr_code_service_url;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown QR code encoding");
+        }
       }
   
-      // ✅ Send binary content directly
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("QR code buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
+  
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing QR code:", err);
       res.status(500).json({ error: "Error viewing QR code: " + err.message });
     }
   },

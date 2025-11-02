@@ -465,6 +465,8 @@ CREATE TABLE Employee (
     ID SERIAL PRIMARY KEY,
     Name VARCHAR(255),
     Surname VARCHAR(255),
+    -- ✅ Center_ID can be NULL for App Admin users (User_Type = 1)
+    -- All other user types must have a valid center_id
     Center_ID BIGINT,
     ID_Number VARCHAR(255),
     Date_of_Birth DATE,
@@ -496,7 +498,12 @@ CREATE TABLE Employee (
     CONSTRAINT fk_suburb FOREIGN KEY (Suburb) REFERENCES Suburb(ID),
     CONSTRAINT fk_blood_type FOREIGN KEY (Blood_Type) REFERENCES Blood_Type(ID),
     CONSTRAINT fk_user_type FOREIGN KEY (User_Type) REFERENCES User_Types(ID),
-    CONSTRAINT fk_department FOREIGN KEY (Department) REFERENCES Departments(ID)
+    CONSTRAINT fk_department FOREIGN KEY (Department) REFERENCES Departments(ID),
+    -- ✅ CONSTRAINT: App Admin (User_Type = 1) must have NULL center_id
+    CONSTRAINT chk_app_admin_no_center CHECK (
+        (User_Type = 1 AND Center_ID IS NULL) OR
+        (User_Type != 1)
+    )
 );
 
 CREATE TRIGGER Employee_password_hash
@@ -852,7 +859,7 @@ CREATE TABLE Applicant_Expense (
 CREATE TABLE Financial_Assessment (
     ID SERIAL PRIMARY KEY,
     File_ID BIGINT NOT NULL,
-    center_id BIGINT NOT NULL,
+    center_id BIGINT, -- ✅ Fix Issue #1: Allow NULL for App Admin-created records (removed NOT NULL)
     Total_Income DECIMAL(12,2),
     Total_Expenses DECIMAL(12,2),
     Disposable_Income DECIMAL(12,2),
@@ -860,7 +867,7 @@ CREATE TABLE Financial_Assessment (
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     Updated_By VARCHAR(255),
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT fk_file_id FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID),
+    CONSTRAINT fk_file_id FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID) ON DELETE CASCADE, -- ✅ Fix Issue #2: Add CASCADE to allow applicant deletion
     CONSTRAINT fk_center_id_fin_ass FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
 );
 
@@ -884,7 +891,10 @@ BEGIN
         INSERT INTO Financial_Assessment (
             File_ID, center_id, Total_Income, Total_Expenses, Disposable_Income, Created_By
         ) VALUES (
-            NEW.ID, NEW.center_id, 0, 0, 0, 'Admin'
+            NEW.ID, 
+            NEW.center_id, -- ✅ Fix Issue #1: Preserve NULL if App Admin created with NULL center_id (no auto-assignment)
+            0, 0, 0, 
+            COALESCE(NEW.created_by, 'Admin')
         );
     END IF;
     RETURN NEW;
@@ -1376,9 +1386,8 @@ INSERT INTO Relationship_Types (Name) VALUES
     ('Parent');
 
 INSERT INTO Policy_Procedure_Type (Name) VALUES
-    ('Health and Safety'),
-    ('Compliance'),
-    ('Operational');
+    ('Policy'),
+    ('Procedure');
 
 INSERT INTO Policy_Procedure_Field (Name) VALUES
     ('Compliance'),
@@ -1418,7 +1427,7 @@ UPDATE Relationship_Types SET Created_By = 'admin', Updated_By = 'admin', Update
 UPDATE Policy_Procedure_Type SET Created_By = 'admin', Updated_By = 'admin', Updated_At = now();
 UPDATE Policy_Procedure_Field SET Created_By = 'admin', Updated_By = 'admin', Updated_At = now();
 
--- Insert a Admin employee
+-- ✅ Insert seed data: Center and Test Users
 -- Insert into Center_Detail
 INSERT INTO Center_Detail (
     Organisation_Name, Date_of_Establishment, Contact_Number, Email_Address, Address, Area, NPO_Number, Created_By
@@ -1442,33 +1451,75 @@ INSERT INTO Policy_and_Procedure (
      (SELECT ID FROM Policy_Procedure_Field WHERE Name = 'Compliance'),
      'admin');
 
+-- ✅ Seed Test Users with proper role assignments
+-- User 1: App Admin (NO center_id - has access to all centers)
 INSERT INTO Employee (
     Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
-    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related
+    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related, Created_By, Updated_By
 ) VALUES (
     'Super', 'Admin', 'admin', '12345', 1,
-    1, NULL, 14, 1, 1, 3,
-    '+27123456789', '+27123456789', 1, NULL, NULL
+    NULL, 1, 14, 1, 1, 3,
+    '+27123456789', '+27123456789', 1, NULL, NULL, 'system', 'system'
 );
 
--- Insert into Employee_Appraisal
+-- User 2: HQ User (Multi-center access, cannot manage centers)
+INSERT INTO Employee (
+    Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
+    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related, Created_By, Updated_By
+) VALUES (
+    'HQ', 'User', 'hquser', '12345', 2,
+    1, 1, 14, 1, 1, 3,
+    '+27123456780', '+27123456780', 1, NULL, NULL, 'system', 'system'
+);
+
+-- User 3: Org Admin (Full CRUD within own center)
+INSERT INTO Employee (
+    Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
+    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related, Created_By, Updated_By
+) VALUES (
+    'Org', 'Admin', 'orgadmin', '12345', 3,
+    1, 1, 14, 1, 1, 3,
+    '+27123456781', '+27123456781', 1, NULL, NULL, 'system', 'system'
+);
+
+-- User 4: Org Executive (Read-only within own center)
+INSERT INTO Employee (
+    Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
+    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related, Created_By, Updated_By
+) VALUES (
+    'Org', 'Executive', 'orgexeuser', '12345', 4,
+    1, 1, 14, 1, 1, 3,
+    '+27123456782', '+27123456782', 1, NULL, NULL, 'system', 'system'
+);
+
+-- User 5: Org Caseworker (Limited access - Applicants & Tasks only)
+INSERT INTO Employee (
+    Name, Surname, Username, Password_Hash, User_Type, Center_ID, Suburb, Nationality, Race, Gender, 
+    Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related, Created_By, Updated_By
+) VALUES (
+    'Org', 'Caseworker', 'orgcaseuser', '12345', 5,
+    1, 1, 14, 1, 1, 3,
+    '+27123456783', '+27123456783', 1, NULL, NULL, 'system', 'system'
+);
+
+-- Insert into Employee_Appraisal (for orgadmin user)
 INSERT INTO Employee_Appraisal (
     Employee_ID, Positions, Attendance, Job_Knowledge_Skills, Quality_of_Work, Initiative_And_Motivation,
     Teamwork, General_Conduct, Discipline, Special_Task, Overall_Comments, Room_for_Improvement, center_id, Created_By
 ) VALUES
-    (1, 'Case Worker', 'Excellent', 'Proficient', 'High Quality', 'Proactive', 'Collaborative', 'Professional', 'Good', 'None', 'Excellent performance', 'Continue training', 1, 'admin');
+    (3, 'Org Admin', 'Excellent', 'Proficient', 'High Quality', 'Proactive', 'Collaborative', 'Professional', 'Good', 'None', 'Excellent performance', 'Continue training', 1, 'system');
 
--- Insert into Employee_Initiative
+-- Insert into Employee_Initiative (for orgadmin user)
 INSERT INTO Employee_Initiative (
     Employee_ID, Idea, Details, Idea_Date, Status, center_id, Created_By
 ) VALUES
-    (1, 'Streamline Application Process', 'Automate data entry', '2024-02-01', 'Under Review', 1, 'admin');
+    (3, 'Streamline Application Process', 'Automate data entry', '2024-02-01', 'Under Review', 1, 'system');
 
--- Insert into Employee_Skills
+-- Insert into Employee_Skills (for orgadmin user)
 INSERT INTO Employee_Skills (
     Employee_ID, Course, Institution, Date_Conducted, Date_Expired, Training_Outcome, center_id, Created_By
 ) VALUES
-    (1, 1, 1, '2023-03-01', '2026-03-01', 2, 1, 'admin');
+    (3, 1, 1, '2023-03-01', '2026-03-01', 2, 1, 'system');
 
 -- Insert into HSEQ_Toolbox_Meeting
 INSERT INTO HSEQ_Toolbox_Meeting (

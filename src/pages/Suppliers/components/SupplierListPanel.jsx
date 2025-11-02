@@ -6,6 +6,7 @@ import {
   Button,
   Spinner,
 } from "reactstrap";
+import { useRole } from "../../../helpers/useRole";
 
 const SupplierListPanel = ({
   suppliers,
@@ -17,6 +18,7 @@ const SupplierListPanel = ({
   onRefresh,
   onCreateClick,
 }) => {
+  const { isOrgExecutive } = useRole();
 
   return (
     <Card className="border shadow-sm h-100">
@@ -30,15 +32,18 @@ const SupplierListPanel = ({
                 Suppliers List
               </h6>
             </div>
-            <Button 
-              color="primary" 
-              size="sm" 
-              onClick={onCreateClick} 
-              className="btn-sm"
-              title="Create New Supplier"
-            >
-              <i className="bx bx-plus font-size-12"></i>
-            </Button>
+            {/* Hide Add button for Org Executive (view-only) */}
+            {!isOrgExecutive && (
+              <Button 
+                color="primary" 
+                size="sm" 
+                onClick={onCreateClick} 
+                className="btn-sm"
+                title="Create New Supplier"
+              >
+                <i className="bx bx-plus font-size-12"></i>
+              </Button>
+            )}
           </div>
 
           {/* Search Bar */}

@@ -7,6 +7,7 @@ import {
   Spinner,
 } from "reactstrap";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "../../../helpers/useRole";
 
 const ApplicantListPanel = ({
   applicants,
@@ -17,6 +18,7 @@ const ApplicantListPanel = ({
   loading,
   onRefresh,
 }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const navigate = useNavigate();
 
   return (
@@ -31,15 +33,17 @@ const ApplicantListPanel = ({
                 Applicant List
               </h6>
             </div>
-            <Button 
-              color="primary" 
-              size="sm" 
-              onClick={() => navigate("/applicants/create")} 
-              className="btn-sm"
-              title="Create New Applicant"
-            >
-              <i className="bx bx-plus font-size-12"></i>
-            </Button>
+            {!isOrgExecutive && (
+              <Button 
+                color="primary" 
+                size="sm" 
+                onClick={() => navigate("/applicants/create")} 
+                className="btn-sm"
+                title="Create New Applicant"
+              >
+                <i className="bx bx-plus font-size-12"></i>
+              </Button>
+            )}
           </div>
 
           {/* Search Bar */}

@@ -3,8 +3,11 @@ const fs = require('fs').promises;
 
 const employeeSkillsController = {
   getAll: async (req, res) => { 
-    try { 
-      const data = await employeeSkillsModel.getAll(); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await employeeSkillsModel.getAll(centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -12,8 +15,11 @@ const employeeSkillsController = {
   },
   
   getById: async (req, res) => { 
-    try { 
-      const data = await employeeSkillsModel.getById(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await employeeSkillsModel.getById(req.params.id, centerId, isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -24,6 +30,14 @@ const employeeSkillsController = {
   create: async (req, res) => { 
     try { 
       const fields = { ...req.body };
+      
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      fields.created_by = username;
+      fields.updated_by = username;
+      
+      // ✅ Add center_id
+      fields.center_id = req.center_id || req.user?.center_id;
       
       // Convert empty strings to null for numeric fields
       const numericFields = ['employee_id', 'course', 'institution', 'training_outcome', 'center_id'];
@@ -65,6 +79,11 @@ const employeeSkillsController = {
     try { 
       const fields = { ...req.body };
       
+      // ✅ Add audit field (don't allow overwrite of created_by)
+      const username = req.user?.username || 'system';
+      fields.updated_by = username;
+      delete fields.created_by;
+      
       // Convert empty strings to null for numeric fields
       const numericFields = ['employee_id', 'course', 'institution', 'training_outcome', 'center_id'];
       numericFields.forEach(field => {
@@ -94,7 +113,10 @@ const employeeSkillsController = {
         await fs.unlink(file.path);
       }
       
-      const data = await employeeSkillsModel.update(req.params.id, fields); 
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await employeeSkillsModel.update(req.params.id, fields, centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Employee_Skills: " + err.message}); 
@@ -102,8 +124,11 @@ const employeeSkillsController = {
   },
   
   delete: async (req, res) => { 
-    try { 
-      await employeeSkillsModel.delete(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      await employeeSkillsModel.delete(req.params.id, centerId, isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -112,34 +137,48 @@ const employeeSkillsController = {
 
   viewAttachment: async (req, res) => {
     try {
-      const record = await employeeSkillsModel.getById(req.params.id);
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const record = await employeeSkillsModel.getById(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_mime || "application/octet-stream";
       const filename = record.attachment_filename || "attachment";
   
-      // ✅ Set headers properly
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.attachment_size);
-  
-      // ✅ Convert from hex (if coming as hex string)
       let buffer = record.attachment;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64"); // or 'hex' depending on your model
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown attachment encoding");
+        }
       }
   
-      // ✅ Send binary content directly
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("Attachment buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
+  
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing attachment:", err);
       res.status(500).json({ error: "Error viewing attachment: " + err.message });
     }
   },
   
   downloadAttachment: async (req, res) => {
     try {
-      const record = await employeeSkillsModel.getById(req.params.id);
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const record = await employeeSkillsModel.getById(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   

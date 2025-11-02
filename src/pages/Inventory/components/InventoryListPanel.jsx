@@ -6,6 +6,7 @@ import {
   Button,
   Spinner,
 } from "reactstrap";
+import { useRole } from "../../../helpers/useRole";
 
 const InventoryListPanel = ({
   items,
@@ -17,6 +18,7 @@ const InventoryListPanel = ({
   onRefresh,
   onCreateNew,
 }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
 
   const getStockStatus = (item) => {
     const quantity = parseFloat(item.quantity) || 0;
@@ -43,15 +45,17 @@ const InventoryListPanel = ({
                 Inventory Items
               </h6>
             </div>
-            <Button 
-              color="primary" 
-              size="sm" 
-              onClick={onCreateNew} 
-              className="btn-sm"
-              title="Create New Item"
-            >
-              <i className="bx bx-plus font-size-12"></i>
-            </Button>
+            {!isOrgExecutive && (
+              <Button 
+                color="primary" 
+                size="sm" 
+                onClick={onCreateNew} 
+                className="btn-sm"
+                title="Create New Item"
+              >
+                <i className="bx bx-plus font-size-12"></i>
+              </Button>
+            )}
           </div>
 
           {/* Search Bar */}

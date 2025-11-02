@@ -17,11 +17,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -41,6 +43,15 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
     formState: { errors, isSubmitting },
     reset,
   } = useForm();
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
 
   useEffect(() => {
     if (modalOpen) {
@@ -218,16 +229,6 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/homeVisit/${rowId}/download-attachment-1`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
             </div>
           ) : (
             "-"
@@ -252,16 +253,6 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
               >
                 <i
                   className="bx bx-show text-success"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/homeVisit/${rowId}/download-attachment-2`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
@@ -313,9 +304,11 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Home Visits</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Home Visit
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Home Visit
+          </Button>
+        )}
       </div>
 
       {homeVisits.length === 0 ? (
@@ -356,7 +349,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                     control={control}
                     rules={{ required: "Visit date is required" }}
                     render={({ field }) => (
-                      <Input id="Visit_Date" type="date" invalid={!!errors.Visit_Date} {...field} />
+                      <Input id="Visit_Date" type="date" invalid={!!errors.Visit_Date} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Visit_Date && <FormFeedback>{errors.Visit_Date.message}</FormFeedback>}
@@ -373,7 +366,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                     control={control}
                     rules={{ required: "Representative is required" }}
                     render={({ field }) => (
-                      <Input id="Representative" type="text" invalid={!!errors.Representative} {...field} />
+                      <Input id="Representative" type="text" invalid={!!errors.Representative} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Representative && <FormFeedback>{errors.Representative.message}</FormFeedback>}
@@ -386,7 +379,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                   <Controller
                     name="Comments"
                     control={control}
-                    render={({ field }) => <Input id="Comments" type="textarea" rows="5" {...field} />}
+                    render={({ field }) => <Input id="Comments" type="textarea" rows="5" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -403,15 +396,24 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                         type="file"
                         onChange={(e) => onChange(e.target.files)}
                         invalid={!!errors.Attachment_1}
+                        disabled={isOrgExecutive}
                         {...field}
                       />
                     )}
                   />
                   {errors.Attachment_1 && <FormFeedback>{errors.Attachment_1.message}</FormFeedback>}
                   {editItem && editItem.attachment_1 && (
-                    <small className="text-muted d-block mt-1">
-                      Current: {editItem.attachment_1_filename || "attachment_1"}
-                    </small>
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                        <div className="flex-grow-1">
+                          <div className="fw-medium">{editItem.attachment_1_filename || "attachment_1"}</div>
+                          <small className="text-muted">
+                            {formatFileSize(editItem.attachment_1_size)} • Current file
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </FormGroup>
               </Col>
@@ -428,15 +430,24 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                         type="file"
                         onChange={(e) => onChange(e.target.files)}
                         invalid={!!errors.Attachment_2}
+                        disabled={isOrgExecutive}
                         {...field}
                       />
                     )}
                   />
                   {errors.Attachment_2 && <FormFeedback>{errors.Attachment_2.message}</FormFeedback>}
                   {editItem && editItem.attachment_2 && (
-                    <small className="text-muted d-block mt-1">
-                      Current: {editItem.attachment_2_filename || "attachment_2"}
-                    </small>
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                        <div className="flex-grow-1">
+                          <div className="fw-medium">{editItem.attachment_2_filename || "attachment_2"}</div>
+                          <small className="text-muted">
+                            {formatFileSize(editItem.attachment_2_size)} • Current file
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </FormGroup>
               </Col>
@@ -445,7 +456,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -456,18 +467,20 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

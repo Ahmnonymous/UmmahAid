@@ -49,6 +49,15 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
     reset,
   } = useForm();
 
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
   useEffect(() => {
     if (center && modalOpen) {
       reset({
@@ -543,9 +552,17 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                         )}
                       />
                       {center && center.logo_filename && (
-                        <small className="text-muted d-block mt-1">
-                          Current: {center.logo_filename}
-                        </small>
+                        <div className="mt-2 p-2 border rounded bg-light">
+                          <div className="d-flex align-items-center">
+                            <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                            <div className="flex-grow-1">
+                              <div className="fw-medium">{center.logo_filename}</div>
+                              <small className="text-muted">
+                                {formatFileSize(center.logo_size)} • Current file
+                              </small>
+                            </div>
+                          </div>
+                        </div>
                       )}
                       <small className="text-muted d-block mt-1">
                         Supported formats: JPG, PNG, GIF
@@ -569,9 +586,17 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                         )}
                       />
                       {center && center.qr_code_service_url_filename && (
-                        <small className="text-muted d-block mt-1">
-                          Current: {center.qr_code_service_url_filename}
-                        </small>
+                        <div className="mt-2 p-2 border rounded bg-light">
+                          <div className="d-flex align-items-center">
+                            <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                            <div className="flex-grow-1">
+                              <div className="fw-medium">{center.qr_code_service_url_filename}</div>
+                              <small className="text-muted">
+                                {formatFileSize(center.qr_code_service_url_size)} • Current file
+                              </small>
+                            </div>
+                          </div>
+                        </div>
                       )}
                       <small className="text-muted d-block mt-1">
                         Supported formats: JPG, PNG, GIF

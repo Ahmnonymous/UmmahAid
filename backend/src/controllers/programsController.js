@@ -137,31 +137,48 @@ const programsController = {
 
   viewAttachment: async (req, res) => {
     try {
-      const record = await programsModel.getById(req.params.id);
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const record = await programsModel.getById(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_mime || "application/octet-stream";
       const filename = record.attachment_filename || "attachment";
   
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.attachment_size);
-  
       let buffer = record.attachment;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown attachment encoding");
+        }
       }
+  
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("Attachment buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
   
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing attachment:", err);
       res.status(500).json({ error: "Error viewing attachment: " + err.message });
     }
   },
 
   downloadAttachment: async (req, res) => {
     try {
-      const record = await programsModel.getById(req.params.id);
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const record = await programsModel.getById(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   

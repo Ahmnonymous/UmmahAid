@@ -7,7 +7,8 @@ const filterMiddleware = require('../middlewares/filterMiddleware');
 
 // ✅ Apply authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5]));
+// ✅ CORRECTED RBAC - Inventory Transactions accessible by all except Caseworkers
+router.use(roleMiddleware([1, 2, 3, 4])); // App Admin, HQ, Org Admin, Org Executives
 router.use(filterMiddleware);
 
 router.get('/', inventoryTransactionsController.getAll);

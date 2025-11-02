@@ -17,11 +17,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -41,6 +43,15 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
     formState: { errors, isSubmitting },
     reset,
   } = useForm();
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
 
   useEffect(() => {
     if (modalOpen) {
@@ -194,16 +205,6 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/attachments/${rowId}/download-file`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
             </div>
           ) : (
             "-"
@@ -252,9 +253,11 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Attachments</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Attachment
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Attachment
+          </Button>
+        )}
       </div>
 
       {attachments.length === 0 ? (
@@ -295,7 +298,7 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
                     control={control}
                     rules={{ required: "Attachment name is required" }}
                     render={({ field }) => (
-                      <Input id="Attachment_Name" type="text" invalid={!!errors.Attachment_Name} {...field} />
+                      <Input id="Attachment_Name" type="text" invalid={!!errors.Attachment_Name} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Attachment_Name && <FormFeedback>{errors.Attachment_Name.message}</FormFeedback>}
@@ -308,7 +311,7 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
                   <Controller
                     name="Attachment_Details"
                     control={control}
-                    render={({ field }) => <Input id="Attachment_Details" type="textarea" rows="4" {...field} />}
+                    render={({ field }) => <Input id="Attachment_Details" type="textarea" rows="4" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -325,15 +328,24 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
                         type="file"
                         onChange={(e) => onChange(e.target.files)}
                         invalid={!!errors.File}
+                        disabled={isOrgExecutive}
                         {...field}
                       />
                     )}
                   />
                   {errors.File && <FormFeedback>{errors.File.message}</FormFeedback>}
                   {editItem && editItem.file && (
-                    <small className="text-muted d-block mt-1">
-                      Current: {editItem.file_filename || "file"}
-                    </small>
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                        <div className="flex-grow-1">
+                          <div className="fw-medium">{editItem.file_filename || "file"}</div>
+                          <small className="text-muted">
+                            {formatFileSize(editItem.file_size)} • Current file
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </FormGroup>
               </Col>
@@ -342,7 +354,7 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -353,18 +365,20 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

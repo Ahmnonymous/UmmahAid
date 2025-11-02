@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardBody, Button, Spinner } from "reactstrap";
+import { useRole } from "../../helpers/useRole";
 
 const FolderTree = ({
   folders,
@@ -10,6 +11,7 @@ const FolderTree = ({
   onDeleteFolder,
   loading,
 }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [expandedFolders, setExpandedFolders] = useState(new Set());
 
   // Auto-expand parent folders when a folder is selected
@@ -141,6 +143,7 @@ const FolderTree = ({
           </div>
           
           <div className="folder-actions" style={{ flexShrink: 0 }}>
+            {/* Org Executive can edit and delete folders */}
             <Button
               color="link"
               size="sm"
@@ -185,6 +188,7 @@ const FolderTree = ({
             <i className="bx bx-folder-open text-primary me-2"></i>
             Folders
           </h6>
+          {/* Org Executive can create folders */}
           <Button
             color="primary"
             size="sm"

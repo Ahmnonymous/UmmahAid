@@ -145,10 +145,20 @@ const EmployeeProfile = () => {
     },
   });
 
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
   // Form for Employee Edit
   const {
     control: employeeControl,
     handleSubmit: handleEmployeeSubmit,
+    watch: watchEmployee,
     formState: { errors: employeeErrors, isSubmitting: employeeSubmitting },
     reset: resetEmployee,
   } = useForm({
@@ -593,11 +603,26 @@ const EmployeeProfile = () => {
         User_Type: employee?.user_type ? String(employee.user_type) : "",
         Department: employee?.department ? String(employee.department) : "",
         HSEQ_Related: employee?.hseq_related || "N",
-        Center_ID: employee?.center_id ? String(employee.center_id) : "",
+        // ✅ App Admin (user_type = 1) has no center_id
+        Center_ID: employee?.user_type === 1 ? "" : (employee?.center_id ? String(employee.center_id) : ""),
       });
       setSelectedAvatar(employee?.employee_avatar || "");
     }
   }, [employeeModalOpen, employee, resetEmployee]);
+
+  // ✅ Watch User_Type to conditionally show/hide Center field
+  const selectedUserTypeEmployee = watchEmployee("User_Type");
+  const isAppAdminEmployee = selectedUserTypeEmployee === "1"; // App Admin (User_Type = 1) should not have center
+
+  // ✅ Clear Center_ID when App Admin is selected in Employee Profile
+  useEffect(() => {
+    if (isAppAdminEmployee) {
+      resetEmployee({
+        ...watchEmployee(),
+        Center_ID: "", // Clear center_id for App Admin
+      });
+    }
+  }, [selectedUserTypeEmployee]); // Run when User_Type changes
 
   const handleAddSkill = () => {
     setEditSkill(null);
@@ -721,31 +746,22 @@ const EmployeeProfile = () => {
   const appraisalColumns = useMemo(
     () => [
       {
-        header: "",
-        accessorKey: "actions",
-        enableSorting: false,
-        enableColumnFilter: false,
-        cell: (cell) => (
-          <i
-            className="bx bx-edit text-primary"
-            style={{ cursor: "pointer", fontSize: "16px" }}
-            onClick={() => handleEditAppraisal(cell.row.original)}
-          ></i>
-        ),
-      },
-      {
-        header: "#",
-        accessorKey: "serialNo",
-        enableSorting: false,
-        enableColumnFilter: false,
-        cell: (cell) => cell.getValue(),
-      },
-      {
         header: "Positions",
         accessorKey: "positions",
         enableSorting: true,
         enableColumnFilter: false,
-        cell: (cell) => cell.getValue() || "-",
+        cell: (cell) => {
+          const value = cell.getValue() || "-";
+          return (
+            <span
+              className="text-primary"
+              style={{ cursor: "pointer", textDecoration: "underline" }}
+              onClick={() => handleEditAppraisal(cell.row.original)}
+            >
+              {value}
+            </span>
+          );
+        },
       },
       {
         header: "Attendance",
@@ -834,6 +850,23 @@ const EmployeeProfile = () => {
           return date ? new Date(date).toLocaleDateString() : "-";
         },
       },
+      {
+        header: "Updated by",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated at",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
+      },
     ],
     []
   );
@@ -842,31 +875,22 @@ const EmployeeProfile = () => {
   const initiativeColumns = useMemo(
     () => [
       {
-        header: "",
-        accessorKey: "actions",
-        enableSorting: false,
-        enableColumnFilter: false,
-        cell: (cell) => (
-          <i
-            className="bx bx-edit text-primary"
-            style={{ cursor: "pointer", fontSize: "16px" }}
-            onClick={() => handleEditInitiative(cell.row.original)}
-          ></i>
-        ),
-      },
-      {
-        header: "#",
-        accessorKey: "serialNo",
-        enableSorting: false,
-        enableColumnFilter: false,
-        cell: (cell) => cell.getValue(),
-      },
-      {
         header: "Idea",
         accessorKey: "idea",
         enableSorting: true,
         enableColumnFilter: false,
-        cell: (cell) => cell.getValue() || "-",
+        cell: (cell) => {
+          const value = cell.getValue() || "-";
+          return (
+            <span
+              className="text-primary"
+              style={{ cursor: "pointer", textDecoration: "underline" }}
+              onClick={() => handleEditInitiative(cell.row.original)}
+            >
+              {value}
+            </span>
+          );
+        },
       },
       {
         header: "Details",
@@ -909,6 +933,23 @@ const EmployeeProfile = () => {
           return date ? new Date(date).toLocaleDateString() : "-";
         },
       },
+      {
+        header: "Updated by",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated at",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
+      },
     ],
     []
   );
@@ -917,31 +958,22 @@ const EmployeeProfile = () => {
   const skillsColumns = useMemo(
     () => [
       {
-        header: "",
-        accessorKey: "actions",
-        enableSorting: false,
-        enableColumnFilter: false,
-        cell: (cell) => (
-          <i
-            className="bx bx-edit text-primary"
-            style={{ cursor: "pointer", fontSize: "16px" }}
-            onClick={() => handleEditSkill(cell.row.original)}
-          ></i>
-        ),
-      },
-      {
-        header: "#",
-        accessorKey: "serialNo",
-        enableSorting: false,
-        enableColumnFilter: false,
-        cell: (cell) => cell.getValue(),
-      },
-      {
         header: "Course",
         accessorKey: "course",
         enableSorting: true,
         enableColumnFilter: false,
-        cell: (cell) => getLookupName(cell.getValue(), trainingCourses),
+        cell: (cell) => {
+          const value = getLookupName(cell.getValue(), trainingCourses);
+          return (
+            <span
+              className="text-primary"
+              style={{ cursor: "pointer", textDecoration: "underline" }}
+              onClick={() => handleEditSkill(cell.row.original)}
+            >
+              {value}
+            </span>
+          );
+        },
       },
       {
         header: "Institution",
@@ -998,16 +1030,6 @@ const EmployeeProfile = () => {
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/employeeSkills/${rowId}/download-attachment`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
             </div>
           ) : (
             "-"
@@ -1024,6 +1046,23 @@ const EmployeeProfile = () => {
       {
         header: "Created at",
         accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const date = cell.getValue();
+          return date ? new Date(date).toLocaleDateString() : "-";
+        },
+      },
+      {
+        header: "Updated by",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated at",
+        accessorKey: "updated_at",
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => {
@@ -1110,7 +1149,8 @@ const EmployeeProfile = () => {
         department: data.Department ? parseInt(data.Department) : null,
         hseq_related: data.HSEQ_Related,
         employee_avatar: selectedAvatar || null,
-        center_id: data.Center_ID ? parseInt(data.Center_ID) : employee?.center_id || null,
+        // ✅ App Admin (User_Type = 1) should have NULL center_id
+        center_id: data.User_Type === "1" ? null : (data.Center_ID ? parseInt(data.Center_ID) : employee?.center_id || null),
         updated_by: currentUser?.username || "system",
       };
 
@@ -1528,10 +1568,7 @@ const EmployeeProfile = () => {
                   {Array.isArray(appraisals) && appraisals.length > 0 ? (
                     <TableContainer
                       columns={appraisalColumns}
-                      data={appraisals.map((appraisal, index) => ({
-                        ...appraisal,
-                        serialNo: index + 1,
-                      }))}
+                      data={appraisals}
                       isGlobalFilter={false}
                       tableClass="table-nowrap table-hover mb-0"
                     />
@@ -1560,10 +1597,7 @@ const EmployeeProfile = () => {
                   {Array.isArray(initiatives) && initiatives.length > 0 ? (
                     <TableContainer
                       columns={initiativeColumns}
-                      data={initiatives.map((initiative, index) => ({
-                        ...initiative,
-                        serialNo: index + 1,
-                      }))}
+                      data={initiatives}
                       isGlobalFilter={false}
                       tableClass="table-nowrap table-hover mb-0"
                     />
@@ -1588,10 +1622,7 @@ const EmployeeProfile = () => {
                   {Array.isArray(skills) && skills.length > 0 ? (
                     <TableContainer
                       columns={skillsColumns}
-                      data={skills.map((skill, index) => ({
-                        ...skill,
-                        serialNo: index + 1,
-                      }))}
+                      data={skills}
                       isGlobalFilter={false}
                       tableClass="table-nowrap table-hover mb-0"
                     />
@@ -1611,10 +1642,13 @@ const EmployeeProfile = () => {
       <Modal
         isOpen={appraisalModalOpen}
         toggle={() => setAppraisalModalOpen(false)}
+        centered
         size="lg"
+        backdrop="static"
       >
         <ModalHeader toggle={() => setAppraisalModalOpen(false)}>
-          {editAppraisal ? "Edit Appraisal" : "Add Appraisal"}
+          <i className={`bx ${editAppraisal ? "bx-edit" : "bx-plus-circle"} me-2`}></i>
+          {editAppraisal ? "Edit" : "Add New"} Appraisal
         </ModalHeader>
         <Form onSubmit={handleAppraisalSubmit(onAppraisalSubmit)}>
           <ModalBody>
@@ -1873,49 +1907,42 @@ const EmployeeProfile = () => {
               </Col>
             </Row>
           </ModalBody>
-          <ModalFooter>
-            <div className="d-flex justify-content-between w-100">
-              <div>
-                {editAppraisal && (
-                  <Button
-                    color="danger"
-                    onClick={() => handleDeleteAppraisal(editAppraisal)}
-                    disabled={appraisalSubmitting}
-                  >
-                    <i className="bx bx-trash me-1"></i>
-                    Delete
-                  </Button>
+          <ModalFooter className="d-flex justify-content-between">
+            <div>
+              {editAppraisal && (
+                <Button
+                  color="danger"
+                  onClick={() => handleDeleteAppraisal(editAppraisal)}
+                  disabled={appraisalSubmitting}
+                >
+                  <i className="bx bx-trash me-1"></i>
+                  Delete
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <Button
+                color="light"
+                onClick={() => setAppraisalModalOpen(false)}
+                disabled={appraisalSubmitting}
+                className="me-2"
+              >
+                <i className="bx bx-x label-icon"></i> Cancel
+              </Button>
+
+              <Button color="success" type="submit" disabled={appraisalSubmitting}>
+                {appraisalSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-save me-1"></i> Save
+                  </>
                 )}
-              </div>
-              <div className="d-flex gap-2">
-                <Button
-                  color="light"
-                  onClick={() => setAppraisalModalOpen(false)}
-                  disabled={appraisalSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="success"
-                  type="submit"
-                  disabled={appraisalSubmitting}
-                >
-                  {appraisalSubmitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-save me-1"></i>
-                      {editAppraisal ? "Update" : "Create"}
-                    </>
-                  )}
-                </Button>
-              </div>
+              </Button>
             </div>
           </ModalFooter>
         </Form>
@@ -1925,9 +1952,12 @@ const EmployeeProfile = () => {
       <Modal
         isOpen={initiativeModalOpen}
         toggle={() => setInitiativeModalOpen(false)}
+        centered
+        backdrop="static"
       >
         <ModalHeader toggle={() => setInitiativeModalOpen(false)}>
-          {editInitiative ? "Edit Initiative" : "Add Initiative"}
+          <i className={`bx ${editInitiative ? "bx-edit" : "bx-plus-circle"} me-2`}></i>
+          {editInitiative ? "Edit" : "Add New"} Initiative
         </ModalHeader>
         <Form onSubmit={handleInitiativeSubmit(onInitiativeSubmit)}>
           <ModalBody>
@@ -2011,58 +2041,57 @@ const EmployeeProfile = () => {
               )}
             </FormGroup>
           </ModalBody>
-          <ModalFooter>
-            <div className="d-flex justify-content-between w-100">
-              <div>
-                {editInitiative && (
-                  <Button
-                    color="danger"
-                    onClick={() => handleDeleteInitiative(editInitiative)}
-                    disabled={initiativeSubmitting}
-                  >
-                    <i className="bx bx-trash me-1"></i>
-                    Delete
-                  </Button>
+          <ModalFooter className="d-flex justify-content-between">
+            <div>
+              {editInitiative && (
+                <Button
+                  color="danger"
+                  onClick={() => handleDeleteInitiative(editInitiative)}
+                  disabled={initiativeSubmitting}
+                >
+                  <i className="bx bx-trash me-1"></i>
+                  Delete
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <Button
+                color="light"
+                onClick={() => setInitiativeModalOpen(false)}
+                disabled={initiativeSubmitting}
+                className="me-2"
+              >
+                <i className="bx bx-x label-icon"></i> Cancel
+              </Button>
+
+              <Button color="success" type="submit" disabled={initiativeSubmitting}>
+                {initiativeSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-save me-1"></i> Save
+                  </>
                 )}
-              </div>
-              <div className="d-flex gap-2">
-                <Button
-                  color="light"
-                  onClick={() => setInitiativeModalOpen(false)}
-                  disabled={initiativeSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="success"
-                  type="submit"
-                  disabled={initiativeSubmitting}
-                >
-                  {initiativeSubmitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-save me-1"></i>
-                      {editInitiative ? "Update" : "Create"}
-                    </>
-                  )}
-                </Button>
-              </div>
+              </Button>
             </div>
           </ModalFooter>
         </Form>
       </Modal>
 
       {/* Skills Modal */}
-      <Modal isOpen={skillsModalOpen} toggle={() => setSkillsModalOpen(false)}>
+      <Modal 
+        isOpen={skillsModalOpen} 
+        toggle={() => setSkillsModalOpen(false)}
+        centered
+        backdrop="static"
+      >
         <ModalHeader toggle={() => setSkillsModalOpen(false)}>
-          {editSkill ? "Edit Skill" : "Add Skill"}
+          <i className={`bx ${editSkill ? "bx-edit" : "bx-plus-circle"} me-2`}></i>
+          {editSkill ? "Edit" : "Add New"} Skill
         </ModalHeader>
         <Form onSubmit={handleSkillsSubmit(onSkillsSubmit)}>
           <ModalBody>
@@ -2199,51 +2228,57 @@ const EmployeeProfile = () => {
               {skillsErrors.Attachment && (
                 <FormFeedback>{skillsErrors.Attachment.message}</FormFeedback>
               )}
+              {editSkill && editSkill.attachment && (
+                <div className="mt-2 p-2 border rounded bg-light">
+                  <div className="d-flex align-items-center">
+                    <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                    <div className="flex-grow-1">
+                      <div className="fw-medium">{editSkill.attachment_filename || "attachment"}</div>
+                      <small className="text-muted">
+                        {formatFileSize(editSkill.attachment_size)} • Current file
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              )}
             </FormGroup>
           </ModalBody>
-          <ModalFooter>
-            <div className="d-flex justify-content-between w-100">
-              <div>
-                {editSkill && (
-                  <Button
-                    color="danger"
-                    onClick={() => handleDeleteSkill(editSkill)}
-                    disabled={skillsSubmitting}
-                  >
-                    <i className="bx bx-trash me-1"></i>
-                    Delete
-                  </Button>
+          <ModalFooter className="d-flex justify-content-between">
+            <div>
+              {editSkill && (
+                <Button
+                  color="danger"
+                  onClick={() => handleDeleteSkill(editSkill)}
+                  disabled={skillsSubmitting}
+                >
+                  <i className="bx bx-trash me-1"></i>
+                  Delete
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <Button
+                color="light"
+                onClick={() => setSkillsModalOpen(false)}
+                disabled={skillsSubmitting}
+                className="me-2"
+              >
+                <i className="bx bx-x label-icon"></i> Cancel
+              </Button>
+
+              <Button color="success" type="submit" disabled={skillsSubmitting}>
+                {skillsSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-save me-1"></i> Save
+                  </>
                 )}
-              </div>
-              <div className="d-flex gap-2">
-                <Button
-                  color="light"
-                  onClick={() => setSkillsModalOpen(false)}
-                  disabled={skillsSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="success"
-                  type="submit"
-                  disabled={skillsSubmitting}
-                >
-                  {skillsSubmitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-save me-1"></i>
-                      {editSkill ? "Update" : "Create"}
-                    </>
-                  )}
-                </Button>
-              </div>
+              </Button>
             </div>
           </ModalFooter>
         </Form>
@@ -2253,9 +2288,12 @@ const EmployeeProfile = () => {
       <Modal
         isOpen={employeeModalOpen}
         toggle={() => setEmployeeModalOpen(false)}
+        centered
         size="lg"
+        backdrop="static"
       >
         <ModalHeader toggle={() => setEmployeeModalOpen(false)}>
+          <i className="bx bx-edit me-2"></i>
           Edit Employee Profile
         </ModalHeader>
         <Form onSubmit={handleEmployeeSubmit(onEmployeeSubmit)}>
@@ -2780,36 +2818,39 @@ const EmployeeProfile = () => {
                 Department & HSEQ Information
               </h6>
               <Row>
-                <Col md={6}>
-                  <FormGroup>
-                    <Label for="Center_ID">
-                      Center <span className="text-danger">*</span>
-                    </Label>
-                    <Controller
-                      name="Center_ID"
-                      control={employeeControl}
-                      rules={{ required: "Center is required" }}
-                      render={({ field }) => (
-                        <Input
-                          id="Center_ID"
-                          type="select"
-                          invalid={!!employeeErrors.Center_ID}
-                          {...field}
-                        >
-                          <option value="">Select Center</option>
-                          {centers.map((center) => (
-                            <option key={center.id} value={center.id}>
-                              {center.organisation_name}
-                            </option>
-                          ))}
-                        </Input>
+                {/* ✅ Center field: Hidden/Disabled for App Admin (User_Type = 1) */}
+                {!isAppAdminEmployee && (
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="Center_ID">
+                        Center <span className="text-danger">*</span>
+                      </Label>
+                      <Controller
+                        name="Center_ID"
+                        control={employeeControl}
+                        rules={{ required: "Center is required" }}
+                        render={({ field }) => (
+                          <Input
+                            id="Center_ID"
+                            type="select"
+                            invalid={!!employeeErrors.Center_ID}
+                            {...field}
+                          >
+                            <option value="">Select Center</option>
+                            {centers.map((center) => (
+                              <option key={center.id} value={center.id}>
+                                {center.organisation_name}
+                              </option>
+                            ))}
+                          </Input>
+                        )}
+                      />
+                      {employeeErrors.Center_ID && (
+                        <FormFeedback>{employeeErrors.Center_ID.message}</FormFeedback>
                       )}
-                    />
-                    {employeeErrors.Center_ID && (
-                      <FormFeedback>{employeeErrors.Center_ID.message}</FormFeedback>
-                    )}
-                  </FormGroup>
-                </Col>
+                    </FormGroup>
+                  </Col>
+                )}
                 <Col md={6}>
                   <FormGroup>
                     <Label for="User_Type">
@@ -2906,30 +2947,30 @@ const EmployeeProfile = () => {
               </Row>
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button
-              color="light"
-              onClick={() => setEmployeeModalOpen(false)}
-              disabled={employeeSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button color="success" type="submit" disabled={employeeSubmitting}>
-              {employeeSubmitting ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                  />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i className="bx bx-save me-1"></i>
-                  Update
-                </>
-              )}
-            </Button>
+          <ModalFooter className="d-flex justify-content-between">
+            <div></div>
+            <div>
+              <Button
+                color="light"
+                onClick={() => setEmployeeModalOpen(false)}
+                disabled={employeeSubmitting}
+                className="me-2"
+              >
+                <i className="bx bx-x label-icon"></i> Cancel
+              </Button>
+              <Button color="success" type="submit" disabled={employeeSubmitting}>
+                {employeeSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-save me-1"></i> Save
+                  </>
+                )}
+              </Button>
+            </div>
           </ModalFooter>
         </Form>
       </Modal>

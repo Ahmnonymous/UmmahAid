@@ -25,11 +25,13 @@ import classnames from "classnames";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../helpers/userStorage";
 
 const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
 
@@ -159,11 +161,14 @@ const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
             <h5 className="card-title mb-0 fw-semibold font-size-16">
               <i className="bx bx-box me-2 text-primary"></i>
               Item Summary
+              {isOrgExecutive && <span className="ms-2 badge bg-info">Read Only</span>}
             </h5>
             <div className="d-flex gap-2">
-              <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
-                <i className="bx bx-edit-alt me-1"></i> Edit
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
+                  <i className="bx bx-edit-alt me-1"></i> Edit
+                </Button>
+              )}
               {/* <Button
                 color="danger"
                 size="sm"
@@ -407,26 +412,30 @@ const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
           </ModalBody>
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
-                <i className="bx bx-trash me-1"></i> Delete
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
+                  <i className="bx bx-trash me-1"></i> Delete
+                </Button>
+              )}
             </div>
             <div>
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

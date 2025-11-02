@@ -3,15 +3,17 @@
 const tableName = 'supplier_document';
 
 const supplierDocumentModel = {
-  getAll: async (centerId, supplierId = null) => {
+  // ✅ getAll with tenant filtering (can filter by supplierId OR centerId)
+  getAll: async (centerId = null, supplierId = null, isMultiCenter = false) => {
     try {
       let query = `SELECT * FROM ${tableName}`;
-      let params = [];
+      const params = [];
       let paramCount = 0;
       
       const conditions = [];
       
-      if (centerId) {
+      // ✅ Apply tenant filtering
+      if (centerId && !isMultiCenter) {
         paramCount++;
         conditions.push(`center_id = $${paramCount}`);
         params.push(centerId);
@@ -42,15 +44,19 @@ const supplierDocumentModel = {
     }
   },
 
-  getById: async (id, centerId) => {
+  // ✅ getById with tenant filtering
+  getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      let query = `SELECT * FROM ${tableName} WHERE id = $1`;
-      let params = [id];
+      let where = `id = $1`;
+      const params = [id];
       
-      if (centerId) {
-        query += ` AND center_id = $2`;
+      // ✅ Apply tenant filtering
+      if (centerId && !isMultiCenter) {
+        where += ` AND center_id = $2`;
         params.push(centerId);
       }
+      
+      const query = `SELECT * FROM ${tableName} WHERE ${where}`;
       
       const res = await pool.query(query, params);
       if (!res.rows[0]) return null;
@@ -78,27 +84,22 @@ const supplierDocumentModel = {
     }
   },
 
-  update: async (id, fields, centerId) => {
+  // ✅ update with tenant filtering
+  update: async (id, fields, centerId = null, isMultiCenter = false) => {
     try {
-      let query = `UPDATE ${tableName} SET `;
       const setClauses = Object.keys(fields).map((key, i) => `${key} = $${i + 1}`).join(', ');
-      query += setClauses;
-      
       const values = Object.values(fields);
-      let paramIndex = values.length + 1;
+      let where = `id = $${values.length + 1}`;
+      const params = [...values, id];
       
-      query += ` WHERE id = $${paramIndex}`;
-      values.push(id);
-      
-      if (centerId) {
-        paramIndex++;
-        query += ` AND center_id = $${paramIndex}`;
-        values.push(centerId);
+      // ✅ Apply tenant filtering
+      if (centerId && !isMultiCenter) {
+        where += ` AND center_id = $${values.length + 2}`;
+        params.push(centerId);
       }
       
-      query += ` RETURNING *`;
-      
-      const res = await pool.query(query, values);
+      const query = `UPDATE ${tableName} SET ${setClauses} WHERE ${where} RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -106,18 +107,19 @@ const supplierDocumentModel = {
     }
   },
 
-  delete: async (id, centerId) => {
+  // ✅ delete with tenant filtering
+  delete: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      let query = `DELETE FROM ${tableName} WHERE id = $1`;
-      let params = [id];
+      let where = `id = $1`;
+      const params = [id];
       
-      if (centerId) {
-        query += ` AND center_id = $2`;
+      // ✅ Apply tenant filtering
+      if (centerId && !isMultiCenter) {
+        where += ` AND center_id = $2`;
         params.push(centerId);
       }
       
-      query += ` RETURNING *`;
-      
+      const query = `DELETE FROM ${tableName} WHERE ${where} RETURNING *`;
       const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];

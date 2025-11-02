@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Input, Button, Spinner, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
 import SimpleBar from "simplebar-react";
 import { Link } from "react-router-dom";
+import { useRole } from "../../helpers/useRole";
 
 const ConversationList = ({
   conversations,
@@ -12,6 +13,7 @@ const ConversationList = ({
   loading,
   currentUser
 }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [searchTerm, setSearchTerm] = useState("");
 
   // Filter conversations based on search
@@ -62,6 +64,7 @@ const ConversationList = ({
               </p>
             </div>
             <div>
+              {/* Org Executive can create conversations */}
               <Button
                 color="primary"
                 size="sm"
@@ -138,35 +141,36 @@ const ConversationList = ({
                            <p className="text-muted font-size-11 mb-1">
                              {formatDate(conversation.updated_at)}
                            </p>
-                           <UncontrolledDropdown 
-                             onClick={(e) => {
-                               e.preventDefault();
-                               e.stopPropagation();
-                             }}
-                           >
-                             <DropdownToggle 
-                               tag="button"
-                               className="btn btn-link text-muted p-0 font-size-16"
-                               style={{ border: 'none', background: 'none' }}
-                             >
-                               <i className="bx bx-dots-vertical-rounded"></i>
-                             </DropdownToggle>
-                             <DropdownMenu end>
-                               <DropdownItem
-                                 onClick={(e) => {
-                                   e.preventDefault();
-                                   e.stopPropagation();
-                                   if (window.confirm("Are you sure you want to delete this conversation?")) {
-                                     onDeleteConversation(conversation.id);
-                                   }
-                                 }}
-                                 className="text-danger"
-                               >
-                                 <i className="bx bx-trash me-2"></i>
-                                 Delete
-                               </DropdownItem>
-                             </DropdownMenu>
-                           </UncontrolledDropdown>
+                          {/* Org Executive can delete conversations */}
+                          <UncontrolledDropdown 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                              <DropdownToggle 
+                                tag="button"
+                                className="btn btn-link text-muted p-0 font-size-16"
+                                style={{ border: 'none', background: 'none' }}
+                              >
+                                <i className="bx bx-dots-vertical-rounded"></i>
+                              </DropdownToggle>
+                              <DropdownMenu end>
+                                <DropdownItem
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (window.confirm("Are you sure you want to delete this conversation?")) {
+                                      onDeleteConversation(conversation.id);
+                                    }
+                                  }}
+                                  className="text-danger"
+                                >
+                                  <i className="bx bx-trash me-2"></i>
+                                  Delete
+                                </DropdownItem>
+                              </DropdownMenu>
+                            </UncontrolledDropdown>
                          </div>
                       </div>
                     </Link>

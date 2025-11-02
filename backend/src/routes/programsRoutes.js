@@ -2,6 +2,7 @@
 const router = express.Router();
 const programsController = require('../controllers/programsController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const optionalAuthMiddleware = require('../middlewares/optionalAuthMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const filterMiddleware = require('../middlewares/filterMiddleware');
 const multer = require('multer');
@@ -13,13 +14,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ Apply authentication, RBAC, and tenant filtering
+// ✅ View attachment endpoints - optional auth (allow viewing without token)
+router.get('/:id/view-attachment', optionalAuthMiddleware, programsController.viewAttachment);
+
+// ✅ All other endpoints - require authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
 router.use(roleMiddleware([1, 2, 3, 4, 5]));
 router.use(filterMiddleware);
 
 router.get('/', programsController.getAll);
-router.get('/:id/view-attachment', programsController.viewAttachment);
 router.get('/:id/download-attachment', programsController.downloadAttachment);
 router.get('/:id', programsController.getById);
 router.post('/', upload.fields([{ name: 'attachment' }]), programsController.create);

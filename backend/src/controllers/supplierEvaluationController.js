@@ -4,7 +4,7 @@ const supplierEvaluationController = {
   getAll: async (req, res) => { 
     try { 
       const supplierId = req.query.supplier_id;
-      const data = await supplierEvaluationModel.getAll(req.user?.center_id, supplierId); 
+      const data = await supplierEvaluationModel.getAll(req.center_id, req.isMultiCenter, supplierId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -12,7 +12,7 @@ const supplierEvaluationController = {
   },
   getById: async (req, res) => { 
     try { 
-      const data = await supplierEvaluationModel.getById(req.params.id, req.user?.center_id); 
+      const data = await supplierEvaluationModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -20,7 +20,12 @@ const supplierEvaluationController = {
     } 
   },
   create: async (req, res) => { 
-    try { 
+    try {
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      req.body.created_by = username;
+      req.body.updated_by = username;
+      
       const fields = { ...req.body };
       
       // Map frontend field names to database column names
@@ -52,14 +57,18 @@ const supplierEvaluationController = {
         }
       });
       
-      const data = await supplierEvaluationModel.create(mappedFields, req.user?.center_id); 
+      const data = await supplierEvaluationModel.create(mappedFields); 
       res.status(201).json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
     } 
   },
   update: async (req, res) => { 
-    try { 
+    try {
+      // ✅ Add audit fields
+      const username = req.user?.username || 'system';
+      req.body.updated_by = username;
+      
       const fields = { ...req.body };
       
       // Map frontend field names to database column names
@@ -90,7 +99,7 @@ const supplierEvaluationController = {
         }
       });
       
-      const data = await supplierEvaluationModel.update(req.params.id, mappedFields, req.user?.center_id); 
+      const data = await supplierEvaluationModel.update(req.params.id, mappedFields, req.center_id, req.isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -98,7 +107,7 @@ const supplierEvaluationController = {
   },
   delete: async (req, res) => { 
     try { 
-      await supplierEvaluationModel.delete(req.params.id, req.user?.center_id); 
+      await supplierEvaluationModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

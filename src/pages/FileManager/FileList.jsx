@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Card, CardBody, Row, Col, Button, Input, Spinner, Badge, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
+import { useRole } from "../../helpers/useRole";
 
 const FileList = ({
   folders,
@@ -12,6 +13,7 @@ const FileList = ({
   onFolderSelect,
   loading,
 }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
 
@@ -123,7 +125,7 @@ const FileList = ({
               </Button>
             </div>
 
-            {/* Upload Button */}
+            {/* Upload Button - Org Executive can upload */}
             <Button color="primary" size="sm" onClick={onCreateFile} className="px-3">
               <i className="mdi mdi-upload me-1"></i> Upload
             </Button>
@@ -192,6 +194,7 @@ const FileList = ({
                                   <DropdownItem onClick={() => onPreviewFile(file)}>
                                     <i className="bx bx-show me-2"></i>Preview
                                   </DropdownItem>
+                                  {/* Org Executive can edit and delete files */}
                                   <DropdownItem onClick={() => onEditFile(file)}>
                                     <i className="bx bx-edit me-2"></i>Edit
                                   </DropdownItem>
@@ -269,6 +272,7 @@ const FileList = ({
                               >
                                 <i className="bx bx-show"></i>
                               </Button>
+                              {/* Org Executive can edit and delete files */}
                               <Button
                                 color="light"
                                 size="sm"
@@ -297,10 +301,12 @@ const FileList = ({
                 <i className="bx bx-file display-4 text-muted"></i>
                 <h5 className="mt-3">No files found</h5>
                 <p className="text-muted">Upload files to get started</p>
-                <Button color="primary" onClick={onCreateFile} style={{ borderRadius: 0 }}>
-                  <i className="mdi mdi-upload me-1"></i>
-                  Upload File
-                </Button>
+                {!isOrgExecutive && (
+                  <Button color="primary" onClick={onCreateFile} style={{ borderRadius: 0 }}>
+                    <i className="mdi mdi-upload me-1"></i>
+                    Upload File
+                  </Button>
+                )}
               </div>
             )}
           </>

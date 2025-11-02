@@ -3,14 +3,17 @@
 const tableName = 'Supplier_Profile';
 
 const supplierProfileModel = {
-  getAll: async (centerId) => {
+  // ✅ getAll with tenant filtering: App Admin (centerId=null) sees all, others see only their center
+  getAll: async (centerId = null, isSuperAdmin = false) => {
     try {
       let query = `SELECT * FROM ${tableName}`;
-      let params = [];
+      const params = [];
       
-      if (centerId) {
+      // ✅ Apply tenant filtering: Only App Admin (isSuperAdmin=true) bypasses filtering
+      // HQ and other roles are filtered by center_id
+      if (centerId !== null && !isSuperAdmin) {
         query += ` WHERE "center_id" = $1`;
-        params = [centerId];
+        params.push(centerId);
       }
       
       const res = await pool.query(query, params);
@@ -20,12 +23,15 @@ const supplierProfileModel = {
     }
   },
 
-  getById: async (id, centerId) => {
+  // ✅ getById with tenant filtering
+  getById: async (id, centerId = null, isSuperAdmin = false) => {
     try {
       let query = `SELECT * FROM ${tableName} WHERE "id" = $1`;
-      let params = [id];
+      const params = [id];
       
-      if (centerId) {
+      // ✅ Apply tenant filtering: Only App Admin (isSuperAdmin=true) bypasses filtering
+      // HQ and other roles are filtered by center_id
+      if (centerId !== null && !isSuperAdmin) {
         query += ` AND "center_id" = $2`;
         params.push(centerId);
       }
@@ -56,27 +62,23 @@ const supplierProfileModel = {
     }
   },
 
-  update: async (id, fields, centerId) => {
+  // ✅ update with tenant filtering
+  update: async (id, fields, centerId = null, isSuperAdmin = false) => {
     try {
-      let query = `UPDATE ${tableName} SET `;
       const setClauses = Object.keys(fields).map((key, i) => `"${key}" = $${i + 1}`).join(', ');
-      query += setClauses;
-      
       const values = Object.values(fields);
-      let paramIndex = values.length + 1;
+      let where = `"id" = $${values.length + 1}`;
+      const params = [...values, id];
       
-      query += ` WHERE "id" = $${paramIndex}`;
-      values.push(id);
-      
-      if (centerId) {
-        paramIndex++;
-        query += ` AND "center_id" = $${paramIndex}`;
-        values.push(centerId);
+      // ✅ Apply tenant filtering: Only App Admin (isSuperAdmin=true) bypasses filtering
+      // HQ and other roles are filtered by center_id
+      if (centerId !== null && !isSuperAdmin) {
+        where += ` AND "center_id" = $${values.length + 2}`;
+        params.push(centerId);
       }
       
-      query += ` RETURNING *`;
-      
-      const res = await pool.query(query, values);
+      const query = `UPDATE ${tableName} SET ${setClauses} WHERE ${where} RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -84,18 +86,20 @@ const supplierProfileModel = {
     }
   },
 
-  delete: async (id, centerId) => {
+  // ✅ delete with tenant filtering
+  delete: async (id, centerId = null, isSuperAdmin = false) => {
     try {
-      let query = `DELETE FROM ${tableName} WHERE "id" = $1`;
-      let params = [id];
+      let where = `"id" = $1`;
+      const params = [id];
       
-      if (centerId) {
-        query += ` AND "center_id" = $2`;
+      // ✅ Apply tenant filtering: Only App Admin (isSuperAdmin=true) bypasses filtering
+      // HQ and other roles are filtered by center_id
+      if (centerId !== null && !isSuperAdmin) {
+        where += ` AND "center_id" = $2`;
         params.push(centerId);
       }
       
-      query += ` RETURNING *`;
-      
+      const query = `DELETE FROM ${tableName} WHERE ${where} RETURNING *`;
       const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];

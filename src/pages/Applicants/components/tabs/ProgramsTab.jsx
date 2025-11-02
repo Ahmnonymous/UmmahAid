@@ -17,11 +17,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -41,6 +43,15 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
     formState: { errors, isSubmitting },
     reset,
   } = useForm();
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
 
   useEffect(() => {
     if (modalOpen) {
@@ -255,16 +266,6 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/programs/${rowId}/download-attachment`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
             </div>
           ) : (
             "-"
@@ -313,9 +314,11 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Programs</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Program
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Program
+          </Button>
+        )}
       </div>
 
       {programs.length === 0 ? (
@@ -356,7 +359,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                     control={control}
                     rules={{ required: "Program name is required" }}
                     render={({ field }) => (
-                      <Input id="Program_Name" type="select" invalid={!!errors.Program_Name} {...field}>
+                      <Input id="Program_Name" type="select" invalid={!!errors.Program_Name} disabled={isOrgExecutive} {...field}>
                         <option value="">Select Course</option>
                         {lookupData.trainingCourses.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -376,7 +379,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                   <Controller
                     name="Date_of_program"
                     control={control}
-                    render={({ field }) => <Input id="Date_of_program" type="date" {...field} />}
+                    render={({ field }) => <Input id="Date_of_program" type="date" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -388,7 +391,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                     name="Means_of_communication"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Means_of_communication" type="select" {...field}>
+                      <Input id="Means_of_communication" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Means</option>
                         {lookupData.meansOfCommunication.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -408,7 +411,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                     name="Communicated_by"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Communicated_by" type="select" {...field}>
+                      <Input id="Communicated_by" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Employee</option>
                         {lookupData.employees.map((employee) => (
                           <option key={employee.id} value={employee.id}>
@@ -428,7 +431,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                     name="Training_Level"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Training_Level" type="select" {...field}>
+                      <Input id="Training_Level" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Level</option>
                         {lookupData.trainingLevels.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -448,7 +451,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                     name="Training_Provider"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Training_Provider" type="select" {...field}>
+                      <Input id="Training_Provider" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Provider</option>
                         {lookupData.trainingInstitutions.map((institution) => (
                           <option key={institution.id} value={institution.id}>
@@ -468,7 +471,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                     name="Program_Outcome"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Program_Outcome" type="select" {...field}>
+                      <Input id="Program_Outcome" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Outcome</option>
                         {lookupData.trainingOutcomes.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -493,15 +496,24 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
                         type="file"
                         onChange={(e) => onChange(e.target.files)}
                         invalid={!!errors.Attachment}
+                        disabled={isOrgExecutive}
                         {...field}
                       />
                     )}
                   />
                   {errors.Attachment && <FormFeedback>{errors.Attachment.message}</FormFeedback>}
                   {editItem && editItem.attachment && (
-                    <small className="text-muted d-block mt-1">
-                      Current: {editItem.attachment_filename || "attachment"}
-                    </small>
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                        <div className="flex-grow-1">
+                          <div className="fw-medium">{editItem.attachment_filename || "attachment"}</div>
+                          <small className="text-muted">
+                            {formatFileSize(editItem.attachment_size)} • Current file
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </FormGroup>
               </Col>
@@ -510,7 +522,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -521,18 +533,20 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

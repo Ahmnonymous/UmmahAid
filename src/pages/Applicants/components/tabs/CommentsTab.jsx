@@ -17,11 +17,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -189,9 +191,11 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Comments</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Comment
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Comment
+          </Button>
+        )}
       </div>
 
       {comments.length === 0 ? (
@@ -237,6 +241,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
                         type="textarea"
                         rows="5"
                         invalid={!!errors.Comment}
+                        disabled={isOrgExecutive}
                         {...field}
                       />
                     )}
@@ -251,7 +256,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
                   <Controller
                     name="Comment_Date"
                     control={control}
-                    render={({ field }) => <Input id="Comment_Date" type="date" {...field} />}
+                    render={({ field }) => <Input id="Comment_Date" type="date" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -260,7 +265,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -271,18 +276,20 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

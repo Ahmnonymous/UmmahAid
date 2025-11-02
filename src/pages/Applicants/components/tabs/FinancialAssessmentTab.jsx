@@ -19,11 +19,13 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [incomeModalOpen, setIncomeModalOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
@@ -358,9 +360,11 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
             <CardBody>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="card-title mb-0">Income</h5>
-                <Button color="success" size="sm" onClick={handleAddIncome}>
-                  <i className="bx bx-plus me-1"></i> Add Income
-                </Button>
+                {!isOrgExecutive && (
+                  <Button color="success" size="sm" onClick={handleAddIncome}>
+                    <i className="bx bx-plus me-1"></i> Add Income
+                  </Button>
+                )}
               </div>
 
               <div className="table-responsive">
@@ -410,9 +414,11 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
             <CardBody>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="card-title mb-0">Expenses</h5>
-                <Button color="danger" size="sm" onClick={handleAddExpense}>
-                  <i className="bx bx-plus me-1"></i> Add Expense
-                </Button>
+                {!isOrgExecutive && (
+                  <Button color="danger" size="sm" onClick={handleAddExpense}>
+                    <i className="bx bx-plus me-1"></i> Add Expense
+                  </Button>
+                )}
               </div>
 
               <div className="table-responsive">
@@ -476,7 +482,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
                 control={incomeControl}
                 rules={{ required: "Income type is required" }}
                 render={({ field }) => (
-                  <Input id="Income_Type_ID" type="select" invalid={!!incomeErrors.Income_Type_ID} {...field}>
+                  <Input id="Income_Type_ID" type="select" invalid={!!incomeErrors.Income_Type_ID} disabled={isOrgExecutive} {...field}>
                     <option value="">Select Type</option>
                     {lookupData.incomeTypes.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -498,7 +504,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
                 control={incomeControl}
                 rules={{ required: "Amount is required", min: { value: 0, message: "Amount must be positive" } }}
                 render={({ field }) => (
-                  <Input id="Amount" type="number" step="0.01" invalid={!!incomeErrors.Amount} {...field} />
+                  <Input id="Amount" type="number" step="0.01" invalid={!!incomeErrors.Amount} disabled={isOrgExecutive} {...field} />
                 )}
               />
               {incomeErrors.Amount && <FormFeedback>{incomeErrors.Amount.message}</FormFeedback>}
@@ -509,14 +515,14 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
               <Controller
                 name="Description"
                 control={incomeControl}
-                render={({ field }) => <Input id="Description" type="textarea" rows="3" {...field} />}
+                render={({ field }) => <Input id="Description" type="textarea" rows="3" disabled={isOrgExecutive} {...field} />}
               />
             </FormGroup>
           </ModalBody>
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editIncomeItem && (
+              {editIncomeItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDeleteIncome} type="button" disabled={isIncomeSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -527,18 +533,20 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
               <Button color="light" onClick={toggleIncomeModal} disabled={isIncomeSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isIncomeSubmitting}>
-                {isIncomeSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isIncomeSubmitting}>
+                  {isIncomeSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>
@@ -562,7 +570,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
                 control={expenseControl}
                 rules={{ required: "Expense type is required" }}
                 render={({ field }) => (
-                  <Input id="Expense_Type_ID" type="select" invalid={!!expenseErrors.Expense_Type_ID} {...field}>
+                  <Input id="Expense_Type_ID" type="select" invalid={!!expenseErrors.Expense_Type_ID} disabled={isOrgExecutive} {...field}>
                     <option value="">Select Type</option>
                     {lookupData.expenseTypes.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -584,7 +592,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
                 control={expenseControl}
                 rules={{ required: "Amount is required", min: { value: 0, message: "Amount must be positive" } }}
                 render={({ field }) => (
-                  <Input id="Amount" type="number" step="0.01" invalid={!!expenseErrors.Amount} {...field} />
+                  <Input id="Amount" type="number" step="0.01" invalid={!!expenseErrors.Amount} disabled={isOrgExecutive} {...field} />
                 )}
               />
               {expenseErrors.Amount && <FormFeedback>{expenseErrors.Amount.message}</FormFeedback>}
@@ -595,14 +603,14 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
               <Controller
                 name="Description"
                 control={expenseControl}
-                render={({ field }) => <Input id="Description" type="textarea" rows="3" {...field} />}
+                render={({ field }) => <Input id="Description" type="textarea" rows="3" disabled={isOrgExecutive} {...field} />}
               />
             </FormGroup>
           </ModalBody>
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editExpenseItem && (
+              {editExpenseItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDeleteExpense} type="button" disabled={isExpenseSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -613,18 +621,20 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
               <Button color="light" onClick={toggleExpenseModal} disabled={isExpenseSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isExpenseSubmitting}>
-                {isExpenseSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isExpenseSubmitting}>
+                  {isExpenseSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

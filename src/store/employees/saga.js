@@ -5,7 +5,7 @@ import { get, post, put as putApi, del } from "../../helpers/api_helper";
 
 function* fetchEmployeesSaga() {
   try {
-    const employees = yield call(() => get("/employees"));
+    const employees = yield call(() => get("/employee"));
     yield put(fetchEmployeesSuccess(employees));
   } catch (error) {
     yield put(fetchEmployeesError(error.message));
@@ -14,7 +14,7 @@ function* fetchEmployeesSaga() {
 
 function* createEmployeeSaga({ payload }) {
   try {
-    yield call(() => post("/employees", payload));
+    yield call(() => post("/employee", payload));
     yield put(fetchEmployees()); // reload
   } catch (error) {
     yield put(fetchEmployeesError(error.message));
@@ -23,7 +23,7 @@ function* createEmployeeSaga({ payload }) {
 
 function* updateEmployeeSaga({ payload }) {
   try {
-    yield call(() => putApi(`/employees/${payload.id}`, payload));
+    yield call(() => putApi(`/employee/${payload.id}`, payload));
     yield put(fetchEmployees());
   } catch (error) {
     yield put(fetchEmployeesError(error.message));
@@ -32,7 +32,7 @@ function* updateEmployeeSaga({ payload }) {
 
 function* deleteEmployeeSaga({ payload }) {
   try {
-    yield call(() => del(`/employees/${payload}`));
+    yield call(() => del(`/employee/${payload}`));
     yield put(fetchEmployees());
   } catch (error) {
     yield put(fetchEmployeesError(error.message));

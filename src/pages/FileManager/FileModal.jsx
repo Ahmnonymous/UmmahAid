@@ -61,7 +61,7 @@ const FileModal = ({
       const currentUser = getUmmahAidUser();
       
       // Validate user session
-      if (!currentUser || !currentUser.center_id) {
+      if (!currentUser) {
         showAlert("User session expired. Please login again.", "danger");
         return;
       }
@@ -81,7 +81,10 @@ const FileModal = ({
         formData.append("employee_id", currentUser.id);
       }
       
-      formData.append("center_id", currentUser?.center_id || 1);
+      // Backend will handle App Admin (null center_id)
+      if (currentUser?.center_id) {
+        formData.append("center_id", currentUser.center_id);
+      }
 
       if (editItem) {
         formData.append("updated_by", currentUser?.username || "system");

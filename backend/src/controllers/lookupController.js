@@ -39,12 +39,19 @@ const lookupController = {
   getAll: async (req, res) => {
     try {
       const { table } = req.params;
+      
+      // 🔍 DEBUG: Log lookup request
+      console.log(`[DEBUG] Lookup.getAll - user: ${req.user?.username}, role: ${req.user?.user_type}, table: ${table}`);
+      
       if (!lookupTables[table]) {
+        console.error(`[ERROR] Lookup.getAll - Invalid table: ${table}`);
         return res.status(400).json({ error: 'Invalid lookup table' });
       }
       const data = await lookupModel.getAll(table, lookupTables[table]);
+      console.log(`[DEBUG] Lookup.getAll - Success: ${table}, rows: ${data?.length || 0}`);
       res.json(data);
     } catch (err) {
+      console.error(`[ERROR] Lookup.getAll - ${err.message}`, err);
       res.status(500).json({ error: err.message });
     }
   },

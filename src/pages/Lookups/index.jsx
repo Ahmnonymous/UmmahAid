@@ -79,6 +79,7 @@ const Lookups = () => {
       categories: [
         { name: "Policy Procedure Types", table: "Policy_Procedure_Type", icon: "bxs-file-find" },
         { name: "Policy Procedure Fields", table: "Policy_Procedure_Field", icon: "bxs-grid-alt" },
+        { name: "Policy and Procedure", table: "Policy_And_Procedure", icon: "bxs-file-doc", customRoute: "/lookups/policy-and-procedure" },
       ],
     },
     {
@@ -118,7 +119,7 @@ const Lookups = () => {
                  return (
                    <div key={index} className={`grid-item ${isLeftColumn ? 'left-col' : 'right-col'}`}>
                      <Link
-                       to={`/lookups/${category.table}`}
+                       to={category.customRoute || `/lookups/${category.table}`}
                        className={`lookup-item d-flex align-items-center px-3 py-2 text-body ${isLastItem ? 'last-item' : ''}`}
                        style={{ textDecoration: "none", fontSize: "0.875rem" }}
                      >
@@ -140,7 +141,7 @@ const Lookups = () => {
              group.categories.map((category, index) => (
                <Link
                  key={index}
-                 to={`/lookups/${category.table}`}
+                 to={category.customRoute || `/lookups/${category.table}`}
                  className="lookup-item d-flex align-items-center px-3 py-2 text-body"
                  style={{ textDecoration: "none", fontSize: "0.875rem" }}
                >

@@ -210,14 +210,17 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Applicants - All staff roles (1,2,3,4,5) */}
-            <li>
-              <Link to="/applicants/create">
-                <i className="bx bx-user-plus"></i>
-                <span>{props.t("Create Applicant")}</span>
-              </Link>
-            </li>
+            {/* ✅ Create Applicant - Only Caseworker (role 5) can create applicants */}
+            {hasRole([5]) && (
+              <li>
+                <Link to="/applicants/create">
+                  <i className="bx bx-user-plus"></i>
+                  <span>{props.t("Create Applicant")}</span>
+                </Link>
+              </li>
+            )}
 
+            {/* ✅ Applicant Details - All roles (1,2,3,4,5) */}
             <li>
               <Link to="/applicants">
                 <i className="bx bx-user-check"></i>
@@ -225,12 +228,14 @@ const SidebarContent = (props) => {
               </Link>
             </li>
 
-            <li>
-              <Link to="/#" className="has-arrow ">
-                <i className="bx bx-file-find"></i>
-                <span>{props.t("Reports")}</span>
-              </Link>
-              <ul className="sub-menu" aria-expanded="false">
+            {/* ✅ Reports - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
+            {hasRole([1, 2, 3]) && (
+              <li>
+                <Link to="/#" className="has-arrow ">
+                  <i className="bx bx-file-find"></i>
+                  <span>{props.t("Reports")}</span>
+                </Link>
+                <ul className="sub-menu" aria-expanded="false">
                 <li>
                   <Link to="/reports/applicant-details">
                     <i className="bx bx-user-plus"></i>
@@ -280,14 +285,18 @@ const SidebarContent = (props) => {
                   </Link>
                 </li>
               </ul>
-            </li>
+              </li>
+            )}
 
-            <li>
-              <Link to="/lookups">
-                <i className="bx bx-list-ul"></i>
-                <span>{props.t("Lookup Setup")}</span>
-              </Link>
-            </li>
+            {/* ✅ Lookup Setup - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
+            {hasRole([1, 2, 3]) && (
+              <li>
+                <Link to="/lookups">
+                  <i className="bx bx-list-ul"></i>
+                  <span>{props.t("Lookup Setup")}</span>
+                </Link>
+              </li>
+            )}
 
             <li>
               <Link to="/FileManager">
@@ -300,6 +309,13 @@ const SidebarContent = (props) => {
               <Link to="/chat">
                 <i className="bx bx-chat"></i>
                 <span>{props.t("Chat")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/policy-library">
+                <i className="bx bx-file-blank"></i>
+                <span>{props.t("Policy & Procedure")}</span>
               </Link>
             </li>
           </ul>

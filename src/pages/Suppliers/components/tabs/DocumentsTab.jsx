@@ -18,10 +18,12 @@ import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
+import { useRole } from "../../../../helpers/useRole";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -41,6 +43,15 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
     formState: { errors, isSubmitting },
     reset,
   } = useForm();
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
 
   useEffect(() => {
     if (modalOpen) {
@@ -66,6 +77,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
   };
 
   const handleEdit = (item) => {
+    // Allow Org Executive to view (open modal) but they'll only see Cancel button
     setEditItem(item);
     setModalOpen(true);
   };
@@ -213,16 +225,6 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/supplierDocument/${rowId}/download-file`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
             </div>
           ) : (
             "-"
@@ -264,16 +266,19 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
         },
       },
     ],
-    []
+    [isOrgExecutive]
   );
 
   return (
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Documents</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Document
-        </Button>
+        {/* Hide Add button for Org Executive (view-only) */}
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Document
+          </Button>
+        )}
       </div>
 
       {documents.length === 0 ? (
@@ -314,7 +319,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                     control={control}
                     rules={{ required: "Document type is required" }}
                     render={({ field }) => (
-                      <Input id="Doc_Type" type="text" invalid={!!errors.Doc_Type} {...field} />
+                      <Input id="Doc_Type" type="text" invalid={!!errors.Doc_Type} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Doc_Type && <FormFeedback>{errors.Doc_Type.message}</FormFeedback>}
@@ -329,7 +334,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                     control={control}
                     rules={{ required: "Issued date is required" }}
                     render={({ field }) => (
-                      <Input id="Issued_At" type="date" invalid={!!errors.Issued_At} {...field} />
+                      <Input id="Issued_At" type="date" invalid={!!errors.Issued_At} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Issued_At && <FormFeedback>{errors.Issued_At.message}</FormFeedback>}
@@ -342,7 +347,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                   <Controller
                     name="Description"
                     control={control}
-                    render={({ field }) => <Input id="Description" type="textarea" rows="5" {...field} />}
+                    render={({ field }) => <Input id="Description" type="textarea" rows="5" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -360,15 +365,24 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                         onChange={(e) => onChange(e.target.files)}
                         invalid={!!errors.File}
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        disabled={isOrgExecutive}
                         {...field}
                       />
                     )}
                   />
                   {errors.File && <FormFeedback>{errors.File.message}</FormFeedback>}
                   {editItem && editItem.file_filename && (
-                    <small className="text-muted d-block mt-1">
-                      Current: {editItem.file_filename || "file"}
-                    </small>
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                        <div className="flex-grow-1">
+                          <div className="fw-medium">{editItem.file_filename || "file"}</div>
+                          <small className="text-muted">
+                            {formatFileSize(editItem.file_size)} • Current file
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   )}
                   <small className="text-muted d-block mt-1">
                     Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG
@@ -380,7 +394,8 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {/* Hide Delete button for Org Executive (view-only) */}
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -391,7 +406,9 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
+              {/* Hide Save button for Org Executive (view-only) */}
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" />
@@ -403,6 +420,7 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
                   </>
                 )}
               </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

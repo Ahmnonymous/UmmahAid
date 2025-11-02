@@ -17,11 +17,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -228,9 +230,11 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Relationships</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Relationship
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Relationship
+          </Button>
+        )}
       </div>
 
       {relationships.length === 0 ? (
@@ -271,7 +275,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     control={control}
                     rules={{ required: "Relationship type is required" }}
                     render={({ field }) => (
-                      <Input id="Relationship_Type" type="select" invalid={!!errors.Relationship_Type} {...field}>
+                      <Input id="Relationship_Type" type="select" invalid={!!errors.Relationship_Type} disabled={isOrgExecutive} {...field}>
                         <option value="">Select Type</option>
                         {lookupData.relationshipTypes.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -294,7 +298,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     name="Name"
                     control={control}
                     rules={{ required: "Name is required" }}
-                    render={({ field }) => <Input id="Name" type="text" invalid={!!errors.Name} {...field} />}
+                    render={({ field }) => <Input id="Name" type="text" invalid={!!errors.Name} disabled={isOrgExecutive} {...field} />}
                   />
                   {errors.Name && <FormFeedback>{errors.Name.message}</FormFeedback>}
                 </FormGroup>
@@ -309,7 +313,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     name="Surname"
                     control={control}
                     rules={{ required: "Surname is required" }}
-                    render={({ field }) => <Input id="Surname" type="text" invalid={!!errors.Surname} {...field} />}
+                    render={({ field }) => <Input id="Surname" type="text" invalid={!!errors.Surname} disabled={isOrgExecutive} {...field} />}
                   />
                   {errors.Surname && <FormFeedback>{errors.Surname.message}</FormFeedback>}
                 </FormGroup>
@@ -339,6 +343,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                         value={field.value}
                         onBlur={field.onBlur}
                         invalid={!!errors.ID_Number}
+                        disabled={isOrgExecutive}
                       />
                     )}
                   />
@@ -352,7 +357,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                   <Controller
                     name="Date_of_Birth"
                     control={control}
-                    render={({ field }) => <Input id="Date_of_Birth" type="date" {...field} />}
+                    render={({ field }) => <Input id="Date_of_Birth" type="date" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -364,7 +369,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     name="Gender"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Gender" type="select" {...field}>
+                      <Input id="Gender" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Gender</option>
                         {lookupData.gender.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -384,7 +389,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     name="Employment_Status"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Employment_Status" type="select" {...field}>
+                      <Input id="Employment_Status" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Status</option>
                         {lookupData.employmentStatus.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -404,7 +409,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     name="Highest_Education"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Highest_Education" type="select" {...field}>
+                      <Input id="Highest_Education" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Level</option>
                         {lookupData.educationLevel.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -424,7 +429,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                     name="Health_Condition"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Health_Condition" type="select" {...field}>
+                      <Input id="Health_Condition" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Condition</option>
                         {lookupData.healthConditions.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -441,7 +446,7 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -452,18 +457,20 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

@@ -25,6 +25,7 @@ import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
+import { useRole } from "../../helpers/useRole";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getUmmahAidUser } from "../../helpers/userStorage";
@@ -40,6 +41,7 @@ import {
 const TableView = () => {
   const { table } = useParams();
   const dispatch = useDispatch();
+  const { isOrgExecutive } = useRole(); // Read-only check
 
   const { data, loading, error } = useSelector((state) => state.Lookup);
   const tableData = data[table] || [];
@@ -304,14 +306,19 @@ const TableView = () => {
                       <Link to="/lookups" className="btn btn-light btn-sm me-2">
                         <i className="bx bx-arrow-back"></i> Back
                       </Link>
-                      <h4 className="card-title mb-0">{formatTableName(table)}</h4>
+                      <h4 className="card-title mb-0">
+                        {formatTableName(table)}
+                        {isOrgExecutive && <span className="ms-2 badge bg-info">Read Only</span>}
+                      </h4>
                     </div>
                   </Col>
                   <Col sm={6}>
                     <div className="text-sm-end">
-                      <Button color="primary" style={{ borderRadius: 0 }} onClick={handleAdd}>
-                        <i className="mdi mdi-plus me-1"></i> Add New
-                      </Button>
+                      {!isOrgExecutive && (
+                        <Button color="primary" style={{ borderRadius: 0 }} onClick={handleAdd}>
+                          <i className="mdi mdi-plus me-1"></i> Add New
+                        </Button>
+                      )}
                     </div>
                   </Col>
                 </Row>
@@ -420,7 +427,7 @@ const TableView = () => {
 
             <ModalFooter className="d-flex justify-content-between">
               <div>
-                {editItem && (
+                {editItem && !isOrgExecutive && (
                   <Button color="danger" onClick={handleDeleteClick} disabled={isSubmitting}>
                     <i className="bx bx-trash me-1"></i> Delete
                   </Button>
@@ -437,18 +444,20 @@ const TableView = () => {
                   <i className="bx bx-x label-icon"></i> Cancel
                 </Button>
 
-                <Button color="success" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-save me-1"></i> Save
-                    </>
-                  )}
-                </Button>
+                {!isOrgExecutive && (
+                  <Button color="success" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bx bx-save me-1"></i> Save
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </ModalFooter>
           </Form>

@@ -51,7 +51,7 @@ const FolderModal = ({
       const currentUser = getUmmahAidUser();
       
       // Validate user session
-      if (!currentUser || !currentUser.center_id) {
+      if (!currentUser) {
         showAlert("User session expired. Please login again.", "danger");
         return;
       }
@@ -60,7 +60,7 @@ const FolderModal = ({
         name: data.name,
         parent_id: data.parent_id && data.parent_id !== "" ? parseInt(data.parent_id) : null,
         employee_id: currentUser?.id || null,
-        center_id: currentUser?.center_id || 1,
+        center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
       };
 
       if (editItem) {

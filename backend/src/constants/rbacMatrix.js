@@ -32,12 +32,12 @@ const ROLE_DEFINITIONS = {
     id: 2,
     name: "HQ",
     label: "HQ",
-    access: "multi-center",
+    access: "multi-center", // Can view data across centers, but dashboard shows only their assigned center
     center_restriction: false,
     allowed_methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowed_modules: "all_except_centers",
     restricted_modules: ["Center_Detail"], // Cannot add/edit organizations
-    description: "HQ - Access to all data except organization management",
+    description: "HQ - Access to all data except organization management. Dashboard filtered by assigned center.",
   },
   3: {
     id: 3,
@@ -66,8 +66,8 @@ const ROLE_DEFINITIONS = {
     access: "center-only",
     center_restriction: true,
     allowed_methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowed_modules: ["Applicant_Details", "Tasks", "Comments", "Relationships", "Home_Visit", "Financial_Assistance", "Food_Assistance", "Attachments", "Programs", "Financial_Assessment", "Applicant_Income", "Applicant_Expense"],
-    description: "Caseworker - CRUD for Applicants and Tasks only within own center",
+    allowed_modules: ["Dashboard", "Applicant_Details", "Tasks", "Comments", "Relationships", "Home_Visit", "Financial_Assistance", "Food_Assistance", "Attachments", "Programs", "Financial_Assessment", "Applicant_Income", "Applicant_Expense", "Folders", "Conversations"], // ✅ Added Folders and Conversations for caseworker access
+    description: "Caseworker - CRUD for Applicants and Tasks only within own center, plus access to Folders and Conversations",
   },
 };
 
@@ -93,6 +93,10 @@ const MODULE_ROUTE_MAP = {
   "Inventory_Transactions": "/api/inventoryTransactions",
   "Supplier_Profile": "/api/supplierProfile",
   "Center_Detail": "/api/centerDetail",
+  "Dashboard": "/api/dashboard", // ✅ Fix Issue #4: Add Dashboard to module map
+  "Folders": "/api/folders", // ✅ Added for caseworker access
+  "Conversations": "/api/conversations", // ✅ Added for caseworker access
+  "Lookup": "/api/lookup", // ✅ Added for Org Executive lookup access
 };
 
 /**
@@ -118,6 +122,11 @@ function canAccessRoute(userType, routePath) {
   
   const module = getModuleFromRoute(routePath);
   
+  // ✅ Allow lookup routes for all authenticated users (they're global tables)
+  if (routePath && (routePath.includes('/lookup') || module === "Lookup" || module === "lookup")) {
+    return true;
+  }
+  
   // HQ cannot access Center_Detail
   if (userType === ROLES.HQ && module === "Center_Detail") {
     return false;
@@ -125,7 +134,24 @@ function canAccessRoute(userType, routePath) {
   
   // Caseworkers only access specific modules
   if (userType === ROLES.ORG_CASEWORKER) {
+    // ✅ Fix Issue #4: Allow Dashboard for caseworkers
+    if (module === "Dashboard" || module === "dashboard") {
+      return true;
+    }
+    // ✅ Allow Folders and Conversations for caseworkers
+    if (module === "Folders" || module === "folders" || routePath.includes('/folders')) {
+      return true;
+    }
+    if (module === "Conversations" || module === "conversations" || routePath.includes('/conversations')) {
+      return true;
+    }
     return role.allowed_modules.includes(module);
+  }
+  
+  // ✅ Org Executive (role 4) should have access to all modules for read-only (GET requests)
+  // The method check (GET only) is handled by canPerformMethod, so allow all modules here
+  if (userType === ROLES.ORG_EXECUTIVE) {
+    return true; // Org Executive can access all modules (read-only enforced by canPerformMethod)
   }
   
   return true;

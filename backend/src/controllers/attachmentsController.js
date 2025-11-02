@@ -3,8 +3,11 @@ const fs = require('fs').promises;
 
 const attachmentsController = {
   getAll: async (req, res) => { 
-    try { 
-      const data = await attachmentsModel.getAll(); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await attachmentsModel.getAll(centerId, isMultiCenter); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -12,8 +15,11 @@ const attachmentsController = {
   },
   
   getById: async (req, res) => { 
-    try { 
-      const data = await attachmentsModel.getById(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const data = await attachmentsModel.getById(req.params.id, centerId, isMultiCenter); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -75,8 +81,11 @@ const attachmentsController = {
   },
   
   delete: async (req, res) => { 
-    try { 
-      await attachmentsModel.delete(req.params.id); 
+    try {
+      // ✅ Apply tenant filtering
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      await attachmentsModel.delete(req.params.id, centerId, isMultiCenter); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -92,17 +101,28 @@ const attachmentsController = {
       const mimeType = record.file_mime || "application/octet-stream";
       const filename = record.file_filename || "attachment";
   
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.file_size);
-  
       let buffer = record.file;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown file encoding");
+        }
       }
+  
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("File buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
   
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing file:", err);
       res.status(500).json({ error: "Error viewing file: " + err.message });
     }
   },

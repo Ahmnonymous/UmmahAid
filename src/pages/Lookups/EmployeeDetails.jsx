@@ -64,6 +64,7 @@ const EmployeeDetails = () => {
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
     reset,
   } = useForm({
@@ -144,7 +145,8 @@ const EmployeeDetails = () => {
         User_Type: editItem?.user_type ? String(editItem.user_type) : "",
         Department: editItem?.department ? String(editItem.department) : "",
         HSEQ_Related: editItem?.hseq_related || "N",
-        Center_ID: editItem?.center_id ? String(editItem.center_id) : (currentUser?.center_id ? String(currentUser.center_id) : ""),
+        // ✅ App Admin (user_type = 1) has no center_id, others populate from editItem or currentUser
+        Center_ID: editItem?.user_type === 1 ? "" : (editItem?.center_id ? String(editItem.center_id) : (currentUser?.center_id ? String(currentUser.center_id) : "")),
       });
       setSelectedAvatar(editItem?.employee_avatar || "");
       // Auto-focus on first input
@@ -349,6 +351,20 @@ const EmployeeDetails = () => {
     );
     return item ? item.name : "-";
   };
+
+  // ✅ Watch User_Type to conditionally show/hide Center field
+  const selectedUserType = watch("User_Type");
+  const isAppAdmin = selectedUserType === "1"; // App Admin (User_Type = 1) should not have center
+
+  // ✅ Clear Center_ID when App Admin is selected
+  useEffect(() => {
+    if (isAppAdmin) {
+      reset({
+        ...watch(),
+        Center_ID: "", // Clear center_id for App Admin
+      });
+    }
+  }, [selectedUserType]); // Run when User_Type changes
 
   // Define table columns
   const columns = useMemo(
@@ -1061,36 +1077,39 @@ const EmployeeDetails = () => {
                   Department & HSEQ Information
                 </h6>
                 <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Label for="Center_ID">
-                        Center <span className="text-danger">*</span>
-                      </Label>
-                      <Controller
-                        name="Center_ID"
-                        control={control}
-                        rules={{ required: "Center is required" }}
-                        render={({ field }) => (
-                          <Input
-                            id="Center_ID"
-                            type="select"
-                            invalid={!!errors.Center_ID}
-                            {...field}
-                          >
-                            <option value="">Select Center</option>
-                            {centers.map((center) => (
-                              <option key={center.id} value={center.id}>
-                                {center.organisation_name}
-                              </option>
-                            ))}
-                          </Input>
+                  {/* ✅ Center field: Hidden/Disabled for App Admin (User_Type = 1) */}
+                  {!isAppAdmin && (
+                    <Col md={6}>
+                      <FormGroup>
+                        <Label for="Center_ID">
+                          Center <span className="text-danger">*</span>
+                        </Label>
+                        <Controller
+                          name="Center_ID"
+                          control={control}
+                          rules={{ required: "Center is required" }}
+                          render={({ field }) => (
+                            <Input
+                              id="Center_ID"
+                              type="select"
+                              invalid={!!errors.Center_ID}
+                              {...field}
+                            >
+                              <option value="">Select Center</option>
+                              {centers.map((center) => (
+                                <option key={center.id} value={center.id}>
+                                  {center.organisation_name}
+                                </option>
+                              ))}
+                            </Input>
+                          )}
+                        />
+                        {errors.Center_ID && (
+                          <FormFeedback>{errors.Center_ID.message}</FormFeedback>
                         )}
-                      />
-                      {errors.Center_ID && (
-                        <FormFeedback>{errors.Center_ID.message}</FormFeedback>
-                      )}
-                    </FormGroup>
-                  </Col>
+                      </FormGroup>
+                    </Col>
+                  )}
                   <Col md={6}>
                     <FormGroup>
                       <Label for="User_Type">

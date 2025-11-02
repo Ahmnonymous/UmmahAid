@@ -42,6 +42,15 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
     reset,
   } = useForm();
 
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
   useEffect(() => {
     if (modalOpen) {
       reset({
@@ -223,16 +232,6 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
                   style={{ cursor: "pointer", fontSize: "16px" }}
                 ></i>
               </a>
-              <a
-                href={`${API_STREAM_BASE_URL}/centerAudits/${rowId}/download-attachment`}
-                download
-                title="Download"
-              >
-                <i
-                  className="bx bx-download text-primary"
-                  style={{ cursor: "pointer", fontSize: "16px" }}
-                ></i>
-              </a>
             </div>
           ) : (
             "-"
@@ -402,9 +401,17 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
                   />
                   {errors.Attachments && <FormFeedback>{errors.Attachments.message}</FormFeedback>}
                   {editItem && editItem.attachments_filename && (
-                    <small className="text-muted d-block mt-1">
-                      Current: {editItem.attachments_filename || "file"}
-                    </small>
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <i className="bx bx-file font-size-24 text-primary me-2"></i>
+                        <div className="flex-grow-1">
+                          <div className="fw-medium">{editItem.attachments_filename || "file"}</div>
+                          <small className="text-muted">
+                            {formatFileSize(editItem.attachments_size)} • Current file
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   )}
                   <small className="text-muted d-block mt-1">
                     Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG

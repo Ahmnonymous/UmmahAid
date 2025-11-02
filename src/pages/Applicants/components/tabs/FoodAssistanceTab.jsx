@@ -17,11 +17,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -217,9 +219,11 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Food Assistance</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Food Assistance
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Food Assistance
+          </Button>
+        )}
       </div>
 
       {foodAssistance.length === 0 ? (
@@ -260,7 +264,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
                     control={control}
                     rules={{ required: "Distributed date is required" }}
                     render={({ field }) => (
-                      <Input id="Distributed_Date" type="date" invalid={!!errors.Distributed_Date} {...field} />
+                      <Input id="Distributed_Date" type="date" invalid={!!errors.Distributed_Date} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Distributed_Date && <FormFeedback>{errors.Distributed_Date.message}</FormFeedback>}
@@ -277,7 +281,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
                     control={control}
                     rules={{ required: "Hamper type is required" }}
                     render={({ field }) => (
-                      <Input id="Hamper_Type" type="select" invalid={!!errors.Hamper_Type} {...field}>
+                      <Input id="Hamper_Type" type="select" invalid={!!errors.Hamper_Type} disabled={isOrgExecutive} {...field}>
                         <option value="">Select Type</option>
                         {lookupData.hampers.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -297,7 +301,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
                   <Controller
                     name="Financial_Cost"
                     control={control}
-                    render={({ field }) => <Input id="Financial_Cost" type="number" step="0.01" {...field} />}
+                    render={({ field }) => <Input id="Financial_Cost" type="number" step="0.01" disabled={isOrgExecutive} {...field} />}
                   />
                 </FormGroup>
               </Col>
@@ -309,7 +313,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
                     name="Assisted_By"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Assisted_By" type="select" {...field}>
+                      <Input id="Assisted_By" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Employee</option>
                         {(lookupData.employees || []).map((emp) => (
                           <option key={emp.id} value={emp.id}>
@@ -326,7 +330,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -337,18 +341,20 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

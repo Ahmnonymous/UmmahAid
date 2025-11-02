@@ -3,22 +3,27 @@
 const tableName = 'Conversation_Participants';
 
 const conversationParticipantsModel = {
-  getAll: async () => {
+  // ✅ getAll with tenant filtering: App Admin (centerId=null) sees all, others see only their center
+  getAll: async (centerId = null) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
-
+      // ✅ Standardized pattern: WHERE ($1::int IS NULL OR center_id = $1)
+      const query = `SELECT * FROM ${tableName} WHERE ($1::int IS NULL OR center_id = $1)`;
+      const params = [centerId];
+      const res = await pool.query(query, params);
       return res.rows;
     } catch (err) {
       throw new Error("Error fetching all records from Conversation_Participants: " + err.message);
     }
   },
 
-  getById: async (id) => {
+  // ✅ getById with tenant filtering
+  getById: async (id, centerId = null) => {
     try {
-      const query = `SELECT * FROM ${tableName} WHERE "id" = $1`;
-      const res = await pool.query(query, [id]);
+      // ✅ Standardized pattern: WHERE id = $1 AND ($2::int IS NULL OR center_id = $2)
+      const query = `SELECT * FROM ${tableName} WHERE "id" = $1 AND ($2::int IS NULL OR center_id = $2)`;
+      const params = [id, centerId];
+      const res = await pool.query(query, params);
       if (!res.rows[0]) return null;
-
       return res.rows[0];
     } catch (err) {
       throw new Error("Error fetching record by ID from Conversation_Participants: " + err.message);
@@ -38,12 +43,16 @@ const conversationParticipantsModel = {
     }
   },
 
-  update: async (id, fields) => {
+  // ✅ update with tenant filtering
+  update: async (id, fields, centerId = null) => {
     try {
       const setClauses = Object.keys(fields).map((key, i) => `"${key}" = $${i + 1}`).join(', ');
       const values = Object.values(fields);
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE "id" = $${values.length + 1} RETURNING *`;
-      const res = await pool.query(query, [...values, id]);
+      const paramIndex = values.length + 1;
+      // ✅ Standardized pattern: WHERE id = $X AND ($Y::int IS NULL OR center_id = $Y)
+      const query = `UPDATE ${tableName} SET ${setClauses} WHERE "id" = $${paramIndex} AND ($${paramIndex + 1}::int IS NULL OR center_id = $${paramIndex + 1}) RETURNING *`;
+      const params = [...values, id, centerId];
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -51,10 +60,13 @@ const conversationParticipantsModel = {
     }
   },
 
-  delete: async (id) => {
+  // ✅ delete with tenant filtering
+  delete: async (id, centerId = null) => {
     try {
-      const query = `DELETE FROM ${tableName} WHERE "id" = $1 RETURNING *`;
-      const res = await pool.query(query, [id]);
+      // ✅ Standardized pattern: WHERE id = $1 AND ($2::int IS NULL OR center_id = $2)
+      const query = `DELETE FROM ${tableName} WHERE "id" = $1 AND ($2::int IS NULL OR center_id = $2) RETURNING *`;
+      const params = [id, centerId];
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {

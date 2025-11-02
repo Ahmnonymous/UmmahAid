@@ -1,10 +1,11 @@
 const ReportsModel = require('../models/reportsModel');
 
 class ReportsController {
+    // ✅ FIXED: Use req.center_id from filterMiddleware (App Admin = null, others = their center_id)
     // Center Audits Report
     static async getCenterAudits(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id;
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getCenterAudits(centerId);
             res.status(200).json({ success: true, data, count: data.length, message: 'Center audits report retrieved successfully' });
         } catch (error) {
@@ -15,7 +16,7 @@ class ReportsController {
     // Get Applicant Details Report
     static async getApplicantDetails(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getApplicantDetails(centerId);
             
             res.status(200).json({
@@ -37,7 +38,7 @@ class ReportsController {
     // Get Total Financial Assistance Report
     static async getTotalFinancialAssistance(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getTotalFinancialAssistance(centerId);
             
             res.status(200).json({
@@ -59,7 +60,7 @@ class ReportsController {
     // Get Financial Assistance Report
     static async getFinancialAssistance(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getFinancialAssistance(centerId);
             
             res.status(200).json({
@@ -81,7 +82,7 @@ class ReportsController {
     // Get Food Assistance Report
     static async getFoodAssistance(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getFoodAssistance(centerId);
             
             res.status(200).json({
@@ -103,7 +104,7 @@ class ReportsController {
     // Get Home Visits Report
     static async getHomeVisits(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getHomeVisits(centerId);
             
             res.status(200).json({
@@ -125,7 +126,7 @@ class ReportsController {
     // Get Relationship Report
     static async getRelationshipReport(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getRelationshipReport(centerId);
             
             res.status(200).json({
@@ -147,7 +148,7 @@ class ReportsController {
     // Get Applicant Programs Report
     static async getApplicantPrograms(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getApplicantPrograms(centerId);
             
             res.status(200).json({
@@ -169,7 +170,7 @@ class ReportsController {
     // Get Financial Assessment Report
     static async getFinancialAssessment(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getFinancialAssessment(centerId);
             
             res.status(200).json({
@@ -191,7 +192,7 @@ class ReportsController {
     // Get Skills Matrix Report
     static async getSkillsMatrix(req, res) {
         try {
-            const centerId = parseInt(req.user.user_type) === 3 ? null : req.user.center_id; // 3 = SuperAdmin (Org. Executives)
+            const centerId = req.center_id; // Set by filterMiddleware
             const data = await ReportsModel.getSkillsMatrix(centerId);
             
             res.status(200).json({

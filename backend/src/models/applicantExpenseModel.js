@@ -3,20 +3,41 @@
 const tableName = 'Applicant_Expense';
 
 const applicantExpenseModel = {
-  getAll: async () => {
+  // ✅ getAll with tenant filtering via join to Financial_Assessment
+  getAll: async (centerId = null, isMultiCenter = false) => {
     try {
-      const res = await pool.query(`SELECT * FROM ${tableName}`);
-
+      let query = `SELECT ae.* FROM ${tableName} ae 
+                   INNER JOIN Financial_Assessment fa ON ae.Financial_Assessment_ID = fa.id`;
+      const params = [];
+      
+      // ✅ Apply tenant filtering
+      if (centerId && !isMultiCenter) {
+        query += ` WHERE fa.center_id = $1`;
+        params.push(centerId);
+      }
+      
+      const res = await pool.query(query, params);
       return res.rows;
     } catch (err) {
       throw new Error("Error fetching all records from Applicant_Expense: " + err.message);
     }
   },
 
-  getById: async (id) => {
+  // ✅ getById with tenant filtering via join
+  getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      const query = `SELECT * FROM ${tableName} WHERE "id" = $1`;
-      const res = await pool.query(query, [id]);
+      let query = `SELECT ae.* FROM ${tableName} ae 
+                   INNER JOIN Financial_Assessment fa ON ae.Financial_Assessment_ID = fa.id
+                   WHERE ae."id" = $1`;
+      const params = [id];
+      
+      // ✅ Apply tenant filtering
+      if (centerId && !isMultiCenter) {
+        query += ` AND fa.center_id = $2`;
+        params.push(centerId);
+      }
+      
+      const res = await pool.query(query, params);
       if (!res.rows[0]) return null;
 
       return res.rows[0];
@@ -38,12 +59,22 @@ const applicantExpenseModel = {
     }
   },
 
-  update: async (id, fields) => {
+  // ✅ update with tenant filtering via join
+  update: async (id, fields, centerId = null, isMultiCenter = false) => {
     try {
       const setClauses = Object.keys(fields).map((key, i) => `"${key}" = $${i + 1}`).join(', ');
       const values = Object.values(fields);
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE "id" = $${values.length + 1} RETURNING *`;
-      const res = await pool.query(query, [...values, id]);
+      let query = `UPDATE ${tableName} SET ${setClauses} WHERE "id" = $${values.length + 1}`;
+      const params = [...values, id];
+      
+      // ✅ Apply tenant filtering via EXISTS subquery
+      if (centerId && !isMultiCenter) {
+        query += ` AND EXISTS (SELECT 1 FROM Financial_Assessment fa WHERE fa.id = ${tableName}."Financial_Assessment_ID" AND fa.center_id = $${values.length + 2})`;
+        params.push(centerId);
+      }
+      
+      query += ` RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
@@ -51,10 +82,20 @@ const applicantExpenseModel = {
     }
   },
 
-  delete: async (id) => {
+  // ✅ delete with tenant filtering via join
+  delete: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      const query = `DELETE FROM ${tableName} WHERE "id" = $1 RETURNING *`;
-      const res = await pool.query(query, [id]);
+      let query = `DELETE FROM ${tableName} WHERE "id" = $1`;
+      const params = [id];
+      
+      // ✅ Apply tenant filtering via EXISTS subquery
+      if (centerId && !isMultiCenter) {
+        query += ` AND EXISTS (SELECT 1 FROM Financial_Assessment fa WHERE fa.id = ${tableName}."Financial_Assessment_ID" AND fa.center_id = $2)`;
+        params.push(centerId);
+      }
+      
+      query += ` RETURNING *`;
+      const res = await pool.query(query, params);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {

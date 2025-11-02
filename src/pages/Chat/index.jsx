@@ -49,16 +49,13 @@ const Chat = () => {
       setLoading(true);
       const response = await axiosApi.get(`${API_BASE_URL}/conversations`);
       
-      // Filter by center_id for tenant isolation
-      const userConversations = currentUser?.center_id 
-        ? response.data.filter(c => c.center_id === currentUser.center_id)
-        : response.data;
-
-      setConversations(userConversations);
+      // ✅ Backend now handles filtering - App Admin sees all, others see only their center
+      // No frontend filtering needed (backend enforces it)
+      setConversations(response.data);
       
       // Set first conversation as active if none selected
-      if (!currentConversation && userConversations.length > 0) {
-        setCurrentConversation(userConversations[0]);
+      if (!currentConversation && response.data.length > 0) {
+        setCurrentConversation(response.data[0]);
       }
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -72,10 +69,15 @@ const Chat = () => {
     try {
       const response = await axiosApi.get(`${API_BASE_URL}/employee`);
       
-      // Filter by center_id for tenant isolation
-      const centerEmployees = currentUser?.center_id
-        ? response.data.filter(e => e.center_id === currentUser.center_id)
-        : response.data;
+      // ✅ App Admin can chat with users from any center, others only within their center
+      const userType = parseInt(currentUser?.user_type);
+      const isAppAdmin = userType === 1; // App Admin (role 1)
+      
+      const centerEmployees = isAppAdmin 
+        ? response.data // App Admin sees all employees
+        : (currentUser?.center_id
+          ? response.data.filter(e => e.center_id === currentUser.center_id)
+          : response.data);
 
       setEmployees(centerEmployees);
     } catch (error) {
@@ -170,7 +172,7 @@ const Chat = () => {
         sender_id: currentUser?.id,
         message_text: messageData.message_text,
         read_status: "Unread",
-        center_id: currentUser?.center_id || 1,
+        center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
         created_by: currentUser?.username || "system",
       };
 
@@ -190,15 +192,14 @@ const Chat = () => {
         formData.append("sender_id", payload.sender_id);
         formData.append("message_text", payload.message_text);
         formData.append("read_status", payload.read_status);
-        formData.append("center_id", payload.center_id);
+        // Only append center_id if it's not null (App Admin has null center_id)
+        if (payload.center_id !== null && payload.center_id !== undefined) {
+          formData.append("center_id", payload.center_id);
+        }
         formData.append("created_by", payload.created_by);
         formData.append("attachment", messageData.file);
 
-        const response = await axiosApi.post(`${API_BASE_URL}/messages`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await axiosApi.post(`${API_BASE_URL}/messages`, formData);
       } else {
         await axiosApi.post(`${API_BASE_URL}/messages`, payload);
       }
@@ -218,7 +219,7 @@ const Chat = () => {
       const payload = {
         title: conversationData.title,
         type: conversationData.type,
-        center_id: currentUser?.center_id || 1,
+        center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
         created_by: currentUser?.username || "system",
       };
 
@@ -232,7 +233,7 @@ const Chat = () => {
             conversation_id: newConversation.id,
             employee_id: employeeId,
             joined_date: new Date().toISOString().split('T')[0],
-            center_id: currentUser?.center_id || 1,
+            center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
             created_by: currentUser?.username || "system",
           });
         }

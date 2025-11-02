@@ -4,7 +4,9 @@ const fs = require('fs').promises;
 const messagesController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await messagesModel.getAll(req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) sees all, others see only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const data = await messagesModel.getAll(centerId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -13,7 +15,9 @@ const messagesController = {
   
   getById: async (req, res) => { 
     try { 
-      const data = await messagesModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) sees all, others see only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const data = await messagesModel.getById(req.params.id, centerId); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -67,7 +71,9 @@ const messagesController = {
         await fs.unlink(file.path);
       }
       
-      const data = await messagesModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) can update all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const data = await messagesModel.update(req.params.id, fields, centerId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Messages: " + err.message}); 
@@ -76,7 +82,9 @@ const messagesController = {
   
   delete: async (req, res) => { 
     try { 
-      await messagesModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) can delete all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      await messagesModel.delete(req.params.id, centerId); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -85,31 +93,46 @@ const messagesController = {
 
   viewAttachment: async (req, res) => {
     try {
-      const record = await messagesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
+      // ✅ App Admin (center_id=null) can view all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const record = await messagesModel.getById(req.params.id, centerId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_mime || "application/octet-stream";
       const filename = record.attachment_filename || "attachment";
   
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.attachment_size);
-  
       let buffer = record.attachment;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown attachment encoding");
+        }
       }
+  
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("Attachment buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
   
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing attachment:", err);
       res.status(500).json({ error: "Error viewing attachment: " + err.message });
     }
   },
 
   downloadAttachment: async (req, res) => {
     try {
-      const record = await messagesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
+      // ✅ App Admin (center_id=null) can view all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const record = await messagesModel.getById(req.params.id, centerId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   

@@ -2,6 +2,7 @@
 const router = express.Router();
 const policyAndProcedureController = require('../controllers/policyAndProcedureController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const optionalAuthMiddleware = require('../middlewares/optionalAuthMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const filterMiddleware = require('../middlewares/filterMiddleware');
 const multer = require('multer');
@@ -13,13 +14,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ Apply authentication, RBAC, and tenant filtering
+// ✅ View file endpoints - optional auth (allow viewing without token)
+router.get('/:id/view-file', optionalAuthMiddleware, policyAndProcedureController.viewFile);
+
+// ✅ All other endpoints - require authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
 router.use(roleMiddleware([1, 2, 3, 4, 5]));
 router.use(filterMiddleware);
 
 router.get('/', policyAndProcedureController.getAll);
-router.get('/:id/view-file', policyAndProcedureController.viewFile);
 router.get('/:id/download-file', policyAndProcedureController.downloadFile);
 router.get('/:id', policyAndProcedureController.getById);
 router.post('/', upload.fields([{ name: 'file' }]), policyAndProcedureController.create);

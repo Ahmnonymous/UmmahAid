@@ -2,6 +2,7 @@
 const router = express.Router();
 const applicantDetailsController = require('../controllers/applicantDetailsController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const optionalAuthMiddleware = require('../middlewares/optionalAuthMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const filterMiddleware = require('../middlewares/filterMiddleware');
 const multer = require('multer');
@@ -13,17 +14,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ Apply authentication to all routes
+// ✅ View signature endpoint - optional auth (allow viewing without token)
+router.get('/:id/view-signature', optionalAuthMiddleware, applicantDetailsController.viewSignature);
+
+// ✅ All other endpoints - require authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
-
-// ✅ Apply RBAC - Applicants accessible by all staff roles
 router.use(roleMiddleware([1, 2, 3, 4, 5])); // All staff can access applicants
-
-// ✅ Apply tenant filtering
 router.use(filterMiddleware);
 
 router.get('/', applicantDetailsController.getAll);
-router.get('/:id/view-signature', applicantDetailsController.viewSignature);
 router.get('/:id/download-signature', applicantDetailsController.downloadSignature);
 router.get('/:id', applicantDetailsController.getById);
 router.post('/', upload.fields([{ name: 'signature' }]), applicantDetailsController.create);

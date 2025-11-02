@@ -18,11 +18,13 @@ import { useForm, Controller } from "react-hook-form";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
+import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../../helpers/userStorage";
 
 const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert }) => {
+  const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -235,9 +237,11 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Transactions</h5>
-        <Button color="primary" size="sm" onClick={handleAdd}>
-          <i className="bx bx-plus me-1"></i> Add Transaction
-        </Button>
+        {!isOrgExecutive && (
+          <Button color="primary" size="sm" onClick={handleAdd}>
+            <i className="bx bx-plus me-1"></i> Add Transaction
+          </Button>
+        )}
       </div>
 
       {transactions.length === 0 ? (
@@ -278,7 +282,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
                     control={control}
                     rules={{ required: "Transaction date is required" }}
                     render={({ field }) => (
-                      <Input id="Transaction_Date" type="date" invalid={!!errors.Transaction_Date} {...field} />
+                      <Input id="Transaction_Date" type="date" invalid={!!errors.Transaction_Date} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Transaction_Date && <FormFeedback>{errors.Transaction_Date.message}</FormFeedback>}
@@ -295,7 +299,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
                     control={control}
                     rules={{ required: "Transaction type is required" }}
                     render={({ field }) => (
-                      <Input id="Transaction_Type" type="select" invalid={!!errors.Transaction_Type} {...field}>
+                      <Input id="Transaction_Type" type="select" invalid={!!errors.Transaction_Type} disabled={isOrgExecutive} {...field}>
                         <option value="IN">IN (Stock Received)</option>
                         <option value="OUT">OUT (Stock Issued)</option>
                       </Input>
@@ -318,7 +322,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
                       min: { value: 0.01, message: "Quantity must be greater than 0" }
                     }}
                     render={({ field }) => (
-                      <Input id="Quantity" type="number" step="0.01" invalid={!!errors.Quantity} {...field} />
+                      <Input id="Quantity" type="number" step="0.01" invalid={!!errors.Quantity} disabled={isOrgExecutive} {...field} />
                     )}
                   />
                   {errors.Quantity && <FormFeedback>{errors.Quantity.message}</FormFeedback>}
@@ -332,7 +336,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
                     name="Employee_ID"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Employee_ID" type="select" {...field}>
+                      <Input id="Employee_ID" type="select" disabled={isOrgExecutive} {...field}>
                         <option value="">Select Employee</option>
                         {(lookupData.employees || []).map((employee) => (
                           <option key={employee.id} value={employee.id}>
@@ -352,7 +356,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
                     name="Notes"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Notes" type="textarea" rows="5" {...field} />
+                      <Input id="Notes" type="textarea" rows="5" disabled={isOrgExecutive} {...field} />
                     )}
                   />
                 </FormGroup>
@@ -362,7 +366,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
 
           <ModalFooter className="d-flex justify-content-between">
             <div>
-              {editItem && (
+              {editItem && !isOrgExecutive && (
                 <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
@@ -373,18 +377,20 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
               <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
                 <i className="bx bx-x me-1"></i> Cancel
               </Button>
-              <Button color="success" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="bx bx-save me-1"></i> Save
-                  </>
-                )}
-              </Button>
+              {!isOrgExecutive && (
+                <Button color="success" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-save me-1"></i> Save
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </ModalFooter>
         </Form>

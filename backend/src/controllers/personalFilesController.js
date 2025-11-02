@@ -4,16 +4,37 @@ const fs = require('fs').promises;
 const personalFilesController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await personalFilesModel.getAll(req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) sees all, others see only their center
+      let centerId = req.center_id || req.user?.center_id || null;
+      
+      // 🔍 DEBUG: Log user context
+      console.log(`[DEBUG] PersonalFiles.getAll - user: ${req.user?.username}, role: ${req.user?.user_type}, center_id (raw): ${req.user?.center_id}, center_id (final): ${centerId}, type: ${typeof centerId}`);
+      
+      // ✅ Normalize centerId: convert to integer or null
+      if (centerId !== null && centerId !== undefined) {
+        centerId = parseInt(centerId);
+        if (isNaN(centerId)) {
+          centerId = null; // Invalid number becomes null
+        }
+      } else {
+        centerId = null; // Explicitly set to null
+      }
+      
+      console.log(`[DEBUG] PersonalFiles.getAll - normalized centerId: ${centerId} (type: ${typeof centerId})`);
+      
+      const data = await personalFilesModel.getAll(centerId); 
       res.json(data); 
     } catch(err){ 
+      console.error(`[ERROR] PersonalFiles.getAll - ${err.message}`, err);
       res.status(500).json({error: err.message}); 
     } 
   },
   
   getById: async (req, res) => { 
     try { 
-      const data = await personalFilesModel.getById(req.params.id, req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) sees all, others see only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const data = await personalFilesModel.getById(req.params.id, centerId); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -101,7 +122,9 @@ const personalFilesController = {
         await fs.unlink(file.path);
       }
       
-      const data = await personalFilesModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) can update all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const data = await personalFilesModel.update(req.params.id, fields, centerId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Personal_Files: " + err.message}); 
@@ -110,7 +133,9 @@ const personalFilesController = {
   
   delete: async (req, res) => { 
     try { 
-      await personalFilesModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      // ✅ App Admin (center_id=null) can delete all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      await personalFilesModel.delete(req.params.id, centerId); 
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -119,31 +144,46 @@ const personalFilesController = {
 
   viewFile: async (req, res) => {
     try {
-      const record = await personalFilesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
+      // ✅ App Admin (center_id=null) can view all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const record = await personalFilesModel.getById(req.params.id, centerId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
       const mimeType = record.file_mime || "application/octet-stream";
       const filename = record.file_filename || "file";
   
-      res.setHeader("Content-Type", mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-      res.setHeader("Content-Length", record.file_size);
-  
       let buffer = record.file;
       if (typeof buffer === "string") {
-        buffer = Buffer.from(buffer, "base64");
+        if (buffer.startsWith("\\x")) {
+          buffer = Buffer.from(buffer.slice(2), "hex");
+        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+          buffer = Buffer.from(buffer, "base64");
+        } else {
+          throw new Error("Unknown file encoding");
+        }
       }
+  
+      if (!buffer || !buffer.length) {
+        return res.status(500).send("File buffer is empty or corrupted");
+      }
+  
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
   
       res.end(buffer, "binary");
     } catch (err) {
+      console.error("Error viewing file:", err);
       res.status(500).json({ error: "Error viewing file: " + err.message });
     }
   },
 
   downloadFile: async (req, res) => {
     try {
-      const record = await personalFilesModel.getById(req.params.id, req.center_id, req.isMultiCenter);
+      // ✅ App Admin (center_id=null) can view all, others only their center
+      const centerId = req.center_id || req.user?.center_id || null;
+      const record = await personalFilesModel.getById(req.params.id, centerId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
