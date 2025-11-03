@@ -19,8 +19,9 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import SupplierListPanel from "./components/SupplierListPanel";
+import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 import SupplierSummary from "./components/SupplierSummary";
 import SummaryMetrics from "./components/SummaryMetrics";
 import DetailTabs from "./components/DetailTabs";
@@ -212,7 +213,7 @@ const SupplierManagement = () => {
         address: formData.Address || "",
         category_id: formData.Category_ID || null,
         status: formData.Status || "Active",
-        created_by: currentUser?.username || "system",
+        created_by: getAuditName(),
       };
 
       await axiosApi.post(`${API_BASE_URL}/supplierProfile`, payload);
@@ -442,15 +443,27 @@ const SupplierManagement = () => {
                     <Controller
                       name="Contact_Phone"
                       control={control}
+                      rules={tenDigitRule(false, "Phone")}
                       render={({ field }) => (
                         <Input
                           {...field}
                           type="text"
                           id="Contact_Phone"
-                          placeholder="Enter phone number"
+                          placeholder="0123456789"
+                          maxLength={10}
+                          onInput={(e) => {
+                            e.target.value = sanitizeTenDigit(e.target.value);
+                            field.onChange(e);
+                          }}
+                          value={field.value}
+                          onBlur={field.onBlur}
+                          invalid={!!errors.Contact_Phone}
                         />
                       )}
                     />
+                    {errors.Contact_Phone && (
+                      <FormFeedback>{errors.Contact_Phone.message}</FormFeedback>
+                    )}
                   </FormGroup>
                 </Col>
 

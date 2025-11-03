@@ -29,6 +29,7 @@ import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../helpers/userStorage";
+import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 
 const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -372,10 +373,27 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Contact_Phone"
                         control={control}
+                        rules={tenDigitRule(false, "Contact Phone")}
                         render={({ field }) => (
-                          <Input id="Contact_Phone" type="text" {...field} />
+                          <Input
+                            id="Contact_Phone"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Contact_Phone}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Contact_Phone && (
+                        <FormFeedback>{errors.Contact_Phone.message}</FormFeedback>
+                      )}
                     </FormGroup>
                   </Col>
                 </Row>

@@ -20,7 +20,7 @@ import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirm
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
 import { useRole } from "../../../../helpers/useRole";
 
 const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAlert }) => {
@@ -109,10 +109,10 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
       };
 
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/supplierEvaluation/${editItem.id}`, payload);
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/supplierEvaluation`, payload);
       }
 

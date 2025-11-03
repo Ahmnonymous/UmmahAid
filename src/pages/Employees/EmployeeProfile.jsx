@@ -27,7 +27,7 @@ import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
 import AvatarSelector from "../../components/AvatarSelector";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 import profile1 from "/src/assets/images/profile-img.png";
 
@@ -435,13 +435,13 @@ const EmployeeProfile = () => {
       };
 
       if (editAppraisal && editAppraisal.id) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(
           `${API_BASE_URL}/employeeAppraisal/${editAppraisal.id}`,
           payload
         );
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(
           `${API_BASE_URL}/employeeAppraisal`,
           payload
@@ -530,14 +530,14 @@ const EmployeeProfile = () => {
       };
 
       if (editInitiative && editInitiative.id) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(
           `/employeeInitiative/${editInitiative.id}`,
           payload
         );
         showAlert("Initiative has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(
           "/employeeInitiative",
           payload
@@ -681,7 +681,7 @@ const EmployeeProfile = () => {
         formData.append("attachment", data.Attachment[0]);
 
         if (editSkill && editSkill.id) {
-          formData.append("updated_by", currentUser?.username || "system");
+          formData.append("updated_by", getAuditName());
           await axiosApi.put(
             `${API_BASE_URL}/employeeSkills/${editSkill.id}`,
             formData,
@@ -690,7 +690,7 @@ const EmployeeProfile = () => {
             }
           );
         } else {
-          formData.append("created_by", currentUser?.username || "system");
+          formData.append("created_by", getAuditName());
           await axiosApi.post(
             `${API_BASE_URL}/employeeSkills`,
             formData,
@@ -714,13 +714,13 @@ const EmployeeProfile = () => {
         };
 
         if (editSkill && editSkill.id) {
-          payload.updated_by = currentUser?.username || "system";
+          payload.updated_by = getAuditName();
           await axiosApi.put(
             `${API_BASE_URL}/employeeSkills/${editSkill.id}`,
             payload
           );
         } else {
-          payload.created_by = currentUser?.username || "system";
+          payload.created_by = getAuditName();
           await axiosApi.post(`${API_BASE_URL}/employeeSkills`, payload);
         }
       }
@@ -1095,7 +1095,7 @@ const EmployeeProfile = () => {
       const currentUser = getUmmahAidUser();
       const payload = {
         employee_avatar: avatarUrl,
-        updated_by: currentUser?.username || "system",
+        updated_by: getAuditName(),
       };
 
           await axiosApi.put(`${API_BASE_URL}/employee/${id}`, payload);
@@ -1151,7 +1151,7 @@ const EmployeeProfile = () => {
         employee_avatar: selectedAvatar || null,
         // ✅ App Admin (User_Type = 1) should have NULL center_id
         center_id: data.User_Type === "1" ? null : (data.Center_ID ? parseInt(data.Center_ID) : employee?.center_id || null),
-        updated_by: currentUser?.username || "system",
+        updated_by: getAuditName(),
       };
 
       // Only include password_hash if password is provided
@@ -2609,15 +2609,19 @@ const EmployeeProfile = () => {
                       name="Contact_Number"
                       control={employeeControl}
                       rules={{
-                        pattern: {
-                          value: /^\+?[0-9]{10,15}$/,
-                          message: "Invalid phone number (10-15 digits)",
-                        },
+                        validate: (v) => (!v ? true : /^\d{10}$/.test(v)) || "Contact Number must be exactly 10 digits",
                       }}
                       render={({ field }) => (
                         <Input
                           id="Contact_Number"
-                          placeholder="+27123456789"
+                          placeholder="0123456789"
+                          maxLength={10}
+                          onInput={(e) => {
+                            e.target.value = (e.target.value || "").replace(/\D/g, "").slice(0, 10);
+                            field.onChange(e);
+                          }}
+                          value={field.value}
+                          onBlur={field.onBlur}
                           invalid={!!employeeErrors.Contact_Number}
                           {...field}
                         />
@@ -2637,15 +2641,19 @@ const EmployeeProfile = () => {
                       name="Emergency_Contact"
                       control={employeeControl}
                       rules={{
-                        pattern: {
-                          value: /^\+?[0-9]{10,15}$/,
-                          message: "Invalid phone number (10-15 digits)",
-                        },
+                        validate: (v) => (!v ? true : /^\d{10}$/.test(v)) || "Emergency Contact must be exactly 10 digits",
                       }}
                       render={({ field }) => (
                         <Input
                           id="Emergency_Contact"
-                          placeholder="+27123456789"
+                          placeholder="0123456789"
+                          maxLength={10}
+                          onInput={(e) => {
+                            e.target.value = (e.target.value || "").replace(/\D/g, "").slice(0, 10);
+                            field.onChange(e);
+                          }}
+                          value={field.value}
+                          onBlur={field.onBlur}
                           invalid={!!employeeErrors.Emergency_Contact}
                           {...field}
                         />

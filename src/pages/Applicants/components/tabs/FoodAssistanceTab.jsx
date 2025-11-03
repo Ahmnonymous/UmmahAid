@@ -20,7 +20,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -74,7 +74,6 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
 
       const payload = {
         file_id: applicantId,
@@ -85,11 +84,11 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
       };
 
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/foodAssistance/${editItem.id}`, payload);
         showAlert("Food assistance has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/foodAssistance`, payload);
         showAlert("Food assistance has been added successfully", "success");
       }
@@ -182,6 +181,14 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
         },
       },
       
+      {
+        header: "Created By",
+        accessorKey: "created_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+
       {
         header: "Created On",
         accessorKey: "created_at",

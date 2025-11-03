@@ -27,6 +27,7 @@ import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getUmmahAidUser } from "../../../helpers/userStorage";
+import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 
 const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -416,10 +417,27 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Contact_Number"
                         control={control}
+                        rules={tenDigitRule(false, "Contact Number")}
                         render={({ field }) => (
-                          <Input id="Contact_Number" type="text" {...field} />
+                          <Input
+                            id="Contact_Number"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Contact_Number}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Contact_Number && (
+                        <FormFeedback>{errors.Contact_Number.message}</FormFeedback>
+                      )}
                     </FormGroup>
                   </Col>
                   <Col md={6}>
@@ -464,10 +482,25 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Cell1"
                         control={control}
+                        rules={tenDigitRule(false, "Cell 1")}
                         render={({ field }) => (
-                          <Input id="Cell1" type="text" {...field} />
+                          <Input
+                            id="Cell1"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Cell1}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Cell1 && <FormFeedback>{errors.Cell1.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -476,10 +509,25 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Cell2"
                         control={control}
+                        rules={tenDigitRule(false, "Cell 2")}
                         render={({ field }) => (
-                          <Input id="Cell2" type="text" {...field} />
+                          <Input
+                            id="Cell2"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Cell2}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Cell2 && <FormFeedback>{errors.Cell2.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -488,10 +536,25 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Cell3"
                         control={control}
+                        rules={tenDigitRule(false, "Cell 3")}
                         render={({ field }) => (
-                          <Input id="Cell3" type="text" {...field} />
+                          <Input
+                            id="Cell3"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Cell3}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Cell3 && <FormFeedback>{errors.Cell3.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -500,10 +563,25 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Contact1"
                         control={control}
+                        rules={tenDigitRule(false, "Contact 1")}
                         render={({ field }) => (
-                          <Input id="Contact1" type="text" {...field} />
+                          <Input
+                            id="Contact1"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Contact1}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Contact1 && <FormFeedback>{errors.Contact1.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -512,10 +590,25 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Contact2"
                         control={control}
+                        rules={tenDigitRule(false, "Contact 2")}
                         render={({ field }) => (
-                          <Input id="Contact2" type="text" {...field} />
+                          <Input
+                            id="Contact2"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Contact2}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Contact2 && <FormFeedback>{errors.Contact2.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -524,10 +617,25 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Contact3"
                         control={control}
+                        rules={tenDigitRule(false, "Contact 3")}
                         render={({ field }) => (
-                          <Input id="Contact3" type="text" {...field} />
+                          <Input
+                            id="Contact3"
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Contact3}
+                            {...field}
+                          />
                         )}
                       />
+                      {errors.Contact3 && <FormFeedback>{errors.Contact3.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                 </Row>

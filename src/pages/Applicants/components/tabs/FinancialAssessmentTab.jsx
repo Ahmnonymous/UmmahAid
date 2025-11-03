@@ -22,7 +22,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
 
 const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -89,7 +89,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
         total_income: 0,
         total_expenses: 0,
         disposable_income: 0,
-        created_by: currentUser?.username || "system",
+        created_by: getAuditName(),
       };
 
       await axiosApi.post(`${API_BASE_URL}/financialAssessment`, payload);
@@ -159,11 +159,11 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
       };
 
       if (editIncomeItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/applicantIncome/${editIncomeItem.id}`, payload);
         showAlert("Income has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/applicantIncome`, payload);
         showAlert("Income has been added successfully", "success");
       }
@@ -189,11 +189,11 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
       };
 
       if (editExpenseItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/applicantExpense/${editExpenseItem.id}`, payload);
         showAlert("Expense has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/applicantExpense`, payload);
         showAlert("Expense has been added successfully", "success");
       }

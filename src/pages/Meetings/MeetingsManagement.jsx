@@ -19,7 +19,7 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import MeetingListPanel from "./components/MeetingListPanel";
 import MeetingSummary from "./components/MeetingSummary";
 import SummaryMetrics from "./components/SummaryMetrics";
@@ -228,7 +228,7 @@ const MeetingsManagement = () => {
         general_discussion: data.General_Discussion,
         feedback: data.Feedback,
         center_id: currentUser?.center_id || 1,
-        created_by: currentUser?.username || "system",
+        created_by: getAuditName(),
       };
 
       await axiosApi.post(`${API_BASE_URL}/hseqToolboxMeeting`, payload);

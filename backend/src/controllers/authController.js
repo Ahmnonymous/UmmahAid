@@ -17,12 +17,13 @@ exports.login = async (req, res) => {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
-    // ✅ Include center_id in payload
+    // ✅ Include center_id and full_name in payload
     const payload = {
       id: user.id,
       username: user.username,
       user_type: user.user_type,
       center_id: user.center_id,
+      full_name: `${user.name || ''} ${user.surname || ''}`.trim(),
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {

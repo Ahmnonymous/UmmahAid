@@ -28,7 +28,7 @@ import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../helpers/userStorage";
 
 const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -120,7 +120,7 @@ const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
         min_stock: data.Min_Stock ? parseFloat(data.Min_Stock) : null,
         cost_per_unit: data.Cost_Per_Unit ? parseFloat(data.Cost_Per_Unit) : null,
         supplier_id: data.Supplier_ID || null,
-        updated_by: currentUser?.username || "system",
+        updated_by: getAuditName(),
       };
 
       await axiosApi.put(`${API_BASE_URL}/inventoryItems/${item.id}`, payload);

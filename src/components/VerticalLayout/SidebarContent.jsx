@@ -298,19 +298,23 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            <li>
-              <Link to="/FileManager">
-                <i className="bx bx-folder"></i>
-                <span>{props.t("File Manager")}</span>
-              </Link>
-            </li>
+            {!isOrgExecutive && (
+              <li>
+                <Link to="/FileManager">
+                  <i className="bx bx-folder"></i>
+                  <span>{props.t("File Manager")}</span>
+                </Link>
+              </li>
+            )}
 
-            <li>
-              <Link to="/chat">
-                <i className="bx bx-chat"></i>
-                <span>{props.t("Chat")}</span>
-              </Link>
-            </li>
+            {!isOrgExecutive && (
+              <li>
+                <Link to="/chat">
+                  <i className="bx bx-chat"></i>
+                  <span>{props.t("Chat")}</span>
+                </Link>
+              </li>
+            )}
 
             <li>
               <Link to="/policy-library">

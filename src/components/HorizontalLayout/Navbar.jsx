@@ -18,7 +18,7 @@ const Navbar = (props) => {
   const [reports, setReports] = useState(false);
   
   // ✅ Get user role information
-  const { hasRole, isAppAdmin } = useRole();
+  const { hasRole, isAppAdmin, isOrgExecutive } = useRole();
 
   useEffect(() => {
     var matchingMenuItem = null;
@@ -208,19 +208,23 @@ const Navbar = (props) => {
                   </li>
                 )}
 
-                <li className="nav-item">
-                  <Link to="/FileManager" className="nav-link">
-                    <i className="bx bx-folder me-2"></i>
-                    {props.t("File Manager")}
-                      </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link to="/chat" className="nav-link">
-                    <i className="bx bx-chat me-2"></i>
-                    {props.t("Chat")}
+                {!isOrgExecutive && (
+                  <li className="nav-item">
+                    <Link to="/FileManager" className="nav-link">
+                      <i className="bx bx-folder me-2"></i>
+                      {props.t("File Manager")}
                         </Link>
-                </li>
+                  </li>
+                )}
+
+                {!isOrgExecutive && (
+                  <li className="nav-item">
+                    <Link to="/chat" className="nav-link">
+                      <i className="bx bx-chat me-2"></i>
+                      {props.t("Chat")}
+                          </Link>
+                  </li>
+                )}
               </ul>
             </Collapse>
           </nav>

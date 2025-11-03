@@ -20,12 +20,14 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
 
   // Delete confirmation hook
   const {
@@ -62,6 +64,20 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
         Attachment_1: null,
         Attachment_2: null,
       });
+
+      // Load employees when opening the modal
+      (async () => {
+        try {
+          setEmployeesLoading(true);
+          const res = await axiosApi.get(`${API_BASE_URL}/employee`);
+          // Backend enforces tenant filtering. Use as-is.
+          setEmployees(Array.isArray(res.data) ? res.data : []);
+        } catch (e) {
+          console.error("Error fetching employees for representative dropdown:", e);
+        } finally {
+          setEmployeesLoading(false);
+        }
+      })();
     }
   }, [editItem, modalOpen, reset]);
 
@@ -84,7 +100,6 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
 
       // Check if any attachment is being uploaded
       const hasAttachment1 = data.Attachment_1 && data.Attachment_1.length > 0;
@@ -106,12 +121,12 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
         }
 
         if (editItem) {
-          formData.append("updated_by", currentUser?.username || "system");
+          formData.append("updated_by", getAuditName());
           await axiosApi.put(`${API_BASE_URL}/homeVisit/${editItem.id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         } else {
-          formData.append("created_by", currentUser?.username || "system");
+          formData.append("created_by", getAuditName());
           await axiosApi.post(`${API_BASE_URL}/homeVisit`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
@@ -126,10 +141,10 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
         };
 
         if (editItem) {
-          payload.updated_by = currentUser?.username || "system";
+          payload.updated_by = getAuditName();
           await axiosApi.put(`${API_BASE_URL}/homeVisit/${editItem.id}`, payload);
         } else {
-          payload.created_by = currentUser?.username || "system";
+          payload.created_by = getAuditName();
           await axiosApi.post(`${API_BASE_URL}/homeVisit`, payload);
         }
       }
@@ -366,7 +381,26 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
                     control={control}
                     rules={{ required: "Representative is required" }}
                     render={({ field }) => (
-                      <Input id="Representative" type="text" invalid={!!errors.Representative} disabled={isOrgExecutive} {...field} />
+                      <Input
+                        id="Representative"
+                        type="select"
+                        invalid={!!errors.Representative}
+                        disabled={isOrgExecutive}
+                        {...field}
+                      >
+                        <option value="" disabled>
+                          {employeesLoading ? "Loading employees..." : "Select representative"}
+                        </option>
+                        {employees.map((emp) => {
+                          const label = [emp.name, emp.surname].filter(Boolean).join(" ");
+                          const value = label || emp.username || String(emp.id || "");
+                          return (
+                            <option key={emp.id || value} value={value}>
+                              {label || value}
+                            </option>
+                          );
+                        })}
+                      </Input>
                     )}
                   />
                   {errors.Representative && <FormFeedback>{errors.Representative.message}</FormFeedback>}

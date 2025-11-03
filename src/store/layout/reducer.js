@@ -24,14 +24,19 @@ import {
   leftSideBarThemeTypes,
 } from "../../constants/layout";
 
+// Determine default mode based on environment (Vite: import.meta.env.MODE)
+const DEFAULT_MODE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.MODE === "development")
+  ? layoutModeTypes.DARK
+  : layoutModeTypes.LIGHT;
+
 const INIT_STATE = {
   layoutType: layoutTypes.VERTICAL,
-  layoutModeType: layoutModeTypes.LIGHT,
+  layoutModeType: DEFAULT_MODE,
   layoutWidth: layoutWidthTypes.FLUID,
   leftSideBarTheme: leftSideBarThemeTypes.DARK,
   leftSideBarThemeImage: leftBarThemeImageTypes.NONE,
   leftSideBarType: leftSidebarTypes.DEFAULT,
-  topbarTheme: topBarThemeTypes.LIGHT,
+  topbarTheme: DEFAULT_MODE === layoutModeTypes.DARK ? topBarThemeTypes.DARK : topBarThemeTypes.LIGHT,
   isPreloader: false,
   showRightSidebar: false,
   isMobile: false,

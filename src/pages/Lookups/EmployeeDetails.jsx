@@ -26,8 +26,9 @@ import AvatarSelector from "../../components/AvatarSelector";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
+import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 
 const EmployeeDetails = () => {
   const navigate = useNavigate();
@@ -239,7 +240,7 @@ const EmployeeDetails = () => {
       const currentUser = getUmmahAidUser();
       const payload = {
         employee_avatar: avatarUrl,
-        updated_by: currentUser?.username || "system",
+        updated_by: getAuditName(),
       };
 
       await axiosApi.put(
@@ -318,14 +319,14 @@ const EmployeeDetails = () => {
       }
 
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(
           `${API_BASE_URL}/employee/${editItem.id}`,
           payload
         );
         showAlert("Employee has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/employee`, payload);
         showAlert("Employee has been created successfully", "success");
       }
@@ -865,16 +866,18 @@ const EmployeeDetails = () => {
                       <Controller
                         name="Contact_Number"
                         control={control}
-                        rules={{
-                          pattern: {
-                            value: /^\+?[0-9]{10,15}$/,
-                            message: "Invalid phone number (10-15 digits)",
-                          },
-                        }}
+                        rules={tenDigitRule(false, "Contact Number")}
                         render={({ field }) => (
                           <Input
                             id="Contact_Number"
-                            placeholder="+27123456789"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
                             invalid={!!errors.Contact_Number}
                             {...field}
                           />
@@ -893,16 +896,18 @@ const EmployeeDetails = () => {
                       <Controller
                         name="Emergency_Contact"
                         control={control}
-                        rules={{
-                          pattern: {
-                            value: /^\+?[0-9]{10,15}$/,
-                            message: "Invalid phone number (10-15 digits)",
-                          },
-                        }}
+                        rules={tenDigitRule(false, "Emergency Contact")}
                         render={({ field }) => (
                           <Input
                             id="Emergency_Contact"
-                            placeholder="+27123456789"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
                             invalid={!!errors.Emergency_Contact}
                             {...field}
                           />

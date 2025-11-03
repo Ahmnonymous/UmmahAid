@@ -14,7 +14,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 
 const FolderModal = ({
   isOpen,
@@ -64,11 +64,11 @@ const FolderModal = ({
       };
 
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/folders/${editItem.id}`, payload);
         showAlert("Folder has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/folders`, payload);
         showAlert("Folder has been created successfully", "success");
       }

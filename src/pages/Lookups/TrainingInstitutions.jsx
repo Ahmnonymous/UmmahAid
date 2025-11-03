@@ -25,8 +25,9 @@ import TableContainer from "../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
+import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 
 const TrainingInstitutions = () => {
   const [institutions, setInstitutions] = useState([]);
@@ -191,9 +192,9 @@ const TrainingInstitutions = () => {
 
       // Add audit fields based on workspace rules
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
       }
 
       if (editItem) {
@@ -486,16 +487,18 @@ const TrainingInstitutions = () => {
                     <Controller
                       name="Contact_Number"
                       control={control}
-                      rules={{
-                        pattern: {
-                          value: /^\+?[0-9]{10,15}$/,
-                          message: "Invalid phone number (10-15 digits)",
-                        },
-                      }}
+                      rules={tenDigitRule(false, "Contact Number")}
                       render={({ field }) => (
                         <Input
                           id="Contact_Number"
-                          placeholder="+27123456789"
+                          placeholder="0123456789"
+                          maxLength={10}
+                          onInput={(e) => {
+                            e.target.value = sanitizeTenDigit(e.target.value);
+                            field.onChange(e);
+                          }}
+                          value={field.value}
+                          onBlur={field.onBlur}
                           invalid={!!errors.Contact_Number}
                           {...field}
                         />

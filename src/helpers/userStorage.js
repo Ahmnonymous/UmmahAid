@@ -40,6 +40,18 @@ export const getUserFullName = () => {
 };
 
 /**
+ * Get preferred audit display name (Full Name fallback to username, else "system")
+ * @returns {string}
+ */
+export const getAuditName = () => {
+  const user = getUmmahAidUser();
+  const full = (user && user.name && user.surname) ? `${user.name} ${user.surname}`.trim() : "";
+  if (full) return full;
+  if (user && user.username) return user.username;
+  return "system";
+};
+
+/**
  * Get user's center ID from localStorage
  * @returns {number|null} Center ID or null if not found
  */

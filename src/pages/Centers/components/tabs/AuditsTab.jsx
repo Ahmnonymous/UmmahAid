@@ -19,7 +19,7 @@ import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirm
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
 
 const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -125,10 +125,10 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
         };
 
         if (editItem) {
-          payload.updated_by = currentUser?.username || "system";
+          payload.updated_by = getAuditName();
           await axiosApi.put(`${API_BASE_URL}/centerAudits/${editItem.id}`, payload);
         } else {
-          payload.created_by = currentUser?.username || "system";
+          payload.created_by = getAuditName();
           await axiosApi.post(`${API_BASE_URL}/centerAudits`, payload);
         }
       }

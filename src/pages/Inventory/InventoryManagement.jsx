@@ -25,7 +25,7 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import InventoryListPanel from "./components/InventoryListPanel";
 import InventorySummary from "./components/InventorySummary";
 import SummaryMetrics from "./components/SummaryMetrics";
@@ -243,7 +243,7 @@ const InventoryManagement = () => {
         cost_per_unit: data.Cost_Per_Unit ? parseFloat(data.Cost_Per_Unit) : null,
         supplier_id: data.Supplier_ID || null,
         center_id: currentUser?.center_id || 1,
-        created_by: currentUser?.username || "system",
+        created_by: getAuditName(),
       };
 
       await axiosApi.post(`${API_BASE_URL}/inventoryItems`, payload);

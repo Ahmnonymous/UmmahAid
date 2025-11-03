@@ -3,7 +3,7 @@ import { Container, Row, Col, Alert } from "reactstrap";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 
 // Import Components
 import ConversationList from "./ConversationList";
@@ -173,7 +173,7 @@ const Chat = () => {
         message_text: messageData.message_text,
         read_status: "Unread",
         center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
-        created_by: currentUser?.username || "system",
+        created_by: getAuditName(),
       };
 
       // Optimistic update - add message to UI immediately
@@ -220,7 +220,7 @@ const Chat = () => {
         title: conversationData.title,
         type: conversationData.type,
         center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
-        created_by: currentUser?.username || "system",
+        created_by: getAuditName(),
       };
 
       const response = await axiosApi.post(`${API_BASE_URL}/conversations`, payload);
@@ -234,7 +234,7 @@ const Chat = () => {
             employee_id: employeeId,
             joined_date: new Date().toISOString().split('T')[0],
             center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
-            created_by: currentUser?.username || "system",
+            created_by: getAuditName(),
           });
         }
       }

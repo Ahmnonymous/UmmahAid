@@ -27,7 +27,8 @@ import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../helpers/userStorage";
+import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 
 const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -43,7 +44,10 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    // Map pointer to canvas coordinate space (fix cursor/draw offset when canvas is CSS-scaled)
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    return { x, y };
   };
 
   const startSignature = (e) => {
@@ -261,7 +265,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
           health: data.Health && data.Health !== "" ? parseInt(data.Health) : null,
           skills: data.Skills && data.Skills !== "" ? parseInt(data.Skills) : null,
           popia_agreement: data.POPIA_Agreement ? "Y" : "N",
-          updated_by: currentUser?.username || "system",
+          updated_by: getAuditName(),
         };
 
         await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, payload);
@@ -635,25 +639,33 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       />
                     </FormGroup>
                   </Col>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Label>Period as Muslim</Label>
-                      <Controller
-                        name="Period_As_Muslim_ID"
-                        control={control}
-                        render={({ field }) => (
-                          <Input type="select" {...field}>
-                            <option value="">Select Period</option>
-                            {lookupData.periodAsMuslim.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name}
-                              </option>
-                            ))}
-                          </Input>
-                        )}
-                      />
-                    </FormGroup>
-                  </Col>
+                  {(() => {
+                    const bornRelId = watch("Born_Religion_ID");
+                    const bornRel = lookupData.bornReligion.find((r) => String(r.id) === String(bornRelId));
+                    const isIslam = (bornRel?.name || "").toLowerCase() === "islam";
+                    if (isIslam) return null;
+                    return (
+                      <Col md={4}>
+                        <FormGroup>
+                          <Label>Period as Muslim</Label>
+                          <Controller
+                            name="Period_As_Muslim_ID"
+                            control={control}
+                            render={({ field }) => (
+                              <Input type="select" {...field}>
+                                <option value="">Select Period</option>
+                                {lookupData.periodAsMuslim.map((item) => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.name}
+                                  </option>
+                                ))}
+                              </Input>
+                            )}
+                          />
+                        </FormGroup>
+                      </Col>
+                    );
+                  })()}
                   <Col md={4}>
                     <FormGroup>
                       <Label>Education Level</Label>
@@ -760,8 +772,24 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Cell_Number"
                         control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
+                        rules={tenDigitRule(false, "Cell Number")}
+                        render={({ field }) => (
+                          <Input
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Cell_Number}
+                            {...field}
+                          />
+                        )}
                       />
+                      {errors.Cell_Number && <FormFeedback>{errors.Cell_Number.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -770,8 +798,24 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       <Controller
                         name="Alternate_Number"
                         control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
+                        rules={tenDigitRule(false, "Alternate Number")}
+                        render={({ field }) => (
+                          <Input
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Alternate_Number}
+                            {...field}
+                          />
+                        )}
                       />
+                      {errors.Alternate_Number && <FormFeedback>{errors.Alternate_Number.message}</FormFeedback>}
                     </FormGroup>
                   </Col>
                   <Col md={4}>
@@ -851,26 +895,36 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                       />
                     </FormGroup>
                   </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Label>Flat Name</Label>
-                      <Controller
-                        name="Flat_Name"
-                        control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Label>Flat Number</Label>
-                      <Controller
-                        name="Flat_Number"
-                        control={control}
-                        render={({ field }) => <Input type="text" {...field} />}
-                      />
-                    </FormGroup>
-                  </Col>
+                  {(() => {
+                    const selectedDwellingTypeId = watch("Dwelling_Type");
+                    const selected = lookupData.dwellingType.find((d) => String(d.id) === String(selectedDwellingTypeId));
+                    const isFlat = (selected?.name || "").toLowerCase() === "flat";
+                    if (!isFlat) return null;
+                    return (
+                      <>
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label>Flat Name</Label>
+                            <Controller
+                              name="Flat_Name"
+                              control={control}
+                              render={({ field }) => <Input type="text" {...field} />}
+                            />
+                          </FormGroup>
+                        </Col>
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label>Flat Number</Label>
+                            <Controller
+                              name="Flat_Number"
+                              control={control}
+                              render={({ field }) => <Input type="text" {...field} />}
+                            />
+                          </FormGroup>
+                        </Col>
+                      </>
+                    );
+                  })()}
                 </Row>
               </TabPane>
 

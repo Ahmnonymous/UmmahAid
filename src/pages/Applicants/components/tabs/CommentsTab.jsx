@@ -20,12 +20,39 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName, getUserFullName } from "../../../../helpers/userStorage";
 
 const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
+  const currentUser = getUmmahAidUser();
+
+  // Robust creator match: handles username, full name, and audit formats like "John Doe (jdoe)"
+  const isCreatedByCurrentUser = (createdByRaw) => {
+    const createdBy = (createdByRaw || "").toString().trim().toLowerCase();
+    if (!createdBy) return false;
+    const username = (currentUser?.username || "").toString().trim().toLowerCase();
+    const fullName = (getUserFullName?.() || "").toString().trim().toLowerCase();
+    const auditName = (getAuditName?.() || "").toString().trim().toLowerCase();
+    const auditUsername = (auditName.match(/\(([^)]+)\)/)?.[1] || "").toLowerCase();
+    const createdByUsername = (createdBy.match(/\(([^)]+)\)/)?.[1] || "").toLowerCase();
+    const candidates = new Set([
+      username,
+      fullName,
+      auditName,
+      auditUsername,
+    ].filter(Boolean));
+    if (candidates.has(createdBy)) return true;
+    if (createdByUsername && candidates.has(createdByUsername)) return true;
+    // Loose contains check to survive minor formatting differences
+    for (const c of candidates) {
+      if (c && (createdBy.includes(c) || c.includes(createdBy))) return true;
+    }
+    return false;
+  };
 
   // Delete confirmation hook
   const {
@@ -45,7 +72,6 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
   } = useForm({
     defaultValues: {
       Comment: "",
-      Comment_Date: "",
     },
   });
 
@@ -53,7 +79,6 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
     if (modalOpen) {
       reset({
         Comment: editItem?.comment || "",
-        Comment_Date: editItem?.comment_date || new Date().toISOString().split("T")[0],
       });
     }
   }, [editItem, modalOpen, reset]);
@@ -71,6 +96,8 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
   };
 
   const handleEdit = (item) => {
+    // Only creator can edit
+    if (!isCreatedByCurrentUser(item?.created_by)) return;
     setEditItem(item);
     setModalOpen(true);
   };
@@ -82,15 +109,16 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
       const payload = {
         file_id: applicantId,
         comment: data.Comment,
-        comment_date: data.Comment_Date || new Date().toISOString().split("T")[0],
+        // Default to existing comment_date when editing; else use today's date
+        comment_date: editItem?.comment_date || new Date().toISOString().split("T")[0],
       };
 
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/comments/${editItem.id}`, payload);
         showAlert("Comment has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/comments`, payload);
         showAlert("Comment has been added successfully", "success");
       }
@@ -130,61 +158,73 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
         accessorKey: "comment",
         enableSorting: false,
         enableColumnFilter: false,
-        cell: (cell) => (
-          <span
-            className="text-decoration-none"
-            style={{ cursor: "pointer" }}
-            onClick={() => handleEdit(cell.row.original)}
-            onMouseOver={(e) => {
-              e.currentTarget.classList.add('text-primary', 'text-decoration-underline');
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.classList.remove('text-primary', 'text-decoration-underline');
-            }}
-          >
-            {cell.getValue() || "-"}
-          </span>
-        ),
-      },
-      {
-        header: "Date",
-        accessorKey: "comment_date",
-        enableSorting: true,
-        enableColumnFilter: false,
         cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
-      },
-      {
-        header: "Created On",
-        accessorKey: "created_at",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => {
-          const v = cell.getValue();
-          return v ? new Date(v).toLocaleDateString() : "-";
-        },
-      },
-      {
-        header: "Updated By",
-        accessorKey: "updated_by",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => cell.getValue() || "-",
-      },
-      {
-        header: "Updated On",
-        accessorKey: "updated_at",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => {
-          const v = cell.getValue();
-          return v ? new Date(v).toLocaleDateString() : "-";
+          const row = cell.row.original;
+          const createdAt = row.created_at || row.comment_date;
+          const updatedAt = row.updated_at;
+          const isEdited = !!row.updated_by && !!row.updated_at && row.updated_at !== row.created_at;
+          const canEdit = !isOrgExecutive && isCreatedByCurrentUser(row.created_by);
+          const creatorName = row.created_by || getUserFullName() || currentUser?.username || "-";
+          const initials = (() => {
+            const n = (creatorName || "").trim();
+            if (!n) return "--";
+            const parts = n.split(/\s+/);
+            const first = parts[0]?.[0] || "";
+            const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] || "") : "";
+            return (first + last).toUpperCase();
+          })();
+          const formatDT = (d) => {
+            if (!d) return "-";
+            const date = new Date(d);
+            const dateStr = date.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "2-digit" }).toUpperCase();
+            const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: true });
+            return `${dateStr} (${timeStr})`;
+          };
+          return (
+            <div className="d-flex align-items-start">
+              <div
+                className="me-2 rounded-circle bg-secondary text-white text-center shadow-sm"
+                style={{ width: 34, minWidth: 34, height: 34, lineHeight: "34px", fontSize: 11, fontWeight: 700 }}
+                title={creatorName}
+              >
+                {initials}
+              </div>
+              <div className="flex-grow-1">
+                <div className="position-relative border rounded bg-light px-2 py-2 shadow-sm" style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
+                  <div className="d-flex">
+                    <div className="flex-grow-1 text-dark" style={{ lineHeight: 1.4 }}>
+                      {cell.getValue()}
+                      {isEdited && <span className="ms-2 text-muted">(edited)</span>}
+                    </div>
+                    {canEdit && (
+                      <Button color="light" size="sm" className="ms-2" onClick={() => handleEdit(row)} title="Edit">
+                        <i className="bx bx-edit"></i>
+                      </Button>
+                    )}
+                    {!canEdit && (
+                      <span className="ms-2 text-muted" title="Only the creator can edit">
+                        <i className="bx bx-lock"></i>
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 d-flex flex-wrap gap-2 small text-muted">
+                    <span>
+                      <strong>{creatorName}</strong> • {formatDT(createdAt)}
+                    </span>
+                    {isEdited && (
+                      <span>
+                        Updated by <strong>{row.updated_by || "-"}</strong> on {formatDT(updatedAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
         },
       },
     ],
-    []
+    [isOrgExecutive, currentUser]
   );
 
   return (
@@ -198,6 +238,8 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
         )}
       </div>
 
+      {/* Controls are provided by TableContainer for consistency with other tabs */}
+
       {comments.length === 0 ? (
         <div className="alert alert-info" role="alert">
           <i className="bx bx-info-circle me-2"></i>
@@ -206,7 +248,11 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
       ) : (
         <TableContainer
           columns={columns}
-          data={comments}
+          data={(comments || []).slice().sort((a, b) => {
+            const ad = new Date(a.created_at || a.comment_date || 0).getTime();
+            const bd = new Date(b.created_at || b.comment_date || 0).getTime();
+            return bd - ad; // latest first
+          })}
           isGlobalFilter={false}
           isPagination={true}
           isCustomPageSize={true}
@@ -250,16 +296,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
                 </FormGroup>
               </Col>
 
-              <Col md={6}>
-                <FormGroup>
-                  <Label for="Comment_Date">Comment Date</Label>
-                  <Controller
-                    name="Comment_Date"
-                    control={control}
-                    render={({ field }) => <Input id="Comment_Date" type="date" disabled={isOrgExecutive} {...field} />}
-                  />
-                </FormGroup>
-              </Col>
+              {/* Comment date is auto-managed: current date on create, preserved on edit */}
             </Row>
           </ModalBody>
 

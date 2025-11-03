@@ -25,6 +25,7 @@ const lookupTables = {
   User_Types: true,
   Policy_Procedure_Type: true,
   Policy_Procedure_Field: true,
+  Policy_and_Procedure: false,
   Income_Type: true,
   Expense_Type: true,
   Hampers: true,

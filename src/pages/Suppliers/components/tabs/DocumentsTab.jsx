@@ -20,7 +20,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { useRole } from "../../../../helpers/useRole";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
 
 const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole();
@@ -122,10 +122,10 @@ const DocumentsTab = ({ supplierId, documents, lookupData, onUpdate, showAlert }
         };
 
         if (editItem) {
-          payload.updated_by = currentUser?.username || "system";
+          payload.updated_by = getAuditName();
           await axiosApi.put(`${API_BASE_URL}/supplierDocument/${editItem.id}`, payload);
         } else {
-          payload.created_by = currentUser?.username || "system";
+          payload.created_by = getAuditName();
           await axiosApi.post(`${API_BASE_URL}/supplierDocument`, payload);
         }
       }

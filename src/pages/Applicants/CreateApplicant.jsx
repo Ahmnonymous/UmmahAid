@@ -25,7 +25,8 @@ import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TopRightAlert from "../../components/Common/TopRightAlert";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 
 const CreateApplicant = () => {
   document.title = "Create Applicant | UmmahAid";
@@ -47,6 +48,8 @@ const CreateApplicant = () => {
     dwellingStatus: [],
     healthConditions: [],
     skills: [],
+    bornReligion: [],
+    periodAsMuslim: [],
   });
 
   // Signature pad refs/state
@@ -98,7 +101,10 @@ const CreateApplicant = () => {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    // Scale the pointer to the canvas coordinate space to avoid offset when CSS scales the canvas
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    return { x, y };
   };
 
   const dataURLToBlob = (dataURL) => {
@@ -133,6 +139,8 @@ const CreateApplicant = () => {
       Employment_Status: "",
       Skills: "",
       Highest_Education: "",
+      Born_Religion_ID: "",
+      Period_As_Muslim_ID: "",
       Cell_Number: "",
       Alternate_Number: "",
       Email_Address: "",
@@ -174,6 +182,8 @@ const CreateApplicant = () => {
         dwellingStatusRes,
         healthConditionsRes,
         skillsRes,
+        bornReligionRes,
+        periodAsMuslimRes,
       ] = await Promise.all([
         axiosApi.get(`${API_BASE_URL}/lookup/Race`),
         axiosApi.get(`${API_BASE_URL}/lookup/Nationality`),
@@ -188,6 +198,8 @@ const CreateApplicant = () => {
         axiosApi.get(`${API_BASE_URL}/lookup/Dwelling_Status`),
         axiosApi.get(`${API_BASE_URL}/lookup/Health_Conditions`),
         axiosApi.get(`${API_BASE_URL}/lookup/Skills`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Born_Religion`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Period_As_Muslim`),
       ]);
 
       setLookupData({
@@ -204,6 +216,8 @@ const CreateApplicant = () => {
         dwellingStatus: dwellingStatusRes.data || [],
         healthConditions: healthConditionsRes.data || [],
         skills: skillsRes.data || [],
+        bornReligion: bornReligionRes.data || [],
+        periodAsMuslim: periodAsMuslimRes.data || [],
       });
     } catch (error) {
       console.error("Error fetching lookup data:", error);
@@ -251,6 +265,8 @@ const CreateApplicant = () => {
         if (data.Suburb) formData.append("suburb", data.Suburb);
         if (data.Dwelling_Type) formData.append("dwelling_type", data.Dwelling_Type);
         if (data.Dwelling_Status) formData.append("dwelling_status", data.Dwelling_Status);
+        if (data.Born_Religion_ID) formData.append("born_religion_id", data.Born_Religion_ID);
+        if (data.Period_As_Muslim_ID) formData.append("period_as_muslim_id", data.Period_As_Muslim_ID);
         if (data.Health_Conditions) formData.append("health", data.Health_Conditions);
         if (data.Marital_Status) formData.append("marital_status", data.Marital_Status);
         formData.append("date_intake", data.Date_Intake || new Date().toISOString().split("T")[0]);
@@ -277,6 +293,8 @@ const CreateApplicant = () => {
           employment_status: data.Employment_Status && data.Employment_Status !== "" ? parseInt(data.Employment_Status) : null,
           skills: data.Skills && data.Skills !== "" ? parseInt(data.Skills) : null,
           highest_education_level: data.Highest_Education && data.Highest_Education !== "" ? parseInt(data.Highest_Education) : null,
+          born_religion_id: data.Born_Religion_ID && data.Born_Religion_ID !== "" ? parseInt(data.Born_Religion_ID) : null,
+          period_as_muslim_id: data.Period_As_Muslim_ID && data.Period_As_Muslim_ID !== "" ? parseInt(data.Period_As_Muslim_ID) : null,
           cell_number: data.Cell_Number || null,
           alternate_number: data.Alternate_Number || null,
           email_address: data.Email_Address || null,
@@ -292,7 +310,7 @@ const CreateApplicant = () => {
           file_status: data.File_Status && data.File_Status !== "" ? parseInt(data.File_Status) : null,
           popia_agreement: data.POPIA_Agreement ? "Y" : "N",
           center_id: currentUser?.center_id || 1,
-          created_by: currentUser?.username || "system",
+          created_by: getAuditName(),
         };
 
         await axiosApi.post(`${API_BASE_URL}/applicantDetails`, payload);
@@ -499,6 +517,50 @@ const CreateApplicant = () => {
                           </FormGroup>
                         </Col>
 
+                    <Col md={6}>
+                      <FormGroup>
+                        <Label for="Born_Religion_ID">Born Religion</Label>
+                        <Controller
+                          name="Born_Religion_ID"
+                          control={control}
+                          render={({ field }) => (
+                            <Input id="Born_Religion_ID" type="select" {...field}>
+                              <option value="">Select Religion</option>
+                              {(lookupData.bornReligion || []).map((x) => (
+                                <option key={x.id} value={x.id}>{x.name}</option>
+                              ))}
+                            </Input>
+                          )}
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {(() => {
+                      const bornRelId = watch("Born_Religion_ID");
+                      const bornRel = (lookupData.bornReligion || []).find((r) => String(r.id) === String(bornRelId));
+                      const isIslam = (bornRel?.name || "").toLowerCase() === "islam";
+                      if (isIslam) return null;
+                      return (
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label for="Period_As_Muslim_ID">Period as a Muslim</Label>
+                            <Controller
+                              name="Period_As_Muslim_ID"
+                              control={control}
+                              render={({ field }) => (
+                                <Input id="Period_As_Muslim_ID" type="select" {...field}>
+                                  <option value="">Select Period</option>
+                                  {(lookupData.periodAsMuslim || []).map((x) => (
+                                    <option key={x.id} value={x.id}>{x.name}</option>
+                                  ))}
+                                </Input>
+                              )}
+                            />
+                          </FormGroup>
+                        </Col>
+                      );
+                    })()}
+
                         <Col md={6}>
                           <FormGroup>
                             <Label for="Race">Race</Label>
@@ -618,10 +680,23 @@ const CreateApplicant = () => {
                             <Controller
                               name="Cell_Number"
                               control={control}
+                              rules={tenDigitRule(false, "Cell Number")}
                               render={({ field }) => (
-                                <Input id="Cell_Number" type="text" {...field} />
+                                <Input
+                                  id="Cell_Number"
+                                  type="text"
+                                  maxLength={10}
+                                  onInput={(e) => {
+                                    e.target.value = sanitizeTenDigit(e.target.value);
+                                    field.onChange(e);
+                                  }}
+                                  value={field.value}
+                                  onBlur={field.onBlur}
+                                  invalid={!!errors.Cell_Number}
+                                />
                               )}
                             />
+                            {errors.Cell_Number && <FormFeedback>{errors.Cell_Number.message}</FormFeedback>}
                           </FormGroup>
                         </Col>
 
@@ -631,10 +706,23 @@ const CreateApplicant = () => {
                             <Controller
                               name="Alternate_Number"
                               control={control}
+                              rules={tenDigitRule(false, "Alternate Number")}
                               render={({ field }) => (
-                                <Input id="Alternate_Number" type="text" {...field} />
+                                <Input
+                                  id="Alternate_Number"
+                                  type="text"
+                                  maxLength={10}
+                                  onInput={(e) => {
+                                    e.target.value = sanitizeTenDigit(e.target.value);
+                                    field.onChange(e);
+                                  }}
+                                  value={field.value}
+                                  onBlur={field.onBlur}
+                                  invalid={!!errors.Alternate_Number}
+                                />
                               )}
                             />
+                            {errors.Alternate_Number && <FormFeedback>{errors.Alternate_Number.message}</FormFeedback>}
                           </FormGroup>
                         </Col>
 
@@ -717,6 +805,41 @@ const CreateApplicant = () => {
                             />
                           </FormGroup>
                         </Col>
+
+                        {(() => {
+                          const selectedDwellingTypeId = watch("Dwelling_Type");
+                          const selected = (lookupData.dwellingType || []).find((d) => String(d.id) === String(selectedDwellingTypeId));
+                          const isFlat = (selected?.name || "").toLowerCase() === "flat";
+                          if (!isFlat) return null;
+                          return (
+                            <>
+                              <Col md={6}>
+                                <FormGroup>
+                                  <Label for="Flat_Name">Flat Name</Label>
+                                  <Controller
+                                    name="Flat_Name"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Input id="Flat_Name" type="text" {...field} />
+                                    )}
+                                  />
+                                </FormGroup>
+                              </Col>
+                              <Col md={6}>
+                                <FormGroup>
+                                  <Label for="Flat_Number">Flat Number</Label>
+                                  <Controller
+                                    name="Flat_Number"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Input id="Flat_Number" type="text" {...field} />
+                                    )}
+                                  />
+                                </FormGroup>
+                              </Col>
+                            </>
+                          );
+                        })()}
                       </Row>
                     </TabPane>
 

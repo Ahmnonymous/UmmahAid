@@ -411,7 +411,7 @@ const FoodAssistanceReport = () => {
                                                 <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
                                                 <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1000px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                                                            <tr>
+                                                <tr>
                                                                 <th style={{minWidth: '120px'}}>File #</th>
                                                                 <th style={{minWidth: '150px'}}>Name</th>
                                                                 <th style={{minWidth: '120px'}}>Contact</th>

@@ -28,10 +28,10 @@ const tasksController = {
 
   create: async (req, res) => {
     try {
-      // ✅ Add audit fields
-      const username = req.user?.username || 'system';
-      req.body.created_by = username;
-      req.body.updated_by = username;
+      // ✅ Add audit fields using full name when available
+      const auditName = (req.user && req.user.full_name) ? req.user.full_name : (req.user?.username || 'system');
+      req.body.created_by = auditName;
+      req.body.updated_by = auditName;
       
       // ✅ Add center_id
       req.body.center_id = req.center_id || req.user?.center_id;
@@ -46,8 +46,8 @@ const tasksController = {
   update: async (req, res) => {
     try {
       // ✅ Add audit field (don't allow overwrite of created_by)
-      const username = req.user?.username || 'system';
-      req.body.updated_by = username;
+      const auditName = (req.user && req.user.full_name) ? req.user.full_name : (req.user?.username || 'system');
+      req.body.updated_by = auditName;
       delete req.body.created_by; // Prevent overwrite
       
       // ✅ Apply tenant filtering

@@ -26,11 +26,12 @@ import { validateTabsAndNavigate } from "../../helpers/tabValidation";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import CenterListPanel from "./components/CenterListPanel";
 import CenterSummary from "./components/CenterSummary";
 import SummaryMetrics from "./components/SummaryMetrics";
 import DetailTabs from "./components/DetailTabs";
+import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 
 const CenterManagement = () => {
   // Meta title
@@ -288,7 +289,7 @@ const CenterManagement = () => {
           contact3: data.Contact3,
           npo_number: data.NPO_Number,
           service_rating_email: data.Service_Rating_Email,
-          created_by: currentUser?.username || "system",
+          created_by: getAuditName(),
         };
 
         await axiosApi.post(`${API_BASE_URL}/centerDetail`, payload);
@@ -539,10 +540,27 @@ const CenterManagement = () => {
                         <Controller
                           name="Contact_Number"
                           control={createControl}
+                          rules={tenDigitRule(false, "Contact Number")}
                           render={({ field }) => (
-                            <Input id="Contact_Number" type="text" {...field} />
+                            <Input
+                              id="Contact_Number"
+                              type="text"
+                              placeholder="0123456789"
+                              maxLength={10}
+                              onInput={(e) => {
+                                e.target.value = sanitizeTenDigit(e.target.value);
+                                field.onChange(e);
+                              }}
+                              value={field.value}
+                              onBlur={field.onBlur}
+                              invalid={!!createErrors.Contact_Number}
+                              {...field}
+                            />
                           )}
                         />
+                        {createErrors.Contact_Number && (
+                          <FormFeedback>{createErrors.Contact_Number.message}</FormFeedback>
+                        )}
                       </FormGroup>
                     </Col>
                     <Col md={6}>

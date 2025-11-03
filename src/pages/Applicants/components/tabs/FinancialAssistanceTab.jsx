@@ -20,7 +20,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
 
 const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -85,11 +85,11 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
       };
 
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
         await axiosApi.put(`${API_BASE_URL}/financialAssistance/${editItem.id}`, payload);
         showAlert("Financial assistance has been updated successfully", "success");
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/financialAssistance`, payload);
         showAlert("Financial assistance has been added successfully", "success");
       }

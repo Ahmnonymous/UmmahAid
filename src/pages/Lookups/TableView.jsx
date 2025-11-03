@@ -28,7 +28,7 @@ import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import { useRole } from "../../helpers/useRole";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 
 // Redux actions
 import {
@@ -164,9 +164,9 @@ const TableView = () => {
       // Add audit fields based on workspace rules
       const payload = { ...formData };
       if (editItem) {
-        payload.updated_by = currentUser?.username || "system";
+        payload.updated_by = getAuditName();
       } else {
-        payload.created_by = currentUser?.username || "system";
+        payload.created_by = getAuditName();
       }
 
       if (editItem) {

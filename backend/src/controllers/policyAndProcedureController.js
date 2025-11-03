@@ -1,13 +1,21 @@
 ﻿const policyAndProcedureModel = require('../models/policyAndProcedureModel');
+const lookupModel = require('../models/lookupModel');
 const fs = require('fs').promises;
 
 const policyAndProcedureController = {
   getAll: async (req, res) => { 
     try { 
-      const data = await policyAndProcedureModel.getAll(req.center_id, req.isMultiCenter); 
-      res.json(data); 
+      // Use lookup-based listing if available (global setup)
+      const data = await lookupModel.getAll('Policy_and_Procedure', false);
+      return res.json(data);
     } catch(err){ 
-      res.status(500).json({error: err.message}); 
+      // Fallback to model if lookup fails
+      try {
+        const data = await policyAndProcedureModel.getAll(req.center_id, req.isMultiCenter);
+        return res.json(data);
+      } catch (innerErr) {
+        return res.status(500).json({error: innerErr.message});
+      }
     } 
   },
   
