@@ -754,6 +754,16 @@ CREATE TABLE Financial_Assistance (
     Financial_Amount DECIMAL(12,2),
     Date_of_Assistance DATE,
     Assisted_By BIGINT,
+    Sector VARCHAR(255),
+    Program VARCHAR(255),
+    Project VARCHAR(255),
+    Give_To VARCHAR(255),
+    Starting_Date DATE,
+    End_Date DATE,
+    Frequency VARCHAR(20),
+    Is_Recurring BOOLEAN DEFAULT false,
+    Is_Auto_Generated BOOLEAN DEFAULT false,
+    Recurring_Source_ID BIGINT,
     Created_By VARCHAR(255),
     Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
     Updated_By VARCHAR(255),
@@ -762,7 +772,24 @@ CREATE TABLE Financial_Assistance (
     CONSTRAINT fk_file_id_fin FOREIGN KEY (File_ID) REFERENCES Applicant_Details(ID),
     CONSTRAINT fk_assistance_type FOREIGN KEY (Assistance_Type) REFERENCES Assistance_Types(ID),
     CONSTRAINT fk_financial_assistance_assisted_by FOREIGN KEY (Assisted_By) REFERENCES Employee(ID),
+    CONSTRAINT fk_recurring_source_id FOREIGN KEY (Recurring_Source_ID) REFERENCES Financial_Assistance(ID) ON DELETE CASCADE,
     CONSTRAINT fk_center_id_fin FOREIGN KEY (center_id) REFERENCES Center_Detail(ID)
+);
+
+CREATE TABLE Recurring_Invoice_Log (
+    ID SERIAL PRIMARY KEY,
+    Applicant_ID BIGINT REFERENCES Applicant_Details(ID) ON DELETE CASCADE,
+    Financial_Aid_ID BIGINT REFERENCES Financial_Assistance(ID) ON DELETE CASCADE,
+    Source_Financial_Aid_ID BIGINT REFERENCES Financial_Assistance(ID) ON DELETE CASCADE,
+    Created_Date TIMESTAMPTZ NOT NULL DEFAULT now(),
+    Next_Run_Date DATE,
+    Frequency VARCHAR(20),
+    Created_By_System BOOLEAN DEFAULT true,
+    Created_By VARCHAR(255),
+    Created_At TIMESTAMPTZ NOT NULL DEFAULT now(),
+    Updated_By VARCHAR(255),
+    Updated_At TIMESTAMPTZ NOT NULL DEFAULT now(),
+    center_id BIGINT REFERENCES Center_Detail(ID)
 );
 
 CREATE TABLE Food_Assistance (
@@ -1141,6 +1168,9 @@ CREATE INDEX idx_employee_id_number ON Employee (ID_Number);
 CREATE INDEX idx_employee_username ON Employee (Username);
 CREATE INDEX idx_financial_assistance_file_type ON Financial_Assistance (File_ID, Assistance_Type);
 CREATE INDEX idx_financial_assistance_assisted_by ON Financial_Assistance (Assisted_By);
+CREATE INDEX idx_financial_assistance_recurring_source ON Financial_Assistance (Recurring_Source_ID);
+CREATE INDEX idx_financial_assistance_recurring_flags ON Financial_Assistance (Is_Recurring, Is_Auto_Generated);
+CREATE INDEX idx_recurring_invoice_log_source ON Recurring_Invoice_Log (Source_Financial_Aid_ID);
 CREATE INDEX idx_food_assistance_file_id ON Food_Assistance (File_ID);
 CREATE INDEX idx_food_assistance_assisted_by ON Food_Assistance (Assisted_By);
 CREATE INDEX idx_home_visit_file_id ON Home_Visit (File_ID);

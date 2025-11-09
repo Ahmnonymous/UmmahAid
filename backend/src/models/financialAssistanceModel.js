@@ -99,6 +99,57 @@ const financialAssistanceModel = {
     } catch (err) {
       throw new Error("Error deleting record from Financial_Assistance: " + err.message);
     }
+  },
+
+  getRecurringTemplates: async (referenceDate = new Date()) => {
+    try {
+      const query = `
+        SELECT *
+        FROM ${tableName}
+        WHERE is_recurring = true
+          AND starting_date IS NOT NULL
+          AND end_date IS NOT NULL
+          AND starting_date <= $1
+          AND end_date >= $2
+          AND is_auto_generated = false
+      `;
+      const refDate = referenceDate instanceof Date ? referenceDate : new Date(referenceDate);
+      const dateParam = refDate.toISOString().split('T')[0];
+      const res = await pool.query(query, [dateParam, dateParam]);
+      return res.rows;
+    } catch (err) {
+      throw new Error("Error fetching recurring templates from Financial_Assistance: " + err.message);
+    }
+  },
+
+  getLastGeneratedAssistanceDate: async (templateId) => {
+    try {
+      const query = `
+        SELECT MAX(date_of_assistance) AS last_date
+        FROM ${tableName}
+        WHERE id = $1 OR recurring_source_id = $1
+      `;
+      const res = await pool.query(query, [templateId]);
+      return res.rows[0]?.last_date || null;
+    } catch (err) {
+      throw new Error("Error fetching last generated assistance date: " + err.message);
+    }
+  },
+
+  findOccurrenceByTemplateAndDate: async (templateId, targetDate) => {
+    try {
+      const query = `
+        SELECT *
+        FROM ${tableName}
+        WHERE (id = $1 OR recurring_source_id = $1)
+          AND date_of_assistance = $2
+        LIMIT 1
+      `;
+      const res = await pool.query(query, [templateId, targetDate]);
+      return res.rows[0] || null;
+    } catch (err) {
+      throw new Error("Error finding assistance occurrence by date: " + err.message);
+    }
   }
 };
 

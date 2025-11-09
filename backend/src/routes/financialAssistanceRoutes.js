@@ -12,6 +12,11 @@ router.use(filterMiddleware);
 
 router.get('/', financialAssistanceController.getAll);
 router.get('/:id', financialAssistanceController.getById);
+router.post(
+  '/recurring',
+  roleMiddleware([1, 2, 3]),
+  financialAssistanceController.createRecurring
+);
 router.post('/', financialAssistanceController.create);
 router.put('/:id', financialAssistanceController.update);
 router.delete('/:id', financialAssistanceController.delete);

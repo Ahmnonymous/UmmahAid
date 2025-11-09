@@ -134,5 +134,9 @@ module.exports = app;
 // ✅ Server Start (only if not in test environment)
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  const { startScheduler } = require('./services/recurringInvoiceService');
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    startScheduler();
+  });
 }

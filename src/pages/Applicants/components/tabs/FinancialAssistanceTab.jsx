@@ -1,19 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import {
-  Button,
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Form,
-  FormGroup,
-  Label,
-  Input,
-  Row,
-  Col,
-  FormFeedback,
-} from "reactstrap";
-import { useForm, Controller } from "react-hook-form";
+import React, { useState, useMemo } from "react";
+import { Button } from "reactstrap";
 import TableContainer from "../../../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
@@ -21,11 +7,22 @@ import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import FinancialAssistanceModal from "../FinancialAssistanceModal";
+import RecurringInvoiceModal from "../RecurringInvoiceModal";
 
-const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, onUpdate, showAlert }) => {
-  const { isOrgExecutive } = useRole(); // Read-only check
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+const FinancialAssistanceTab = ({
+  applicantId,
+  applicant = null,
+  relationships = [],
+  financialAssistance = [],
+  lookupData = {},
+  onUpdate,
+  showAlert,
+}) => {
+  const { isOrgExecutive, isAppAdmin, isOrgAdmin, isHQ } = useRole(); // Read-only check
+  const [assistanceModalOpen, setAssistanceModalOpen] = useState(false);
+  const [recurringModalOpen, setRecurringModalOpen] = useState(false);
+  const [selectedAssistance, setSelectedAssistance] = useState(null);
 
   // Delete confirmation hook
   const {
@@ -34,98 +31,200 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
     deleteLoading,
     showDeleteConfirmation,
     hideDeleteConfirmation,
-    confirmDelete
+    confirmDelete,
   } = useDeleteConfirmation();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm();
+  const toggleAssistanceModal = () => {
+    setAssistanceModalOpen((prev) => {
+      if (prev) {
+        setSelectedAssistance(null);
+      }
+      return !prev;
+    });
+  };
 
-  useEffect(() => {
-    if (modalOpen) {
-      reset({
-        Assistance_Type: editItem?.assistance_type || "",
-        Financial_Amount: editItem?.financial_amount || "",
-        Date_of_Assistance: editItem?.date_of_assistance || "",
-        Assisted_By: editItem?.assisted_by || "",
-      });
-    }
-  }, [editItem, modalOpen, reset]);
-
-  const toggleModal = () => {
-    setModalOpen(!modalOpen);
-    if (modalOpen) {
-      setEditItem(null);
-    }
+  const toggleRecurringModal = () => {
+    setRecurringModalOpen((prev) => !prev);
   };
 
   const handleAdd = () => {
-    setEditItem(null);
-    setModalOpen(true);
+    setSelectedAssistance(null);
+    setAssistanceModalOpen(true);
   };
 
   const handleEdit = (item) => {
-    setEditItem(item);
-    setModalOpen(true);
+    setSelectedAssistance(item);
+    setAssistanceModalOpen(true);
   };
 
-  const onSubmit = async (data) => {
+  const handleSaveAssistance = async (formValues, editItem) => {
     try {
       const currentUser = getUmmahAidUser();
 
       const payload = {
         file_id: applicantId,
-        assistance_type: data.Assistance_Type ? parseInt(data.Assistance_Type) : null,
-        financial_amount: data.Financial_Amount ? parseFloat(data.Financial_Amount) : 0,
-        date_of_assistance: data.Date_of_Assistance || null,
-        assisted_by: data.Assisted_By ? parseInt(data.Assisted_By) : null,
+        assistance_type: formValues.Assistance_Type
+          ? parseInt(formValues.Assistance_Type, 10)
+          : null,
+        financial_amount: formValues.Financial_Amount
+          ? parseFloat(formValues.Financial_Amount)
+          : 0,
+        date_of_assistance: formValues.Date_of_Assistance || null,
+        assisted_by: formValues.Assisted_By
+          ? parseInt(formValues.Assisted_By, 10)
+          : null,
+        sector: formValues.Sector || "",
+        program: formValues.Program || "",
+        project: formValues.Project || "",
+        give_to: formValues.Give_To || "",
       };
 
+      // 🔹 Auto-attach created_by / updated_by fields from localStorage
+      const persistedUser = JSON.parse(localStorage.getItem("UmmahAidUser"));
       if (editItem) {
-        payload.updated_by = getAuditName();
-        await axiosApi.put(`${API_BASE_URL}/financialAssistance/${editItem.id}`, payload);
+        payload.updated_by =
+          persistedUser?.username ||
+          currentUser?.username ||
+          getAuditName();
+        await axiosApi.put(
+          `${API_BASE_URL}/financialAssistance/${editItem.id}`,
+          payload
+        );
         showAlert("Financial assistance has been updated successfully", "success");
       } else {
-        payload.created_by = getAuditName();
+        payload.created_by =
+          persistedUser?.username ||
+          currentUser?.username ||
+          getAuditName();
         await axiosApi.post(`${API_BASE_URL}/financialAssistance`, payload);
         showAlert("Financial assistance has been added successfully", "success");
       }
 
       onUpdate();
-      toggleModal();
+      return true;
     } catch (error) {
       console.error("Error saving financial assistance:", error);
-      showAlert(error?.response?.data?.message || "Operation failed", "danger");
+      showAlert(
+        error?.response?.data?.message || "Operation failed",
+        "danger"
+      );
+      throw error;
     }
   };
 
   const handleDelete = () => {
-    if (!editItem) return;
+    if (!selectedAssistance) return;
 
-    const assistanceName = `${getLookupName(lookupData.assistanceTypes, editItem.assistance_type)} - ${editItem.amount || 'Unknown Amount'}`;
-    
-    showDeleteConfirmation({
-      id: editItem.id,
-      name: assistanceName,
-      type: "financial assistance",
-      message: "This financial assistance record will be permanently removed from the system."
-    }, async () => {
-      await axiosApi.delete(`${API_BASE_URL}/financialAssistance/${editItem.id}`);
-      showAlert("Financial assistance has been deleted successfully", "success");
-      onUpdate();
-      if (modalOpen) {
-        setModalOpen(false);
+    const assistanceName = `${
+      getLookupName(lookupData?.assistanceTypes || [], selectedAssistance.assistance_type)
+    } - ${selectedAssistance.financial_amount || "Unknown Amount"}`;
+
+    showDeleteConfirmation(
+      {
+        id: selectedAssistance.id,
+        name: assistanceName,
+        type: "financial assistance",
+        message:
+          "This financial assistance record will be permanently removed from the system.",
+      },
+      async () => {
+        await axiosApi.delete(
+          `${API_BASE_URL}/financialAssistance/${selectedAssistance.id}`
+        );
+        showAlert("Financial assistance has been deleted successfully", "success");
+        onUpdate();
+        setAssistanceModalOpen(false);
+        setSelectedAssistance(null);
       }
-    });
+    );
   };
 
   const getLookupName = (lookupArray, id) => {
     if (!id) return "-";
     const item = lookupArray.find((l) => l.id == id);
     return item ? item.name : "-";
+  };
+
+  const recipientOptions = useMemo(() => {
+    const options = [];
+    const sanitize = (value) => (value || "").replace(/\s+/g, " ").trim();
+
+    if (applicant) {
+      const applicantName =
+        sanitize(`${applicant?.name || ""} ${applicant?.surname || ""}`) ||
+        sanitize(applicant?.preferred_name) ||
+        "Applicant";
+      options.push({
+        key: `applicant-${applicant?.id ?? "self"}`,
+        value: applicantName,
+        label: `${applicantName} (Applicant)`,
+      });
+    }
+
+    (relationships || []).forEach((rel) => {
+      const relName =
+        sanitize(`${rel?.name || ""} ${rel?.surname || ""}`) ||
+        sanitize(rel?.relative_name) ||
+        "Unknown";
+      const relationshipTypeName = getLookupName(
+        lookupData?.relationshipTypes || [],
+        rel?.relationship_type
+      );
+      options.push({
+        key: `relationship-${rel?.id ?? relName}`,
+        value: relName,
+        label:
+          relationshipTypeName && relationshipTypeName !== "-"
+            ? `${relName} (${relationshipTypeName})`
+            : relName,
+      });
+    });
+
+    return options;
+  }, [applicant, relationships, lookupData?.relationshipTypes]);
+
+  const canCreateRecurring = isAppAdmin || isOrgAdmin || isHQ;
+
+  const handleRecurringSave = async (formValues) => {
+    try {
+      const payload = {
+        file_id: applicantId,
+        assistance_type: formValues.Assistance_Type
+          ? parseInt(formValues.Assistance_Type, 10)
+          : null,
+        financial_amount: formValues.Financial_Amount
+          ? parseFloat(formValues.Financial_Amount)
+          : 0,
+        date_of_assistance:
+          formValues.Date_of_Assistance || formValues.Starting_Date,
+        assisted_by: formValues.Assisted_By
+          ? parseInt(formValues.Assisted_By, 10)
+          : null,
+        sector: formValues.Sector || "",
+        program: formValues.Program || "",
+        project: formValues.Project || "",
+        give_to: formValues.Give_To || "",
+        starting_date: formValues.Starting_Date,
+        end_date: formValues.End_Date,
+        frequency: formValues.Frequency,
+      };
+
+      const currentUser =
+        JSON.parse(localStorage.getItem("UmmahAidUser")) || getUmmahAidUser();
+      payload.created_by = currentUser?.username || getAuditName();
+
+      await axiosApi.post(`${API_BASE_URL}/financialAssistance/recurring`, payload);
+      showAlert("Recurring invoice scheduled successfully", "success");
+      onUpdate();
+      return true;
+    } catch (error) {
+      console.error("Error scheduling recurring invoice:", error);
+      showAlert(
+        error?.response?.data?.error || "Failed to schedule recurring invoice",
+        "danger"
+      );
+      throw error;
+    }
   };
 
   const columns = useMemo(
@@ -140,13 +239,13 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
             style={{ cursor: "pointer", color: "inherit" }}
             onClick={() => handleEdit(cell.row.original)}
             onMouseOver={(e) => {
-              e.currentTarget.classList.add('text-primary', 'text-decoration-underline');
+              e.currentTarget.classList.add("text-primary", "text-decoration-underline");
             }}
             onMouseOut={(e) => {
-              e.currentTarget.classList.remove('text-primary', 'text-decoration-underline');
+              e.currentTarget.classList.remove("text-primary", "text-decoration-underline");
             }}
           >
-            {getLookupName(lookupData.assistanceTypes, cell.getValue())}
+            {getLookupName(lookupData.assistanceTypes || [], cell.getValue())}
           </span>
         ),
       },
@@ -178,10 +277,37 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
         cell: (cell) => {
           const empId = cell.getValue();
           const emp = (lookupData.employees || []).find((e) => e.id == empId);
-          return emp ? `${emp.name || ''} ${emp.surname || ''}`.trim() : "-";
+          return emp ? `${emp.name || ""} ${emp.surname || ""}`.trim() : "-";
         },
       },
-      
+      {
+        header: "Sector",
+        accessorKey: "sector",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Program",
+        accessorKey: "program",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Project",
+        accessorKey: "project",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Given To",
+        accessorKey: "give_to",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
       {
         header: "Created On",
         accessorKey: "created_at",
@@ -210,12 +336,7 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
         },
       },
     ],
-    [lookupData]
-  );
-
-  const totalAmount = financialAssistance.reduce(
-    (sum, item) => sum + (parseFloat(item.financial_amount) || 0),
-    0
+    [lookupData, handleEdit]
   );
 
   return (
@@ -223,9 +344,16 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
       <div className="mb-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0">Financial Assistance</h5>
         {!isOrgExecutive && (
-          <Button color="primary" size="sm" onClick={handleAdd}>
-            <i className="bx bx-plus me-1"></i> Add Financial Assistance
-          </Button>
+          <div className="d-flex gap-2">
+            {canCreateRecurring && (
+              <Button color="info" size="sm" onClick={toggleRecurringModal}>
+                <i className="bx bx-plus me-1"></i> Add Recurring Invoice
+              </Button>
+            )}
+            <Button color="primary" size="sm" onClick={handleAdd}>
+              <i className="bx bx-plus me-1"></i> Add Financial Assistance
+            </Button>
+          </div>
         )}
       </div>
 
@@ -247,121 +375,25 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
         />
       )}
 
-      {/* Modal */}
-      <Modal isOpen={modalOpen} toggle={toggleModal} centered size="lg" backdrop="static">
-        <ModalHeader toggle={toggleModal}>
-          <i className={`bx ${editItem ? "bx-edit" : "bx-plus-circle"} me-2`}></i>
-          {editItem ? "Edit" : "Add"} Financial Assistance
-        </ModalHeader>
+      <FinancialAssistanceModal
+        isOpen={assistanceModalOpen}
+        toggle={toggleAssistanceModal}
+        lookupData={lookupData}
+        recipientOptions={recipientOptions}
+        isOrgExecutive={isOrgExecutive}
+        editItem={selectedAssistance}
+        onSave={handleSaveAssistance}
+        onDelete={handleDelete}
+      />
 
-        <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody>
-            <Row>
-              <Col md={6}>
-                <FormGroup>
-                  <Label for="Assistance_Type">
-                    Assistance Type <span className="text-danger">*</span>
-                  </Label>
-                  <Controller
-                    name="Assistance_Type"
-                    control={control}
-                    rules={{ required: "Assistance type is required" }}
-                    render={({ field }) => (
-                      <Input id="Assistance_Type" type="select" invalid={!!errors.Assistance_Type} disabled={isOrgExecutive} {...field}>
-                        <option value="">Select Type</option>
-                        {lookupData.assistanceTypes.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.name}
-                          </option>
-                        ))}
-                      </Input>
-                    )}
-                  />
-                  {errors.Assistance_Type && <FormFeedback>{errors.Assistance_Type.message}</FormFeedback>}
-                </FormGroup>
-              </Col>
-
-              <Col md={6}>
-                <FormGroup>
-                  <Label for="Financial_Amount">
-                    Amount (R) <span className="text-danger">*</span>
-                  </Label>
-                  <Controller
-                    name="Financial_Amount"
-                    control={control}
-                    rules={{ required: "Amount is required", min: { value: 0, message: "Amount must be positive" } }}
-                    render={({ field }) => (
-                      <Input id="Financial_Amount" type="number" step="0.01" invalid={!!errors.Financial_Amount} disabled={isOrgExecutive} {...field} />
-                    )}
-                  />
-                  {errors.Financial_Amount && <FormFeedback>{errors.Financial_Amount.message}</FormFeedback>}
-                </FormGroup>
-              </Col>
-
-              <Col md={6}>
-                <FormGroup>
-                  <Label for="Date_of_Assistance">Date of Assistance</Label>
-                  <Controller
-                    name="Date_of_Assistance"
-                    control={control}
-                    render={({ field }) => <Input id="Date_of_Assistance" type="date" disabled={isOrgExecutive} {...field} />}
-                  />
-                </FormGroup>
-              </Col>
-
-              <Col md={6}>
-                <FormGroup>
-                  <Label for="Assisted_By">Assisted By</Label>
-                  <Controller
-                    name="Assisted_By"
-                    control={control}
-                    render={({ field }) => (
-                      <Input id="Assisted_By" type="select" disabled={isOrgExecutive} {...field}>
-                        <option value="">Select Employee</option>
-                        {(lookupData.employees || []).map((emp) => (
-                          <option key={emp.id} value={emp.id}>
-                            {(emp.name || "")} {(emp.surname || "")}
-                          </option>
-                        ))}
-                      </Input>
-                    )}
-                  />
-                </FormGroup>
-              </Col>
-            </Row>
-          </ModalBody>
-
-          <ModalFooter className="d-flex justify-content-between">
-            <div>
-              {editItem && !isOrgExecutive && (
-                <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
-                  <i className="bx bx-trash me-1"></i> Delete
-                </Button>
-              )}
-            </div>
-
-            <div>
-              <Button color="light" onClick={toggleModal} disabled={isSubmitting} className="me-2">
-                <i className="bx bx-x me-1"></i> Cancel
-              </Button>
-              {!isOrgExecutive && (
-                <Button color="success" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-save me-1"></i> Save
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </ModalFooter>
-        </Form>
-      </Modal>
+      <RecurringInvoiceModal
+        isOpen={recurringModalOpen}
+        toggle={toggleRecurringModal}
+        lookupData={lookupData}
+        recipientOptions={recipientOptions}
+        isOrgExecutive={isOrgExecutive}
+        onSave={handleRecurringSave}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
@@ -379,4 +411,5 @@ const FinancialAssistanceTab = ({ applicantId, financialAssistance, lookupData, 
 };
 
 export default FinancialAssistanceTab;
+
 

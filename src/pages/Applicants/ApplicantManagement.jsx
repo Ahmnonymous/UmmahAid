@@ -384,6 +384,7 @@ const ApplicantManagement = () => {
                 <DetailTabs
                   key={selectedApplicant.id}
                   applicantId={selectedApplicant.id}
+                  applicant={selectedApplicant}
                   comments={comments}
                   tasks={tasks}
                   relationships={relationships}
