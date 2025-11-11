@@ -60,12 +60,14 @@ const ApplicantProgramsReport = () => {
         let result = [...data];
 
         if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
             result = result.filter(item =>
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.file_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.program_name_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.training_provider_name?.toLowerCase().includes(searchTerm.toLowerCase())
+                item.name?.toLowerCase().includes(searchLower) ||
+                item.surname?.toLowerCase().includes(searchLower) ||
+                item.file_number?.toLowerCase().includes(searchLower) ||
+                item.program_name_name?.toLowerCase().includes(searchLower) ||
+                item.training_provider_name?.toLowerCase().includes(searchLower) ||
+                item.center_name?.toLowerCase().includes(searchLower)
             );
         }
 
@@ -126,13 +128,14 @@ const ApplicantProgramsReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'File Number', 'Name', 'Surname', 'Cell Number', 'Program Name',
+            'File Number', 'Center Name', 'Name', 'Surname', 'Cell Number', 'Program Name',
             'Communication Method', 'Date', 'Training Level', 'Provider',
             'Outcome', 'Created By', 'Created At'
         ];
 
         const csvData = processedData.map(item => [
             item.file_number || '',
+            item.center_name || '',
             item.name || '',
             item.surname || '',
             item.cell_number || '',
@@ -449,10 +452,11 @@ const ApplicantProgramsReport = () => {
                                                 </h5>
                                             </div>
                                             <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
-                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1400px' }}>
+                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1550px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                         <tr>
                                                             <th style={{minWidth: '120px'}}>File #</th>
+                                                            <th style={{minWidth: '160px'}}>Center</th>
                                                             <th style={{minWidth: '150px'}}>Name</th>
                                                             <th style={{minWidth: '120px'}}>Contact</th>
                                                             <th style={{minWidth: '200px'}}>Program</th>
@@ -468,6 +472,7 @@ const ApplicantProgramsReport = () => {
                                                         {groupItems.map((item, index) => (
                                                 <tr key={index}>
                                                                 <td><strong>{item.file_number || '-'}</strong></td>
+                                                                <td>{item.center_name || '-'}</td>
                                                                 <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                                 <td>{item.program_name_name || '-'}</td>
@@ -491,12 +496,13 @@ const ApplicantProgramsReport = () => {
                                     ))
                                 ) : (
                                     <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
-                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1400px' }}>
+                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1550px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                         File Number {getSortIcon('file_number')}
                                                     </th>
+                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Name {getSortIcon('name')}
                                                     </th>
@@ -525,6 +531,7 @@ const ApplicantProgramsReport = () => {
                                                 {paginatedData.map((item, index) => (
                                                     <tr key={index}>
                                                         <td><strong>{item.file_number || '-'}</strong></td>
+                                                        <td>{item.center_name || '-'}</td>
                                                         <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                         <td>{item.program_name_name || '-'}</td>

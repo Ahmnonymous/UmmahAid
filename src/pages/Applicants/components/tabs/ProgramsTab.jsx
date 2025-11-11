@@ -254,7 +254,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
           const attachment = cell.getValue();
           const rowId = cell.row.original.id;
           return attachment ? (
-            <div className="d-flex gap-2">
+            <div className="d-flex justify-content-center">
               <a
                 href={`${API_STREAM_BASE_URL}/programs/${rowId}/view-attachment`}
                 target="_blank"
@@ -268,7 +268,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
               </a>
             </div>
           ) : (
-            "-"
+            <span className="d-block text-center">-</span>
           );
         },
       },

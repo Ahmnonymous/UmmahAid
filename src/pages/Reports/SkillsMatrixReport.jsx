@@ -59,12 +59,14 @@ const SkillsMatrixReport = () => {
         let result = [...data];
 
         if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
             result = result.filter(item =>
-                item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.course_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.institution_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.cell_number?.toLowerCase().includes(searchTerm.toLowerCase())
+                item.name?.toLowerCase().includes(searchLower) ||
+                item.surname?.toLowerCase().includes(searchLower) ||
+                item.course_name?.toLowerCase().includes(searchLower) ||
+                item.institution_name?.toLowerCase().includes(searchLower) ||
+                item.cell_number?.toLowerCase().includes(searchLower) ||
+                item.center_name?.toLowerCase().includes(searchLower)
             );
         }
 
@@ -122,12 +124,13 @@ const SkillsMatrixReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'Employee Name', 'ID Number', 'Department', 'Contact', 'Course',
+            'Employee Name', 'Center Name', 'ID Number', 'Department', 'Contact', 'Course',
             'Institution', 'Date Conducted', 'Date Expired', 'Outcome', 'Status', 'Created By'
         ];
 
         const csvData = processedData.map(item => [
             `${item.name} ${item.surname}`,
+            item.center_name || '',
             item.id_number || '',
             item.department_name || '',
             item.cell_number || '',
@@ -423,10 +426,11 @@ const SkillsMatrixReport = () => {
                                                 </h5>
                                             </div>
                                             <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
-                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1500px' }}>
+                                                <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1650px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                         <tr>
                                                             <th style={{minWidth: '150px'}}>Employee</th>
+                                                            <th style={{minWidth: '160px'}}>Center</th>
                                                             <th style={{minWidth: '120px'}}>ID Number</th>
                                                             <th style={{minWidth: '120px'}}>Department</th>
                                                             <th style={{minWidth: '120px'}}>Contact</th>
@@ -443,6 +447,7 @@ const SkillsMatrixReport = () => {
                                                         {groupItems.map((item, index) => (
                                                             <tr key={index}>
                                                                 <td><strong>{item.name} {item.surname}</strong></td>
+                                                                <td>{item.center_name || '-'}</td>
                                                                 <td>{item.id_number || '-'}</td>
                                                                 <td><Badge color="secondary">{item.department_name || 'N/A'}</Badge></td>
                                                                 <td>{item.cell_number || '-'}</td>
@@ -472,12 +477,13 @@ const SkillsMatrixReport = () => {
                                     ))
                                 ) : (
                                     <div className="table-responsive" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto' }}>
-                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1500px' }}>
+                                        <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1650px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Employee Name {getSortIcon('name')}
                                                     </th>
+                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{minWidth: '120px'}}>ID Number</th>
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('department_name')}>
                                                         Department {getSortIcon('department_name')}
@@ -508,6 +514,7 @@ const SkillsMatrixReport = () => {
                                                     <td>
                                                         <strong>{item.name} {item.surname}</strong>
                                                     </td>
+                                                    <td>{item.center_name || '-'}</td>
                                                     <td>{item.id_number || '-'}</td>
                                                     <td>
                                                         <Badge color="secondary">

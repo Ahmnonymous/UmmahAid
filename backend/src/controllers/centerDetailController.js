@@ -244,7 +244,32 @@ const centerDetailController = {
       console.error("Error downloading QR code:", err);
       res.status(500).json({ error: "Error downloading QR code: " + err.message });
     }
-  }
+  },
+
+  getMetrics: async (req, res) => {
+    try {
+      const centerId = parseInt(req.params.id, 10);
+      if (Number.isNaN(centerId)) {
+        return res.status(400).json({ error: "Invalid center id" });
+      }
+
+      // ⚠️ Additional safety: ensure non-admins cannot access other centers (should be handled by RBAC)
+      if (!req.isAppAdmin && req.user?.center_id && parseInt(req.user.center_id, 10) !== centerId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const metrics = await centerDetailModel.getMetrics(centerId);
+      res.json({
+        totalApplicants: parseInt(metrics.total_applicants, 10) || 0,
+        totalRelationships: parseInt(metrics.total_relationships, 10) || 0,
+        totalFinancialAssistance: Number(metrics.total_financial_assistance) || 0,
+        totalFoodAssistance: Number(metrics.total_food_assistance) || 0,
+      });
+    } catch (err) {
+      console.error("Error fetching center metrics:", err);
+      res.status(500).json({ error: "Error fetching center metrics: " + err.message });
+    }
+  },
 };
 
 module.exports = centerDetailController;

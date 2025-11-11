@@ -190,8 +190,8 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Suppliers - All except Caseworkers (roles 1,2,3,4) */}
-            {hasRole([1, 2, 3, 4]) && (
+            {/* ✅ Suppliers - App Admin only */}
+            {isAppAdmin && (
               <li>
                 <Link to="/suppliers">
                   <i className="bx bx-store"></i>
@@ -200,8 +200,8 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Inventory - All except Caseworkers (roles 1,2,3,4) */}
-            {hasRole([1, 2, 3, 4]) && (
+            {/* ✅ Inventory - App Admin only */}
+            {isAppAdmin && (
               <li>
                 <Link to="/inventory">
                   <i className="bx bx-box"></i>

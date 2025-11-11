@@ -205,6 +205,16 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
         },
       },
       {
+        header: "Recommendations",
+        accessorKey: "recommendations",
+        enableSorting: false,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const recommendations = cell.getValue() || "";
+          return recommendations.length > 50 ? `${recommendations.substring(0, 50)}...` : recommendations || "-";
+        },
+      },
+      {
         header: "Conducted By",
         accessorKey: "conducted_by",
         enableSorting: true,
@@ -220,7 +230,7 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
           const filename = cell.getValue();
           const rowId = cell.row.original.id;
           return filename ? (
-            <div className="d-flex gap-2">
+            <div className="d-flex justify-content-center">
               <a
                 href={`${API_STREAM_BASE_URL}/centerAudits/${rowId}/view-attachment`}
                 target="_blank"
@@ -234,7 +244,7 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
               </a>
             </div>
           ) : (
-            "-"
+            <span className="d-block text-center">-</span>
           );
         },
       },

@@ -1018,7 +1018,7 @@ const EmployeeProfile = () => {
           const attachment = cell.getValue();
           const rowId = cell.row.original.id;
           return attachment ? (
-            <div className="d-flex gap-2">
+            <div className="d-flex justify-content-center">
               <a
                 href={`${API_STREAM_BASE_URL}/employeeSkills/${rowId}/view-attachment`}
                 target="_blank"
@@ -1032,7 +1032,7 @@ const EmployeeProfile = () => {
               </a>
             </div>
           ) : (
-            "-"
+            <span className="d-block text-center">-</span>
           );
         },
       },

@@ -6,6 +6,7 @@ export async function validateTabsAndNavigate(options) {
 		getValues,
 		setActiveTab,
 		showAlert,
+		tabLabelMap = {},
 	} = options;
 
 	// Validate required fields across all tabs
@@ -34,7 +35,11 @@ export async function validateTabsAndNavigate(options) {
 	if (firstMissingTab) setActiveTab(firstMissingTab);
 
 	// Reuse existing alert pattern
-	showAlert(`Please fill required fields: ${missing.join(", ")}`, "danger");
+	const tabName = tabLabelMap?.[firstMissingTab];
+	const alertMessage = tabName
+		? `Please complete the required fields in the ${tabName} tab.`
+		: `Please fill required fields: ${missing.join(", ")}`;
+	showAlert(alertMessage, "danger");
 
 	// Scroll into view after tab switch
 	setTimeout(() => {
@@ -47,5 +52,3 @@ export async function validateTabsAndNavigate(options) {
 
 	return false;
 }
-
-

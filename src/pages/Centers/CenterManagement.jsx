@@ -33,6 +33,13 @@ import SummaryMetrics from "./components/SummaryMetrics";
 import DetailTabs from "./components/DetailTabs";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 
+const INITIAL_CENTER_METRICS = {
+  totalApplicants: 0,
+  totalRelationships: 0,
+  totalFinancialAssistance: 0,
+  totalFoodAssistance: 0,
+};
+
 const CenterManagement = () => {
   // Meta title
   document.title = "Center Management | Welfare App";
@@ -48,6 +55,8 @@ const CenterManagement = () => {
 
   // Detail data states
   const [audits, setAudits] = useState([]);
+  const [centerMetrics, setCenterMetrics] = useState(INITIAL_CENTER_METRICS);
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
   // Lookup data states
   const [lookupData, setLookupData] = useState({
@@ -110,14 +119,20 @@ const CenterManagement = () => {
 
   const fetchCenterDetails = async (centerId) => {
     try {
-      const [auditsRes] = await Promise.all([
+      setMetricsLoading(true);
+      const [auditsRes, metricsRes] = await Promise.all([
         axiosApi.get(`${API_BASE_URL}/centerAudits?center_id=${centerId}`),
+        axiosApi.get(`${API_BASE_URL}/centerDetail/${centerId}/metrics`),
       ]);
 
       setAudits(auditsRes.data || []);
+      setCenterMetrics(metricsRes.data || INITIAL_CENTER_METRICS);
     } catch (error) {
       console.error("Error fetching center details:", error);
       showAlert("Failed to fetch center details", "warning");
+      setCenterMetrics(INITIAL_CENTER_METRICS);
+    } finally {
+      setMetricsLoading(false);
     }
   };
 
@@ -175,6 +190,8 @@ const CenterManagement = () => {
     setSelectedCenter(center);
     // Clear existing detail data to avoid showing stale records while fetching
     setAudits([]);
+    setCenterMetrics(INITIAL_CENTER_METRICS);
+    setMetricsLoading(true);
     // Fetch fresh detail data immediately for better UX
     if (center?.id) {
       fetchCenterDetails(center.id);
@@ -373,8 +390,8 @@ const CenterManagement = () => {
               <>
                 {/* Summary Metrics */}
                 <SummaryMetrics
-                  centers={centers}
-                  audits={audits}
+                  metrics={centerMetrics}
+                  loading={metricsLoading}
                 />
 
                 {/* Center Summary */}

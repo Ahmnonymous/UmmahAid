@@ -181,10 +181,10 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
             return `${dateStr} (${timeStr})`;
           };
           return (
-            <div className="d-flex align-items-start">
+            <div className="d-flex align-items-center">
               <div
-                className="me-2 rounded-circle bg-secondary text-white text-center shadow-sm"
-                style={{ width: 34, minWidth: 34, height: 34, lineHeight: "34px", fontSize: 11, fontWeight: 700 }}
+                className="me-3 rounded-circle bg-secondary text-white text-center shadow-sm d-flex align-items-center justify-content-center"
+                style={{ width: 34, minWidth: 34, height: 34, fontSize: 11, fontWeight: 700 }}
                 title={creatorName}
               >
                 {initials}

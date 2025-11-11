@@ -63,11 +63,13 @@ const TotalFinancialAssistanceReport = () => {
         let result = [...data];
 
         if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
             result = result.filter(item =>
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.file_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.cell_number?.toLowerCase().includes(searchTerm.toLowerCase())
+                item.name?.toLowerCase().includes(searchLower) ||
+                item.surname?.toLowerCase().includes(searchLower) ||
+                item.file_number?.toLowerCase().includes(searchLower) ||
+                item.cell_number?.toLowerCase().includes(searchLower) ||
+                item.center_name?.toLowerCase().includes(searchLower)
             );
         }
 
@@ -136,13 +138,14 @@ const TotalFinancialAssistanceReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'File Number', 'Name', 'Surname', 'Cell Number', 'File Status', 
+            'File Number', 'Center Name', 'Name', 'Surname', 'Cell Number', 'File Status', 
             'Employment Status', 'File Condition', 'Health Condition',
             'Food Assistance (R)', 'Financial Transactions (R)', 'Total Assistance (R)'
         ];
 
         const csvData = processedData.map(item => [
             item.file_number || '',
+            item.center_name || '',
             item.name || '',
             item.surname || '',
             item.cell_number || '',
@@ -531,6 +534,7 @@ const TotalFinancialAssistanceReport = () => {
                                                             <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                                 File # {getSortIcon('file_number')}
                                                             </th>
+                                                            <th style={{minWidth: '160px'}}>Center</th>
                                                             <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                                 Name {getSortIcon('name')}
                                                             </th>
@@ -548,6 +552,7 @@ const TotalFinancialAssistanceReport = () => {
                                                         {groupItems.map((item, index) => (
                                                 <tr key={index}>
                                                                 <td><strong>{item.file_number || '-'}</strong></td>
+                                                                <td>{item.center_name || '-'}</td>
                                                                 <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                     <td>
@@ -586,6 +591,7 @@ const TotalFinancialAssistanceReport = () => {
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                         File Number {getSortIcon('file_number')}
                                                     </th>
+                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Name {getSortIcon('name')}
                                                     </th>
@@ -615,6 +621,7 @@ const TotalFinancialAssistanceReport = () => {
                                                 {paginatedData.map((item, index) => (
                                                     <tr key={index}>
                                                         <td><strong>{item.file_number || '-'}</strong></td>
+                                                        <td>{item.center_name || '-'}</td>
                                                         <td>{item.name} {item.surname}</td>
                                                         <td>{item.cell_number || '-'}</td>
                                                         <td>

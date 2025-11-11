@@ -193,7 +193,7 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
           const file = cell.getValue();
           const rowId = cell.row.original.id;
           return file ? (
-            <div className="d-flex gap-2">
+            <div className="d-flex justify-content-center">
               <a
                 href={`${API_STREAM_BASE_URL}/attachments/${rowId}/view-file`}
                 target="_blank"
@@ -207,7 +207,7 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
               </a>
             </div>
           ) : (
-            "-"
+            <span className="d-block text-center">-</span>
           );
         },
       },

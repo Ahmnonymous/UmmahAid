@@ -133,7 +133,9 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
   };
 
   const getLookupName = (lookupArray, id) => {
-    if (!id) return "-";
+    if (!Array.isArray(lookupArray) || id === null || id === undefined || id === "") {
+      return "-";
+    }
     const item = lookupArray.find((l) => l.id == id);
     return item ? item.name : "-";
   };
@@ -187,6 +189,40 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => getLookupName(lookupData.employmentStatus, cell.getValue()),
+      },
+      {
+        header: "Highest Education",
+        accessorKey: "highest_education",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) =>
+          getLookupName(
+            lookupData.educationLevels ||
+              lookupData.educationLevel ||
+              lookupData.education,
+            cell.getValue()
+          ),
+      },
+      {
+        header: "Health Condition",
+        accessorKey: "health_condition",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) =>
+          getLookupName(
+            lookupData.healthConditions || lookupData.healthCondition,
+            cell.getValue()
+          ),
+      },
+      {
+        header: "Date of Birth",
+        accessorKey: "date_of_birth",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const value = cell.getValue();
+          return value ? new Date(value).toLocaleDateString() : "-";
+        },
       },
       {
         header: "Created By",

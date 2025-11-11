@@ -1,65 +1,90 @@
 import React from "react";
 import { Row, Col, Card, CardBody } from "reactstrap";
 
-const SummaryMetrics = ({ centers, audits }) => {
-  // Calculate metrics
-  const totalCenters = centers.length;
-  
-  const recentAudits = audits.filter((audit) => {
-    const auditDate = new Date(audit.audit_date);
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    return auditDate >= sixMonthsAgo;
-  }).length;
+const DEFAULT_METRICS = {
+  totalApplicants: 0,
+  totalRelationships: 0,
+  totalFinancialAssistance: 0,
+  totalFoodAssistance: 0,
+};
 
-  const centersWithNPO = centers.filter(c => c.npo_number).length;
+const formatNumber = (value) => {
+  const numericValue =
+    typeof value === "number" ? value : parseFloat(value ?? "0");
+  if (Number.isNaN(numericValue)) {
+    return "0";
+  }
+  return new Intl.NumberFormat("en-ZA").format(numericValue);
+};
 
-  const totalAudits = audits.length;
+const formatCurrency = (value) => {
+  const numericValue =
+    typeof value === "number" ? value : parseFloat(value ?? "0");
+  if (Number.isNaN(numericValue)) {
+    return "R 0.00";
+  }
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+  }).format(numericValue);
+};
 
-  const metrics = [
+const SummaryMetrics = ({ metrics, loading }) => {
+  const data = metrics || DEFAULT_METRICS;
+
+  const items = [
     {
-      title: "Total Centers",
-      value: totalCenters,
-      icon: "bx-building",
-      color: "primary",
+      title: "Applicants",
+      value: data.totalApplicants,
+      isCurrency: false,
+      icon: "bx-user-check",
       bgColor: "#556ee6",
     },
     {
-      title: "With NPO Number",
-      value: centersWithNPO,
-      icon: "bx-check-shield",
-      color: "success",
+      title: "Relationships",
+      value: data.totalRelationships,
+      isCurrency: false,
+      icon: "bx-group",
       bgColor: "#34c38f",
     },
     {
-      title: "Total Audits",
-      value: totalAudits,
-      icon: "bx-clipboard",
-      color: "info",
+      title: "Financial Assistance",
+      value: data.totalFinancialAssistance,
+      isCurrency: true,
+      icon: "bx-credit-card",
       bgColor: "#50a5f1",
     },
     {
-      title: "Recent Audits (6M)",
-      value: recentAudits,
-      icon: "bx-time-five",
-      color: "warning",
+      title: "Food Assistance",
+      value: data.totalFoodAssistance,
+      isCurrency: true,
+      icon: "bx-food-menu",
       bgColor: "#f1b44c",
     },
   ];
 
   return (
     <Row>
-      {metrics.map((metric, index) => (
+      {items.map((metric, index) => (
         <Col xl={3} md={6} sm={12} key={index}>
           <Card className="mini-stats-wid mb-3">
             <CardBody>
               <div className="d-flex">
                 <div className="flex-grow-1">
                   <p className="text-muted fw-medium mb-2">{metric.title}</p>
-                  <h4 className="mb-0">{metric.value}</h4>
+                  <h4 className="mb-0">
+                    {loading
+                      ? "Loading..."
+                      : metric.isCurrency
+                        ? formatCurrency(metric.value)
+                        : formatNumber(metric.value)}
+                  </h4>
                 </div>
                 <div className="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
-                  <span className="avatar-title rounded-circle" style={{ backgroundColor: metric.bgColor }}>
+                  <span
+                    className="avatar-title rounded-circle"
+                    style={{ backgroundColor: metric.bgColor }}
+                  >
                     <i className={`bx ${metric.icon} font-size-24`}></i>
                   </span>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Container,
   Row,
@@ -27,6 +27,50 @@ import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
 import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
+import { createFieldTabMap, handleTabbedFormErrors } from "../../helpers/formErrorHandler";
+
+const CREATE_APPLICANT_TAB_LABELS = {
+  1: "Personal Info",
+  2: "Contact & Address",
+  3: "File Details",
+};
+
+const CREATE_APPLICANT_TAB_FIELDS = {
+  1: [
+    "Name",
+    "Surname",
+    "ID_Number",
+    "Nationality",
+    "Nationality_Expiry_Date",
+    "Race",
+    "Gender",
+    "Born_Religion_ID",
+    "Period_As_Muslim_ID",
+    "Employment_Status",
+    "Skills",
+    "Highest_Education",
+    "Marital_Status",
+    "Health_Conditions",
+  ],
+  2: [
+    "Cell_Number",
+    "Alternate_Number",
+    "Email_Address",
+    "Suburb",
+    "Street_Address",
+    "Dwelling_Type",
+    "Dwelling_Status",
+    "Flat_Name",
+    "Flat_Number",
+  ],
+  3: [
+    "File_Number",
+    "Date_Intake",
+    "File_Condition",
+    "File_Status",
+    "POPIA_Agreement",
+  ],
+};
 
 const CreateApplicant = () => {
   document.title = "Create Applicant | UmmahAid";
@@ -327,14 +371,19 @@ const CreateApplicant = () => {
   };
 
   // Required fields including POPIA
+  const tabFieldGroups = useMemo(() => CREATE_APPLICANT_TAB_FIELDS, []);
+  const fieldTabMap = useMemo(() => createFieldTabMap(tabFieldGroups), [tabFieldGroups]);
+
   const requiredFields = ["Name", "Surname", "ID_Number", "File_Number", "POPIA_Agreement"];
-  const fieldTabMap = {
-    Name: "1",
-    Surname: "1",
-    ID_Number: "1",
-    File_Number: "3",
-    POPIA_Agreement: "3",
-  };
+
+  const handleFormError = (formErrors) =>
+    handleTabbedFormErrors({
+      errors: formErrors,
+      fieldTabMap,
+      tabLabelMap: CREATE_APPLICANT_TAB_LABELS,
+      setActiveTab,
+      showAlert,
+    });
 
   const handleValidatedSubmit = async () => {
     const ok = await validateTabsAndNavigate({
@@ -344,9 +393,10 @@ const CreateApplicant = () => {
       getValues: (name) => getValues(name),
       setActiveTab,
       showAlert,
+      tabLabelMap: CREATE_APPLICANT_TAB_LABELS,
     });
     if (!ok) return;
-    return handleSubmit(onSubmit)();
+    return handleSubmit(onSubmit, handleFormError)();
   };
 
   return (
@@ -680,7 +730,7 @@ const CreateApplicant = () => {
                             <Controller
                               name="Cell_Number"
                               control={control}
-                              rules={tenDigitRule(false, "Cell Number")}
+                              rules={tenDigitRule(false, "Cell number")}
                               render={({ field }) => (
                                 <Input
                                   id="Cell_Number"
@@ -706,7 +756,7 @@ const CreateApplicant = () => {
                             <Controller
                               name="Alternate_Number"
                               control={control}
-                              rules={tenDigitRule(false, "Alternate Number")}
+                              rules={tenDigitRule(false, "Alternate number")}
                               render={({ field }) => (
                                 <Input
                                   id="Alternate_Number"

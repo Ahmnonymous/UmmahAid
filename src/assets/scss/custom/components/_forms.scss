@@ -214,3 +214,8 @@ $value in $theme-colors {
       background-image: escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$gray-400}'/></svg>"));
     }
   }
+
+.form-error-focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.35);
+  transition: box-shadow 0.3s ease;
+}

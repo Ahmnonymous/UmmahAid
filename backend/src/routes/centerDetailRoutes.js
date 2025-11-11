@@ -28,6 +28,7 @@ router.get('/', centerDetailController.getAll);
 router.get('/:id/download-logo', centerDetailController.downloadLogo);
 router.get('/:id/download-qrcode', centerDetailController.downloadQRCode);
 router.get('/:id', centerDetailController.getById);
+router.get('/:id/metrics', centerDetailController.getMetrics);
 router.post('/', upload.fields([{ name: 'logo' }, { name: 'qr_code_service_url' }]), centerDetailController.create);
 router.put('/:id', upload.fields([{ name: 'logo' }, { name: 'qr_code_service_url' }]), centerDetailController.update);
 router.delete('/:id', centerDetailController.delete);
