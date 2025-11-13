@@ -26,10 +26,10 @@ import DeleteConfirmationModal from "../../../components/Common/DeleteConfirmati
 import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../helpers/userStorage";
+import { getAuditName } from "../../../helpers/userStorage";
 import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 
-const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
+const CenterSummary = ({ center, lookupData, onUpdate, showAlert, canModify }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
 
@@ -98,6 +98,7 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
   };
 
   const handleEdit = () => {
+    if (!canModify) return;
     setModalOpen(true);
   };
 
@@ -109,8 +110,6 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       // Check if files are being uploaded
       const hasLogo = data.Logo && data.Logo.length > 0;
       const hasQR = data.QR_Code_Service_URL && data.QR_Code_Service_URL.length > 0;
@@ -134,7 +133,7 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
         formData.append("contact3", data.Contact3 || "");
         formData.append("npo_number", data.NPO_Number || "");
         formData.append("service_rating_email", data.Service_Rating_Email || "");
-        formData.append("updated_by", currentUser?.username || "system");
+        formData.append("updated_by", getAuditName());
 
         if (hasLogo) {
           formData.append("logo", data.Logo[0]);
@@ -165,7 +164,7 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
           contact3: data.Contact3,
           npo_number: data.NPO_Number,
           service_rating_email: data.Service_Rating_Email,
-          updated_by: currentUser?.username || "system",
+          updated_by: getAuditName(),
         };
 
         await axiosApi.put(`${API_BASE_URL}/centerDetail/${center.id}`, payload);
@@ -181,7 +180,7 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
   };
 
   const handleDelete = () => {
-    if (!center) return;
+    if (!canModify || !center) return;
 
     const centerName = `${center.organisation_name || 'Unknown Center'} - ${center.npo_number || 'No NPO'}`;
     
@@ -211,9 +210,13 @@ const CenterSummary = ({ center, lookupData, onUpdate, showAlert }) => {
               Center Summary
             </h5>
             <div className="d-flex gap-2">
-              <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
-                <i className="bx bx-edit-alt me-1"></i> Edit
-              </Button>
+              {canModify ? (
+                <Button color="primary" size="sm" onClick={handleEdit} className="btn-sm">
+                  <i className="bx bx-edit-alt me-1"></i> Edit
+                </Button>
+              ) : (
+                <span className="badge bg-info">Read Only</span>
+              )}
               {/* <Button
                 color="danger"
                 size="sm"

@@ -6,7 +6,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 import FinancialAssistanceModal from "../FinancialAssistanceModal";
 import RecurringInvoiceModal from "../RecurringInvoiceModal";
 
@@ -59,8 +59,6 @@ const FinancialAssistanceTab = ({
 
   const handleSaveAssistance = async (formValues, editItem) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       const payload = {
         file_id: applicantId,
         assistance_type: formValues.Assistance_Type
@@ -80,22 +78,15 @@ const FinancialAssistanceTab = ({
       };
 
       // 🔹 Auto-attach created_by / updated_by fields from localStorage
-      const persistedUser = JSON.parse(localStorage.getItem("UmmahAidUser"));
       if (editItem) {
-        payload.updated_by =
-          persistedUser?.username ||
-          currentUser?.username ||
-          getAuditName();
+        payload.updated_by = getAuditName();
         await axiosApi.put(
           `${API_BASE_URL}/financialAssistance/${editItem.id}`,
           payload
         );
         showAlert("Financial assistance has been updated successfully", "success");
       } else {
-        payload.created_by =
-          persistedUser?.username ||
-          currentUser?.username ||
-          getAuditName();
+        payload.created_by = getAuditName();
         await axiosApi.post(`${API_BASE_URL}/financialAssistance`, payload);
         showAlert("Financial assistance has been added successfully", "success");
       }
@@ -209,9 +200,7 @@ const FinancialAssistanceTab = ({
         frequency: formValues.Frequency,
       };
 
-      const currentUser =
-        JSON.parse(localStorage.getItem("UmmahAidUser")) || getUmmahAidUser();
-      payload.created_by = currentUser?.username || getAuditName();
+      payload.created_by = getAuditName();
 
       await axiosApi.post(`${API_BASE_URL}/financialAssistance/recurring`, payload);
       showAlert("Recurring invoice scheduled successfully", "success");

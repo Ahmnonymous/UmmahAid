@@ -2,19 +2,9 @@
   "name": "ummahaid-test-suite",
   "version": "1.0.0",
   "description": "Comprehensive test suite for UmmahAid application",
-  "main": "comprehensive-test-runner.js",
+  "main": "rbac-full-test.js",
   "scripts": {
-    "test": "node comprehensive-test-runner.js staging",
-    "test:staging": "node comprehensive-test-runner.js staging",
-    "test:prod": "node comprehensive-test-runner.js production",
-    "test:comprehensive": "node comprehensive-test-runner.js staging",
-    "test:api": "node api-test-runner.js staging",
-    "test:app-admin": "node app-admin-qa-test.js",
-    "test:hq": "node hq-qa-test.js",
-    "test:org-admin": "node org-admin-qa-test.js",
-    "test:org-executive": "node org-executive-qa-test.js",
-    "test:org-caseworker": "node org-caseworker-qa-test.js",
-    "test:attachments": "node attachment-qa-test.js 1 staging"
+    "test": "node rbac-full-test.js"
   },
   "keywords": [
     "testing",
@@ -27,7 +17,8 @@
     "axios": "^1.6.0",
     "dotenv": "^16.4.5",
     "form-data": "^4.0.4",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "playwright": "^1.48.2"
   }
 }
 

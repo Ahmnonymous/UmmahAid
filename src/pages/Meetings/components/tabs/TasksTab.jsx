@@ -20,11 +20,13 @@ import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirm
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
+import { useRole } from "../../../../helpers/useRole";
 
 const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const { centerId } = useRole();
 
   // Delete confirmation hook
   const {
@@ -91,8 +93,6 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         hseq_toolbox_meeting_id: meetingId,
         task_description: data.Task_Description,
@@ -100,7 +100,7 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
         responsible: data.Responsible,
         status: data.Status || null,
         notes: data.Notes,
-        center_id: currentUser?.center_id || 1,
+        center_id: centerId ?? null,
       };
 
       if (editItem) {

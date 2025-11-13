@@ -19,7 +19,8 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
+import { useRole } from "../../helpers/useRole";
 import MeetingListPanel from "./components/MeetingListPanel";
 import MeetingSummary from "./components/MeetingSummary";
 import SummaryMetrics from "./components/SummaryMetrics";
@@ -36,6 +37,7 @@ const MeetingsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [alert, setAlert] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const { centerId } = useRole();
 
   // Detail data states
   const [tasks, setTasks] = useState([]);
@@ -213,8 +215,6 @@ const MeetingsManagement = () => {
 
   const onCreateSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         meeting_date: data.Meeting_Date,
         conducted_by: data.Conducted_By,
@@ -227,7 +227,7 @@ const MeetingsManagement = () => {
         environment_discussions: data.Environment_Discussions,
         general_discussion: data.General_Discussion,
         feedback: data.Feedback,
-        center_id: currentUser?.center_id || 1,
+        center_id: centerId ?? null,
         created_by: getAuditName(),
       };
 

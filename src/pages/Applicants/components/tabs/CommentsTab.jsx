@@ -20,28 +20,31 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName, getUserFullName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
-  const { isOrgExecutive } = useRole(); // Read-only check
+  const { isOrgExecutive, user, username } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
-  const currentUser = getUmmahAidUser();
+  const currentUser = user || {};
+  const currentUsername = (username || currentUser?.username || "").toString().trim();
+  const currentFullName = [currentUser?.name, currentUser?.surname].filter(Boolean).join(" ").trim();
+  const auditDisplayName = getAuditName();
 
   // Robust creator match: handles username, full name, and audit formats like "John Doe (jdoe)"
   const isCreatedByCurrentUser = (createdByRaw) => {
     const createdBy = (createdByRaw || "").toString().trim().toLowerCase();
     if (!createdBy) return false;
-    const username = (currentUser?.username || "").toString().trim().toLowerCase();
-    const fullName = (getUserFullName?.() || "").toString().trim().toLowerCase();
-    const auditName = (getAuditName?.() || "").toString().trim().toLowerCase();
+    const usernameCandidate = currentUsername.toLowerCase();
+    const fullNameCandidate = currentFullName.toLowerCase();
+    const auditName = (auditDisplayName || "").toLowerCase();
     const auditUsername = (auditName.match(/\(([^)]+)\)/)?.[1] || "").toLowerCase();
     const createdByUsername = (createdBy.match(/\(([^)]+)\)/)?.[1] || "").toLowerCase();
     const candidates = new Set([
-      username,
-      fullName,
+      usernameCandidate,
+      fullNameCandidate,
       auditName,
       auditUsername,
     ].filter(Boolean));
@@ -104,8 +107,6 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       const payload = {
         file_id: applicantId,
         comment: data.Comment,
@@ -164,7 +165,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
           const updatedAt = row.updated_at;
           const isEdited = !!row.updated_by && !!row.updated_at && row.updated_at !== row.created_at;
           const canEdit = !isOrgExecutive && isCreatedByCurrentUser(row.created_by);
-          const creatorName = row.created_by || getUserFullName() || currentUser?.username || "-";
+          const creatorName = row.created_by || currentFullName || currentUsername || "-";
           const initials = (() => {
             const n = (creatorName || "").trim();
             if (!n) return "--";
@@ -224,7 +225,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
         },
       },
     ],
-    [isOrgExecutive, currentUser]
+    [isOrgExecutive, currentFullName, currentUsername]
   );
 
   return (

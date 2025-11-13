@@ -1,7 +1,12 @@
 import { API_SUCCESS, API_FAIL, GET_STATISTICS_DATA } from './actionType';
 
 const INIT_STATE = {
-    statistic_data: []
+    statistic_data: {
+        categories: [],
+        categoryLabels: [],
+        metrics: [],
+        duration: "year",
+    }
 };
 
 const DashboardJob = (state = INIT_STATE, action) => {

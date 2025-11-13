@@ -7,7 +7,7 @@ const roleMiddleware = require('../middlewares/roleMiddleware');
 // ✅ Apply authentication and RBAC
 // Training courses used by employees - restrict to staff roles
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5])); // All staff can access
+router.use(roleMiddleware()); // All staff can access
 
 router.get('/', trainingCoursesController.getAll);
 router.get('/:id', trainingCoursesController.getById);

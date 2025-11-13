@@ -25,7 +25,7 @@ import TableContainer from "../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 
@@ -177,9 +177,6 @@ const TrainingInstitutions = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Get current user from localStorage
-      const currentUser = getUmmahAidUser();
-      
       // Convert form fields to lowercase for PostgreSQL
       const payload = {
         institute_name: data.Institute_Name,

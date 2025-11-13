@@ -8,7 +8,7 @@ const filterMiddleware = require('../middlewares/filterMiddleware');
 // ✅ Apply authentication, RBAC, and tenant filtering
 // All users (roles 1,2,3,4,5) can access conversation participants
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5]));
+router.use(roleMiddleware());
 router.use(filterMiddleware);
 
 router.get('/', conversationParticipantsController.getAll);

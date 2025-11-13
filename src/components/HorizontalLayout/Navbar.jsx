@@ -18,7 +18,11 @@ const Navbar = (props) => {
   const [reports, setReports] = useState(false);
   
   // ✅ Get user role information
-  const { hasRole, isAppAdmin, isOrgExecutive } = useRole();
+  const {
+    canAccessNav,
+    canEditModule,
+    isOrgExecutive,
+  } = useRole();
 
   useEffect(() => {
     var matchingMenuItem = null;
@@ -99,8 +103,40 @@ const Navbar = (props) => {
                   </Link>
                 </li>
 
-                {/* ✅ Management - All except Caseworkers (roles 1,2,3,4) */}
-                {hasRole([1, 2, 3, 4]) && (
+                {/* Management dropdown – render only when at least one item is accessible */}
+                {(() => {
+                  const managementLinks = [
+                    canAccessNav("centers") && (
+                      <Link to="/centers" className="dropdown-item" key="centers">
+                        <i className="bx bx-building me-2"></i>
+                        {props.t("Center Management")}
+                      </Link>
+                    ),
+                    canAccessNav("meetings") && (
+                      <Link to="/meetings" className="dropdown-item" key="meetings">
+                        <i className="bx bx-calendar me-2"></i>
+                        {props.t("Meetings Management")}
+                      </Link>
+                    ),
+                    canAccessNav("suppliers") && (
+                      <Link to="/suppliers" className="dropdown-item" key="suppliers">
+                        <i className="bx bx-store me-2"></i>
+                        {props.t("Supplier Management")}
+                      </Link>
+                    ),
+                    canAccessNav("inventory") && (
+                      <Link to="/inventory" className="dropdown-item" key="inventory">
+                        <i className="bx bx-box me-2"></i>
+                        {props.t("Inventory Management")}
+                      </Link>
+                    ),
+                  ].filter(Boolean);
+
+                  if (!managementLinks.length) {
+                    return null;
+                  }
+
+                  return (
                   <li className="nav-item dropdown">
                     <Link
                       className="nav-link dropdown-toggle arrow-none"
@@ -114,32 +150,14 @@ const Navbar = (props) => {
                       {props.t("Management")} <div className="arrow-down"></div>
                     </Link>
                     <div className={classname("dropdown-menu", { show: management })}>
-                      {isAppAdmin && (
-                        <Link to="/centers" className="dropdown-item">
-                          <i className="bx bx-building me-2"></i>
-                          {props.t("Center Management")}
-                        </Link>
-                      )}
-                      {hasRole([2, 3]) && (
-                        <Link to="/meetings" className="dropdown-item">
-                          <i className="bx bx-calendar me-2"></i>
-                          {props.t("Meetings Management")}
-                        </Link>
-                      )}
-                      <Link to="/suppliers" className="dropdown-item">
-                        <i className="bx bx-store me-2"></i>
-                        {props.t("Supplier Management")}
-                      </Link>
-                      <Link to="/inventory" className="dropdown-item">
-                        <i className="bx bx-box me-2"></i>
-                        {props.t("Inventory Management")}
-                      </Link>
+                      {managementLinks}
                     </div>
                   </li>
-                )}
+                  );
+                })()}
 
-                {/* ✅ Create Applicant - Only Caseworker (role 5) can create applicants */}
-                {hasRole([5]) && (
+                {/* Create Applicant – only roles with write access */}
+                {canEditModule("applicants") && !isOrgExecutive && (
                   <li className="nav-item">
                     <Link to="/applicants/create" className="nav-link">
                       <i className="bx bx-user-plus me-2"></i>
@@ -155,8 +173,8 @@ const Navbar = (props) => {
                         </Link>
                 </li>
 
-                {/* ✅ Reports - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
-                {hasRole([1, 2, 3]) && (
+                {/* Reports dropdown */}
+                {canAccessNav("reports") && (
                   <li className="nav-item dropdown">
                     <Link
                       className="nav-link dropdown-toggle arrow-none"
@@ -198,8 +216,8 @@ const Navbar = (props) => {
                   </li>
                 )}
 
-                {/* ✅ Lookup Setup - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
-                {hasRole([1, 2, 3]) && (
+                {/* Lookup setup */}
+                {canAccessNav("lookups") && (
                   <li className="nav-item">
                     <Link to="/lookups" className="nav-link">
                       <i className="bx bx-list-ul me-2"></i>
@@ -208,7 +226,7 @@ const Navbar = (props) => {
                   </li>
                 )}
 
-                {!isOrgExecutive && (
+                {canAccessNav("filemanager") && (
                   <li className="nav-item">
                     <Link to="/FileManager" className="nav-link">
                       <i className="bx bx-folder me-2"></i>
@@ -217,7 +235,7 @@ const Navbar = (props) => {
                   </li>
                 )}
 
-                {!isOrgExecutive && (
+                {canAccessNav("chat") && (
                   <li className="nav-item">
                     <Link to="/chat" className="nav-link">
                       <i className="bx bx-chat me-2"></i>

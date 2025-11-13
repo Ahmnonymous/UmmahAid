@@ -51,6 +51,9 @@ const inventoryItemsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const data = await inventoryItemsModel.update(req.params.id, req.body, centerId, req.isSuperAdmin);
+      if (!data) {
+        return res.status(404).json({ error: 'Not found' });
+      }
       res.json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -61,7 +64,10 @@ const inventoryItemsController = {
     try {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
-      await inventoryItemsModel.delete(req.params.id, centerId, req.isSuperAdmin);
+      const deleted = await inventoryItemsModel.delete(req.params.id, centerId, req.isSuperAdmin);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Not found' });
+      }
       res.json({ message: 'Deleted successfully' });
     } catch (err) {
       res.status(500).json({ error: err.message });

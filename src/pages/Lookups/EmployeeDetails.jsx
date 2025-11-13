@@ -26,12 +26,14 @@ import AvatarSelector from "../../components/AvatarSelector";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
+import { useRole } from "../../helpers/useRole";
 
 const EmployeeDetails = () => {
   const navigate = useNavigate();
+  const { centerId } = useRole();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -119,7 +121,6 @@ const EmployeeDetails = () => {
 
   useEffect(() => {
     if (modalOpen) {
-      const currentUser = getUmmahAidUser();
       reset({
         Name: editItem?.name || "",
         Surname: editItem?.surname || "",
@@ -146,8 +147,15 @@ const EmployeeDetails = () => {
         User_Type: editItem?.user_type ? String(editItem.user_type) : "",
         Department: editItem?.department ? String(editItem.department) : "",
         HSEQ_Related: editItem?.hseq_related || "N",
-        // ✅ App Admin (user_type = 1) has no center_id, others populate from editItem or currentUser
-        Center_ID: editItem?.user_type === 1 ? "" : (editItem?.center_id ? String(editItem.center_id) : (currentUser?.center_id ? String(currentUser.center_id) : "")),
+        // ✅ App Admin (user_type = 1) has no center_id, others populate from editItem or current center context
+        Center_ID:
+          editItem?.user_type === 1
+            ? ""
+            : editItem?.center_id
+            ? String(editItem.center_id)
+            : centerId !== null && centerId !== undefined
+            ? String(centerId)
+            : "",
       });
       setSelectedAvatar(editItem?.employee_avatar || "");
       // Auto-focus on first input
@@ -237,7 +245,6 @@ const EmployeeDetails = () => {
 
     // Save immediately if editing an existing employee
     try {
-      const currentUser = getUmmahAidUser();
       const payload = {
         employee_avatar: avatarUrl,
         updated_by: getAuditName(),
@@ -285,8 +292,6 @@ const EmployeeDetails = () => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       // Convert form data to lowercase for PostgreSQL
       const payload = {
         name: data.Name,
@@ -355,14 +360,14 @@ const EmployeeDetails = () => {
 
   // ✅ Watch User_Type to conditionally show/hide Center field
   const selectedUserType = watch("User_Type");
-  const isAppAdmin = selectedUserType === "1"; // App Admin (User_Type = 1) should not have center
+  const isGlobalAdminUser = selectedUserType === "1" || selectedUserType === "2"; // App Admin or HQ should not have center assigned
 
   // ✅ Clear Center_ID when App Admin is selected
   useEffect(() => {
-    if (isAppAdmin) {
+    if (isGlobalAdminUser) {
       reset({
         ...watch(),
-        Center_ID: "", // Clear center_id for App Admin
+        Center_ID: "", // Clear center_id for App Admin / HQ
       });
     }
   }, [selectedUserType]); // Run when User_Type changes
@@ -1083,7 +1088,7 @@ const EmployeeDetails = () => {
                 </h6>
                 <Row>
                   {/* ✅ Center field: Hidden/Disabled for App Admin (User_Type = 1) */}
-                  {!isAppAdmin && (
+                  {!isGlobalAdminUser && (
                     <Col md={6}>
                       <FormGroup>
                         <Label for="Center_ID">

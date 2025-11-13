@@ -124,13 +124,13 @@ const SkillsMatrixReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'Employee Name', 'Center Name', 'ID Number', 'Department', 'Contact', 'Course',
+            'Center Name', 'Employee Name', 'ID Number', 'Department', 'Contact', 'Course',
             'Institution', 'Date Conducted', 'Date Expired', 'Outcome', 'Status', 'Created By'
         ];
 
         const csvData = processedData.map(item => [
-            `${item.name} ${item.surname}`,
             item.center_name || '',
+            `${item.name} ${item.surname}`,
             item.id_number || '',
             item.department_name || '',
             item.cell_number || '',
@@ -429,8 +429,8 @@ const SkillsMatrixReport = () => {
                                                 <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1650px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                         <tr>
-                                                            <th style={{minWidth: '150px'}}>Employee</th>
                                                             <th style={{minWidth: '160px'}}>Center</th>
+                                                            <th style={{minWidth: '150px'}}>Employee</th>
                                                             <th style={{minWidth: '120px'}}>ID Number</th>
                                                             <th style={{minWidth: '120px'}}>Department</th>
                                                             <th style={{minWidth: '120px'}}>Contact</th>
@@ -446,8 +446,8 @@ const SkillsMatrixReport = () => {
                                                     <tbody>
                                                         {groupItems.map((item, index) => (
                                                             <tr key={index}>
-                                                                <td><strong>{item.name} {item.surname}</strong></td>
                                                                 <td>{item.center_name || '-'}</td>
+                                                                <td><strong>{item.name} {item.surname}</strong></td>
                                                                 <td>{item.id_number || '-'}</td>
                                                                 <td><Badge color="secondary">{item.department_name || 'N/A'}</Badge></td>
                                                                 <td>{item.cell_number || '-'}</td>
@@ -480,10 +480,12 @@ const SkillsMatrixReport = () => {
                                         <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1650px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
+                                                    <th style={{cursor: 'pointer', minWidth: '160px'}} onClick={() => handleSort('center_name')}>
+                                                        Center {getSortIcon('center_name')}
+                                                    </th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Employee Name {getSortIcon('name')}
                                                     </th>
-                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{minWidth: '120px'}}>ID Number</th>
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('department_name')}>
                                                         Department {getSortIcon('department_name')}
@@ -511,10 +513,10 @@ const SkillsMatrixReport = () => {
                                             <tbody>
                                                 {paginatedData.map((item, index) => (
                                                 <tr key={index}>
+                                                    <td>{item.center_name || '-'}</td>
                                                     <td>
                                                         <strong>{item.name} {item.surname}</strong>
                                                     </td>
-                                                    <td>{item.center_name || '-'}</td>
                                                     <td>{item.id_number || '-'}</td>
                                                     <td>
                                                         <Badge color="secondary">

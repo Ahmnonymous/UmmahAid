@@ -25,7 +25,8 @@ import TableContainer from "../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
+import { useRole } from "../../helpers/useRole";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../helpers/url_helper";
 
 const PolicyAndProcedure = () => {
@@ -50,6 +51,9 @@ const PolicyAndProcedure = () => {
   const [policyTypes, setPolicyTypes] = useState([]);
   const [fileStatuses, setFileStatuses] = useState([]);
   const [policyFields, setPolicyFields] = useState([]);
+
+  const { canManagePolicy } = useRole();
+  const canManagePolicyAccess = canManagePolicy();
 
   const {
     control,
@@ -199,20 +203,29 @@ const PolicyAndProcedure = () => {
   };
 
   const handleAdd = () => {
+    if (!canManagePolicyAccess) {
+      showAlert("You do not have permission to add policies.", "danger");
+      return;
+    }
     setEditItem(null);
     setModalOpen(true);
   };
 
   const handleEdit = (item) => {
+    if (!canManagePolicyAccess) {
+      showAlert("You do not have permission to edit policies.", "danger");
+      return;
+    }
     setEditItem(item);
     setModalOpen(true);
   };
 
   const onSubmit = async (data) => {
+    if (!canManagePolicyAccess) {
+      showAlert("You do not have permission to modify policies.", "danger");
+      return;
+    }
     try {
-      // Get current user from localStorage
-      const currentUser = getUmmahAidUser();
-      
       // Convert form fields to lowercase for PostgreSQL
       const payload = {
         name: data.Name,
@@ -287,7 +300,10 @@ const PolicyAndProcedure = () => {
   };
 
   const handleDelete = () => {
-    if (!editItem) return;
+    if (!editItem || !canManagePolicyAccess) {
+      showAlert("You do not have permission to delete policies.", "danger");
+      return;
+    }
 
     showDeleteConfirmation({
       id: editItem.id,
@@ -332,13 +348,15 @@ const PolicyAndProcedure = () => {
         cell: (cell) => (
           <span
             style={{ cursor: "default", color: "inherit", textDecoration: "none" }}
-            onClick={() => handleEdit(cell.row.original)}
+            onClick={canManagePolicyAccess ? () => handleEdit(cell.row.original) : undefined}
             onMouseOver={(e) => {
+              if (!canManagePolicyAccess) return;
               e.currentTarget.style.color = "#0d6efd";
               e.currentTarget.style.textDecoration = "underline";
               e.currentTarget.style.cursor = "pointer";
             }}
             onMouseOut={(e) => {
+              if (!canManagePolicyAccess) return;
               e.currentTarget.style.color = "inherit";
               e.currentTarget.style.textDecoration = "none";
               e.currentTarget.style.cursor = "default";
@@ -449,7 +467,7 @@ const PolicyAndProcedure = () => {
         },
       },
     ],
-    [policyTypes, fileStatuses, policyFields]
+    [policyTypes, fileStatuses, policyFields, canManagePolicyAccess]
   );
 
   return (
@@ -486,7 +504,7 @@ const PolicyAndProcedure = () => {
             <Card>
               <CardBody>
                 <Row className="mb-3">
-                  <Col sm={6}>
+                  <Col sm={canManagePolicyAccess ? 6 : 12}>
                     <div className="d-flex align-items-center">
                       <Link to="/lookups" className="btn btn-light btn-sm me-2">
                         <i className="bx bx-arrow-back"></i> Back
@@ -494,17 +512,19 @@ const PolicyAndProcedure = () => {
                       <h4 className="card-title mb-0">Policy and Procedure</h4>
                     </div>
                   </Col>
-                  <Col sm={6}>
-                    <div className="text-sm-end">
-                      <Button
-                        color="primary"
-                        style={{ borderRadius: 0 }}
-                        onClick={handleAdd}
-                      >
-                        <i className="mdi mdi-plus me-1"></i> Add New
-                      </Button>
-                    </div>
-                  </Col>
+                  {canManagePolicyAccess && (
+                    <Col sm={6}>
+                      <div className="text-sm-end">
+                        <Button
+                          color="primary"
+                          style={{ borderRadius: 0 }}
+                          onClick={handleAdd}
+                        >
+                          <i className="mdi mdi-plus me-1"></i> Add New
+                        </Button>
+                      </div>
+                    </Col>
+                  )}
                 </Row>
 
                 {loading && (
@@ -517,7 +537,9 @@ const PolicyAndProcedure = () => {
                 {!loading && policies.length === 0 && (
                   <div className="alert alert-info" role="alert">
                     <i className="bx bx-info-circle me-2"></i>
-                    No policies found. Click "Add New" to create one.
+                    {canManagePolicyAccess
+                      ? 'No policies found. Click "Add New" to create one.'
+                      : "No policies found."}
                   </div>
                 )}
 
@@ -768,7 +790,7 @@ const PolicyAndProcedure = () => {
 
             <ModalFooter className="d-flex justify-content-between">
               <div>
-                {editItem && (
+                {editItem && canManagePolicyAccess && (
                   <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
                     <i className="bx bx-trash me-1"></i> Delete
                   </Button>
@@ -784,19 +806,20 @@ const PolicyAndProcedure = () => {
                 >
                   <i className="bx bx-x label-icon"></i> Cancel
                 </Button>
-
-                <Button color="success" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bx bx-save me-1"></i> Save
-                    </>
-                  )}
-                </Button>
+                {canManagePolicyAccess && (
+                  <Button color="success" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bx bx-save me-1"></i> Save
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </ModalFooter>
           </Form>

@@ -266,7 +266,8 @@ export const deleteMessage = data => del(url.DELETE_MESSAGE, { headers: { data }
 
 export const walletBalanceData = roomId => get(`${url.GET_WALLET_DATA}/${roomId}`, { params: { roomId } });
 
-export const getStatisticData = roomId => get(`${url.GET_STATISTICS_DATA}/${roomId}`, { params: { roomId } });
+export const getStatisticData = (duration) =>
+  get(`${url.GET_STATISTICS_DATA}`, { params: { duration: duration ?? 1 } });
 
 export const visitorData = roomId => get(`${url.GET_VISITOR_DATA}/${roomId}`, { params: { roomId } });
 

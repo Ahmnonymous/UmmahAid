@@ -19,7 +19,7 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 import SupplierListPanel from "./components/SupplierListPanel";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 import SupplierSummary from "./components/SupplierSummary";
@@ -201,8 +201,6 @@ const SupplierManagement = () => {
 
   const handleCreateSupplier = async (formData) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       // Convert to lowercase for backend
       const payload = {
         name: formData.Name || "",

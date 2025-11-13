@@ -19,9 +19,9 @@ router.get('/:id/view-logo', optionalAuthMiddleware, centerDetailController.view
 router.get('/:id/view-qrcode', optionalAuthMiddleware, centerDetailController.viewQRCode);
 
 // ✅ All other endpoints - require authentication, RBAC, and tenant filtering
-// Center management: App Admin ONLY (role 1)
+// Center management: App Admin (full) / HQ (view-only)
 router.use(authMiddleware);
-router.use(roleMiddleware([1])); // Only App Admin can manage centers
+router.use(roleMiddleware()); // App Admin full access, HQ read-only (enforced in middleware)
 router.use(filterMiddleware);
 
 router.get('/', centerDetailController.getAll);

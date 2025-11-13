@@ -1,115 +1,142 @@
-﻿const pool = require('../config/db');
+﻿const pool = require("../config/db");
+const {
+  buildInsertFragments,
+  buildUpdateFragments,
+  scopeQuery,
+} = require("../utils/modelHelpers");
 
-const tableName = 'Employee_Skills';
+const tableName = "Employee_Skills";
+
+const normalizeAttachment = (records = []) =>
+  records.map((record) => {
+    const clone = { ...record };
+    if (clone.attachment && clone.attachment_filename) {
+      clone.attachment = "exists";
+    } else if (clone.attachment && typeof clone.attachment !== "string") {
+      clone.attachment = clone.attachment.toString("base64");
+    }
+    return clone;
+  });
 
 const employeeSkillsModel = {
-  // ✅ getAll with tenant filtering: App Admin/HQ see all, others see only their center
-  getAll: async (centerId = null, isMultiCenter = false) => {
+  getAll: async (centerId = null, isMultiCenter = false, employeeId = null) => {
     try {
-      let query = `SELECT * FROM ${tableName}`;
-      const params = [];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        query += ` WHERE center_id = $1`;
-        params.push(centerId);
+      let text = `SELECT * FROM ${tableName}`;
+      const values = [];
+      const conditions = [];
+
+      if (employeeId) {
+        conditions.push(`employee_id = $${values.length + 1}`);
+        values.push(employeeId);
       }
-      
-      const res = await pool.query(query, params);
-      res.rows = res.rows.map(r => { 
-        // Convert attachment to base64 only if no filename exists (for display)
-        if (r.attachment && !r.attachment_filename) {
-          r.attachment = r.attachment.toString('base64');
-        } else if (r.attachment && r.attachment_filename) {
-          // Mark that attachment exists but don't convert to base64
-          r.attachment = 'exists';
-        }
-        return r; 
-      });
-      return res.rows;
+
+      if (conditions.length > 0) {
+        text += ` WHERE ${conditions.join(" AND ")}`;
+      }
+
+      const scoped = scopeQuery(
+        { text, values },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
+      return normalizeAttachment(res.rows);
     } catch (err) {
-      throw new Error("Error fetching all records from Employee_Skills: " + err.message);
+      throw new Error(
+        `Error fetching all records from ${tableName}: ${err.message}`,
+      );
     }
   },
 
-  // ✅ getById with tenant filtering
   getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      let where = `id = $1`;
-      const params = [id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND center_id = $2`;
-        params.push(centerId);
-      }
-      
-      const query = `SELECT * FROM ${tableName} WHERE ${where}`;
-      const res = await pool.query(query, params);
+      const scoped = scopeQuery(
+        {
+          text: `SELECT * FROM ${tableName} WHERE id = $1`,
+          values: [id],
+        },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
       if (!res.rows[0]) return null;
-      if (res.rows[0].attachment) res.rows[0].attachment = res.rows[0].attachment.toString('base64');
-      return res.rows[0];
+      return normalizeAttachment(res.rows)[0];
     } catch (err) {
-      throw new Error("Error fetching record by ID from Employee_Skills: " + err.message);
+      throw new Error(
+        `Error fetching record by ID from ${tableName}: ${err.message}`,
+      );
     }
   },
 
   create: async (fields) => {
     try {
-      const columns = Object.keys(fields).join(', ');
-      const values = Object.values(fields);
-      const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+      const { columns, values, placeholders } = buildInsertFragments(fields, {
+        quote: false,
+      });
       const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders}) RETURNING *`;
       const res = await pool.query(query, values);
-      return res.rows[0];
+      return normalizeAttachment(res.rows)[0];
     } catch (err) {
-      throw new Error("Error creating record in Employee_Skills: " + err.message);
+      throw new Error(`Error creating record in ${tableName}: ${err.message}`);
     }
   },
 
-  // ✅ update with tenant filtering
   update: async (id, fields, centerId = null, isMultiCenter = false) => {
+    const existing = await employeeSkillsModel.getById(
+      id,
+      centerId,
+      isMultiCenter,
+    );
+    if (!existing) {
+      return null;
+    }
+
     try {
-      const setClauses = Object.keys(fields).map((key, i) => `${key} = $${i + 1}`).join(', ');
-      const values = Object.values(fields);
-      let where = `id = $${values.length + 1}`;
-      const params = [...values, id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND center_id = $${values.length + 2}`;
-        params.push(centerId);
-      }
-      
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE ${where} RETURNING *`;
-      const res = await pool.query(query, params);
+      const { setClause, values } = buildUpdateFragments(fields, {
+        quote: false,
+      });
+      const query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${
+        values.length + 1
+      } RETURNING *`;
+      const res = await pool.query(query, [...values, id]);
       if (res.rowCount === 0) return null;
-      return res.rows[0];
+      return normalizeAttachment(res.rows)[0];
     } catch (err) {
-      throw new Error("Error updating record in Employee_Skills: " + err.message);
+      throw new Error(`Error updating record in ${tableName}: ${err.message}`);
     }
   },
 
-  // ✅ delete with tenant filtering
   delete: async (id, centerId = null, isMultiCenter = false) => {
-    try {
-      let where = `id = $1`;
-      const params = [id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND center_id = $2`;
-        params.push(centerId);
-      }
-      
-      const query = `DELETE FROM ${tableName} WHERE ${where} RETURNING *`;
-      const res = await pool.query(query, params);
-      if (res.rowCount === 0) return null;
-      return res.rows[0];
-    } catch (err) {
-      throw new Error("Error deleting record from Employee_Skills: " + err.message);
+    const existing = await employeeSkillsModel.getById(
+      id,
+      centerId,
+      isMultiCenter,
+    );
+    if (!existing) {
+      return null;
     }
-  }
+
+    try {
+      const query = `DELETE FROM ${tableName} WHERE id = $1 RETURNING *`;
+      const res = await pool.query(query, [id]);
+      if (res.rowCount === 0) return null;
+      return normalizeAttachment(res.rows)[0];
+    } catch (err) {
+      throw new Error(
+        `Error deleting record from ${tableName}: ${err.message}`,
+      );
+    }
+  },
 };
 
 module.exports = employeeSkillsModel;

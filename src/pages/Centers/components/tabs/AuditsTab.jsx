@@ -19,7 +19,7 @@ import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirm
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -83,8 +83,6 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       // Check if file is being uploaded
       const hasFile = data.Attachments && data.Attachments.length > 0;
 
@@ -103,12 +101,12 @@ const AuditsTab = ({ centerId, audits, lookupData, onUpdate, showAlert }) => {
         }
 
         if (editItem) {
-          formData.append("updated_by", currentUser?.username || "system");
+          formData.append("updated_by", getAuditName());
           await axiosApi.put(`${API_BASE_URL}/centerAudits/${editItem.id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         } else {
-          formData.append("created_by", currentUser?.username || "system");
+          formData.append("created_by", getAuditName());
           await axiosApi.post(`${API_BASE_URL}/centerAudits`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });

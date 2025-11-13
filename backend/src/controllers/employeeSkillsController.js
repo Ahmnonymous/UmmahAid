@@ -7,7 +7,10 @@ const employeeSkillsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const data = await employeeSkillsModel.getAll(centerId, isMultiCenter); 
+      const employeeId = req.query.employee_id || req.query.employeeId;
+      const tempEmployeeId = employeeId ? parseInt(employeeId, 10) : null;
+      const parsedEmployeeId = Number.isNaN(tempEmployeeId) ? null : tempEmployeeId;
+      const data = await employeeSkillsModel.getAll(centerId, isMultiCenter, parsedEmployeeId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -117,6 +120,9 @@ const employeeSkillsController = {
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
       const data = await employeeSkillsModel.update(req.params.id, fields, centerId, isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Employee_Skills: " + err.message}); 
@@ -128,7 +134,10 @@ const employeeSkillsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      await employeeSkillsModel.delete(req.params.id, centerId, isMultiCenter); 
+      const deleted = await employeeSkillsModel.delete(req.params.id, centerId, isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

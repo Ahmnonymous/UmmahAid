@@ -7,9 +7,6 @@ const personalFilesController = {
       // ✅ App Admin (center_id=null) sees all, others see only their center
       let centerId = req.center_id || req.user?.center_id || null;
       
-      // 🔍 DEBUG: Log user context
-      console.log(`[DEBUG] PersonalFiles.getAll - user: ${req.user?.username}, role: ${req.user?.user_type}, center_id (raw): ${req.user?.center_id}, center_id (final): ${centerId}, type: ${typeof centerId}`);
-      
       // ✅ Normalize centerId: convert to integer or null
       if (centerId !== null && centerId !== undefined) {
         centerId = parseInt(centerId);
@@ -20,12 +17,9 @@ const personalFilesController = {
         centerId = null; // Explicitly set to null
       }
       
-      console.log(`[DEBUG] PersonalFiles.getAll - normalized centerId: ${centerId} (type: ${typeof centerId})`);
-      
       const data = await personalFilesModel.getAll(centerId); 
       res.json(data); 
     } catch(err){ 
-      console.error(`[ERROR] PersonalFiles.getAll - ${err.message}`, err);
       res.status(500).json({error: err.message}); 
     } 
   },
@@ -125,6 +119,9 @@ const personalFilesController = {
       // ✅ App Admin (center_id=null) can update all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
       const data = await personalFilesModel.update(req.params.id, fields, centerId); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Personal_Files: " + err.message}); 
@@ -135,7 +132,10 @@ const personalFilesController = {
     try { 
       // ✅ App Admin (center_id=null) can delete all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
-      await personalFilesModel.delete(req.params.id, centerId); 
+      const deleted = await personalFilesModel.delete(req.params.id, centerId); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

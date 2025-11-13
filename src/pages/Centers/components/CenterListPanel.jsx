@@ -16,6 +16,7 @@ const CenterListPanel = ({
   loading,
   onRefresh,
   onCreateNew,
+  canCreate = false,
 }) => {
 
   return (
@@ -30,15 +31,17 @@ const CenterListPanel = ({
                 Centers List
               </h6>
             </div>
-            <Button 
-              color="primary" 
-              size="sm" 
-              onClick={onCreateNew} 
-              className="btn-sm"
-              title="Create New Center"
-            >
-              <i className="bx bx-plus font-size-12"></i>
-            </Button>
+            {canCreate && (
+              <Button 
+                color="primary" 
+                size="sm" 
+                onClick={onCreateNew} 
+                className="btn-sm"
+                title="Create New Center"
+              >
+                <i className="bx bx-plus font-size-12"></i>
+              </Button>
+            )}
           </div>
 
           {/* Search Bar */}

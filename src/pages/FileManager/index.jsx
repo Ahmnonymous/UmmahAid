@@ -3,7 +3,6 @@ import { Container, Row, Col, Alert } from "reactstrap";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 
@@ -56,8 +55,6 @@ const FileManager = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const currentUser = getUmmahAidUser();
-      
       // Fetch folders and files in parallel
       const [foldersResponse, filesResponse] = await Promise.all([
         axiosApi.get(`${API_BASE_URL}/folders`),

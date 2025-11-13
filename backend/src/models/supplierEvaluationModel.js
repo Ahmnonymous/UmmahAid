@@ -1,214 +1,189 @@
-﻿const pool = require('../config/db');
+﻿const pool = require("../config/db");
+const {
+  buildInsertFragments,
+  buildUpdateFragments,
+  scopeQuery,
+} = require("../utils/modelHelpers");
 
-const tableName = 'supplier_evaluation';
+const tableName = "supplier_evaluation";
+
+const mapRow = (row) => ({
+  id: row.id,
+  center_id: row.center_id,
+  supplier_id: row.supplier_id,
+  eval_date: row.eval_date,
+  quality_score: row.quality_score,
+  delivery_score: row.delivery_score,
+  cost_score: row.cost_score,
+  ohs_score: row.ohs_score,
+  env_score: row.env_score,
+  quality_wt: row.quality_wt,
+  delivery_wt: row.delivery_wt,
+  cost_wt: row.cost_wt,
+  ohs_wt: row.ohs_wt,
+  env_wt: row.env_wt,
+  overall_score: row.overall_score,
+  status: row.status,
+  expiry_date: row.expiry_date,
+  notes: row.notes,
+  created_by: row.created_by,
+  updated_by: row.updated_by,
+  datestamp: row.datestamp,
+  updated_at: row.updated_at,
+});
+
+const toDbFields = (fields = {}) => {
+  const dbFields = {};
+  const assignIfPresent = (key, value) => {
+    if (value !== undefined && value !== null) {
+      dbFields[key] = value;
+    }
+  };
+
+  assignIfPresent("supplier_id", fields.supplier_id);
+  assignIfPresent("eval_date", fields.eval_date);
+  assignIfPresent("quality_score", fields.quality_score);
+  assignIfPresent("delivery_score", fields.delivery_score);
+  assignIfPresent("cost_score", fields.cost_score);
+  assignIfPresent("ohs_score", fields.ohs_score);
+  assignIfPresent("env_score", fields.env_score);
+  assignIfPresent("quality_wt", fields.quality_wt);
+  assignIfPresent("delivery_wt", fields.delivery_wt);
+  assignIfPresent("cost_wt", fields.cost_wt);
+  assignIfPresent("ohs_wt", fields.ohs_wt);
+  assignIfPresent("env_wt", fields.env_wt);
+  assignIfPresent("overall_score", fields.overall_score);
+  assignIfPresent("status", fields.status);
+  assignIfPresent("expiry_date", fields.expiry_date);
+  assignIfPresent("notes", fields.notes);
+  assignIfPresent("created_by", fields.created_by);
+  assignIfPresent("updated_by", fields.updated_by);
+  assignIfPresent("center_id", fields.center_id);
+
+  return dbFields;
+};
 
 const supplierEvaluationModel = {
-  // ✅ getAll with tenant filtering (can filter by supplierId OR centerId)
   getAll: async (centerId = null, supplierId = null, isMultiCenter = false) => {
     try {
-      let query = `SELECT * FROM ${tableName}`;
-      const params = [];
-      let paramCount = 0;
-      
+      let text = `SELECT * FROM ${tableName}`;
+      const values = [];
       const conditions = [];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        paramCount++;
-        conditions.push(`"center_id" = $${paramCount}`);
-        params.push(centerId);
-      }
-      
+
       if (supplierId) {
-        paramCount++;
-        conditions.push(`supplier_id = $${paramCount}`);
-        params.push(supplierId);
+        conditions.push(`supplier_id = $${values.length + 1}`);
+        values.push(supplierId);
       }
-      
+
       if (conditions.length > 0) {
-        query += ` WHERE ${conditions.join(' AND ')}`;
+        text += ` WHERE ${conditions.join(" AND ")}`;
       }
-      
-      const res = await pool.query(query, params);
-      // Map database column names to frontend field names
-      return res.rows.map(row => ({
-        id: row.id,
-        center_id: row.center_id,
-        supplier_id: row.supplier_id,
-        eval_date: row.eval_date,
-        quality_score: row.quality_score,
-        delivery_score: row.delivery_score,
-        cost_score: row.cost_score,
-        ohs_score: row.ohs_score,
-        env_score: row.env_score,
-        quality_wt: row.quality_wt,
-        delivery_wt: row.delivery_wt,
-        cost_wt: row.cost_wt,
-        ohs_wt: row.ohs_wt,
-        env_wt: row.env_wt,
-        overall_score: row.overall_score,
-        status: row.status,
-        expiry_date: row.expiry_date,
-        notes: row.notes,
-        created_by: row.created_by,
-        updated_by: row.updated_by,
-        datestamp: row.datestamp,
-        updated_at: row.updated_at,
-      }));
+
+      const scoped = scopeQuery(
+        { text, values },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: '"center_id"',
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
+      return res.rows.map(mapRow);
     } catch (err) {
-      throw new Error("Error fetching all records from Supplier_Evaluation: " + err.message);
+      throw new Error(
+        `Error fetching all records from ${tableName}: ${err.message}`,
+      );
     }
   },
 
-  // ✅ getById with tenant filtering
   getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      let query = `SELECT * FROM ${tableName} WHERE "id" = $1`;
-      const params = [id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        query += ` AND "center_id" = $2`;
-        params.push(centerId);
-      }
-      
-      const res = await pool.query(query, params);
+      const scoped = scopeQuery(
+        {
+          text: `SELECT * FROM ${tableName} WHERE "id" = $1`,
+          values: [id],
+        },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: '"center_id"',
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
       if (!res.rows[0]) return null;
-      
-      const row = res.rows[0];
-      // Map database column names to frontend field names
-      return {
-        id: row.id,
-        center_id: row.center_id,
-        supplier_id: row.supplier_id,
-        eval_date: row.eval_date,
-        quality_score: row.quality_score,
-        delivery_score: row.delivery_score,
-        cost_score: row.cost_score,
-        ohs_score: row.ohs_score,
-        env_score: row.env_score,
-        quality_wt: row.quality_wt,
-        delivery_wt: row.delivery_wt,
-        cost_wt: row.cost_wt,
-        ohs_wt: row.ohs_wt,
-        env_wt: row.env_wt,
-        overall_score: row.overall_score,
-        status: row.status,
-        expiry_date: row.expiry_date,
-        notes: row.notes,
-        created_by: row.created_by,
-        updated_by: row.updated_by,
-        datestamp: row.datestamp,
-        updated_at: row.updated_at,
-      };
+      return mapRow(res.rows[0]);
     } catch (err) {
-      throw new Error("Error fetching record by ID from Supplier_Evaluation: " + err.message);
+      throw new Error(
+        `Error fetching record by ID from ${tableName}: ${err.message}`,
+      );
     }
   },
 
   create: async (fields, centerId) => {
     try {
-      // Add center_id if provided
-      if (centerId) {
-        fields.center_id = centerId;
-      }
-      
-      // Map frontend field names to database column names
-      const dbFields = {};
-      if (fields.supplier_id) dbFields.supplier_id = fields.supplier_id;
-      if (fields.eval_date) dbFields.eval_date = fields.eval_date;
-      if (fields.quality_score !== undefined) dbFields.quality_score = fields.quality_score;
-      if (fields.delivery_score !== undefined) dbFields.delivery_score = fields.delivery_score;
-      if (fields.cost_score !== undefined) dbFields.cost_score = fields.cost_score;
-      if (fields.ohs_score !== undefined) dbFields.ohs_score = fields.ohs_score;
-      if (fields.env_score !== undefined) dbFields.env_score = fields.env_score;
-      if (fields.quality_wt !== undefined) dbFields.quality_wt = fields.quality_wt;
-      if (fields.delivery_wt !== undefined) dbFields.delivery_wt = fields.delivery_wt;
-      if (fields.cost_wt !== undefined) dbFields.cost_wt = fields.cost_wt;
-      if (fields.ohs_wt !== undefined) dbFields.ohs_wt = fields.ohs_wt;
-      if (fields.env_wt !== undefined) dbFields.env_wt = fields.env_wt;
-      if (fields.overall_score !== undefined) dbFields.overall_score = fields.overall_score;
-      if (fields.status) dbFields.status = fields.status;
-      if (fields.expiry_date) dbFields.expiry_date = fields.expiry_date;
-      if (fields.notes) dbFields.notes = fields.notes;
-      if (fields.created_by) dbFields.created_by = fields.created_by;
-      if (fields.updated_by) dbFields.updated_by = fields.updated_by;
-      if (fields.center_id) dbFields.center_id = fields.center_id;
-      
-      const columns = Object.keys(dbFields).join(', ');
-      const values = Object.values(dbFields);
-      const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+      const payload = toDbFields({
+        ...fields,
+        center_id: centerId ?? fields.center_id,
+      });
+
+      const { columns, values, placeholders } = buildInsertFragments(payload);
       const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders}) RETURNING *`;
       const res = await pool.query(query, values);
-      return res.rows[0];
+      return mapRow(res.rows[0]);
     } catch (err) {
-      throw new Error("Error creating record in Supplier_Evaluation: " + err.message);
+      throw new Error(`Error creating record in ${tableName}: ${err.message}`);
     }
   },
 
-  // ✅ update with tenant filtering
   update: async (id, fields, centerId = null, isMultiCenter = false) => {
+    const existing = await supplierEvaluationModel.getById(
+      id,
+      centerId,
+      isMultiCenter,
+    );
+    if (!existing) {
+      return null;
+    }
+
     try {
-      // Map frontend field names to database column names
-      const dbFields = {};
-      if (fields.supplier_id) dbFields.supplier_id = fields.supplier_id;
-      if (fields.eval_date) dbFields.eval_date = fields.eval_date;
-      if (fields.quality_score !== undefined) dbFields.quality_score = fields.quality_score;
-      if (fields.delivery_score !== undefined) dbFields.delivery_score = fields.delivery_score;
-      if (fields.cost_score !== undefined) dbFields.cost_score = fields.cost_score;
-      if (fields.ohs_score !== undefined) dbFields.ohs_score = fields.ohs_score;
-      if (fields.env_score !== undefined) dbFields.env_score = fields.env_score;
-      if (fields.quality_wt !== undefined) dbFields.quality_wt = fields.quality_wt;
-      if (fields.delivery_wt !== undefined) dbFields.delivery_wt = fields.delivery_wt;
-      if (fields.cost_wt !== undefined) dbFields.cost_wt = fields.cost_wt;
-      if (fields.ohs_wt !== undefined) dbFields.ohs_wt = fields.ohs_wt;
-      if (fields.env_wt !== undefined) dbFields.env_wt = fields.env_wt;
-      if (fields.overall_score !== undefined) dbFields.overall_score = fields.overall_score;
-      if (fields.status) dbFields.status = fields.status;
-      if (fields.expiry_date) dbFields.expiry_date = fields.expiry_date;
-      if (fields.notes) dbFields.notes = fields.notes;
-      if (fields.updated_by) dbFields.updated_by = fields.updated_by;
-      
-      const setClauses = Object.keys(dbFields).map((key, i) => `${key} = $${i + 1}`).join(', ');
-      const values = Object.values(dbFields);
-      let where = `"id" = $${values.length + 1}`;
-      const params = [...values, id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND "center_id" = $${values.length + 2}`;
-        params.push(centerId);
-      }
-      
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE ${where} RETURNING *`;
-      const res = await pool.query(query, params);
+      const payload = toDbFields(fields);
+      const { setClause, values } = buildUpdateFragments(payload);
+      const query = `UPDATE ${tableName} SET ${setClause} WHERE "id" = $${
+        values.length + 1
+      } RETURNING *`;
+      const res = await pool.query(query, [...values, id]);
       if (res.rowCount === 0) return null;
-      return res.rows[0];
+      return mapRow(res.rows[0]);
     } catch (err) {
-      throw new Error("Error updating record in Supplier_Evaluation: " + err.message);
+      throw new Error(`Error updating record in ${tableName}: ${err.message}`);
     }
   },
 
-  // ✅ delete with tenant filtering
   delete: async (id, centerId = null, isMultiCenter = false) => {
-    try {
-      let where = `"id" = $1`;
-      const params = [id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND "center_id" = $2`;
-        params.push(centerId);
-      }
-      
-      const query = `DELETE FROM ${tableName} WHERE ${where} RETURNING *`;
-      const res = await pool.query(query, params);
-      if (res.rowCount === 0) return null;
-      return res.rows[0];
-    } catch (err) {
-      throw new Error("Error deleting record from Supplier_Evaluation: " + err.message);
+    const existing = await supplierEvaluationModel.getById(
+      id,
+      centerId,
+      isMultiCenter,
+    );
+    if (!existing) {
+      return null;
     }
-  }
+
+    try {
+      const query = `DELETE FROM ${tableName} WHERE "id" = $1 RETURNING *`;
+      const res = await pool.query(query, [id]);
+      if (res.rowCount === 0) return null;
+      return mapRow(res.rows[0]);
+    } catch (err) {
+      throw new Error(
+        `Error deleting record from ${tableName}: ${err.message}`,
+      );
+    }
+  },
 };
 
 module.exports = supplierEvaluationModel;

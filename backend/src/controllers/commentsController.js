@@ -54,6 +54,9 @@ const commentsController = {
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
       const data = await commentsModel.update(req.params.id, req.body, centerId, isMultiCenter);
+      if (!data) {
+        return res.status(404).json({ error: 'Not found' });
+      }
       res.json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -65,7 +68,10 @@ const commentsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      await commentsModel.delete(req.params.id, centerId, isMultiCenter);
+      const deleted = await commentsModel.delete(req.params.id, centerId, isMultiCenter);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Not found' });
+      }
       res.json({ message: 'Deleted successfully' });
     } catch (err) {
       res.status(500).json({ error: err.message });

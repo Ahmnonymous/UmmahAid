@@ -138,14 +138,14 @@ const TotalFinancialAssistanceReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'File Number', 'Center Name', 'Name', 'Surname', 'Cell Number', 'File Status', 
+            'Center Name', 'File Number', 'Name', 'Surname', 'Cell Number', 'File Status', 
             'Employment Status', 'File Condition', 'Health Condition',
             'Food Assistance (R)', 'Financial Transactions (R)', 'Total Assistance (R)'
         ];
 
         const csvData = processedData.map(item => [
-            item.file_number || '',
             item.center_name || '',
+            item.file_number || '',
             item.name || '',
             item.surname || '',
             item.cell_number || '',
@@ -531,10 +531,12 @@ const TotalFinancialAssistanceReport = () => {
                                                 <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1200px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                         <tr>
+                                                            <th style={{cursor: 'pointer', minWidth: '160px'}} onClick={() => handleSort('center_name')}>
+                                                                Center {getSortIcon('center_name')}
+                                                            </th>
                                                             <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                                 File # {getSortIcon('file_number')}
                                                             </th>
-                                                            <th style={{minWidth: '160px'}}>Center</th>
                                                             <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                                 Name {getSortIcon('name')}
                                                             </th>
@@ -551,8 +553,8 @@ const TotalFinancialAssistanceReport = () => {
                                         <tbody>
                                                         {groupItems.map((item, index) => (
                                                 <tr key={index}>
-                                                                <td><strong>{item.file_number || '-'}</strong></td>
                                                                 <td>{item.center_name || '-'}</td>
+                                                                <td><strong>{item.file_number || '-'}</strong></td>
                                                                 <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                     <td>
@@ -588,10 +590,12 @@ const TotalFinancialAssistanceReport = () => {
                                         <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1200px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
+                                                    <th style={{cursor: 'pointer', minWidth: '160px'}} onClick={() => handleSort('center_name')}>
+                                                        Center {getSortIcon('center_name')}
+                                                    </th>
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                         File Number {getSortIcon('file_number')}
                                                     </th>
-                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Name {getSortIcon('name')}
                                                     </th>
@@ -620,8 +624,8 @@ const TotalFinancialAssistanceReport = () => {
                                             <tbody>
                                                 {paginatedData.map((item, index) => (
                                                     <tr key={index}>
-                                                        <td><strong>{item.file_number || '-'}</strong></td>
                                                         <td>{item.center_name || '-'}</td>
+                                                        <td><strong>{item.file_number || '-'}</strong></td>
                                                         <td>{item.name} {item.surname}</td>
                                                         <td>{item.cell_number || '-'}</td>
                                                         <td>
@@ -650,7 +654,7 @@ const TotalFinancialAssistanceReport = () => {
                                         </tbody>
                                             <tfoot className="table-active">
                                                 <tr>
-                                                    <th colSpan="7" className="text-end">Total:</th>
+                                                    <th colSpan="8" className="text-end">Total:</th>
                                                     <th className="text-end">{formatCurrency(totalFoodAssistance)}</th>
                                                     <th className="text-end">{formatCurrency(totalFinancialTransactions)}</th>
                                                     <th className="text-end text-success">{formatCurrency(grandTotal)}</th>

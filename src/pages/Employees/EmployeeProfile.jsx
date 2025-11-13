@@ -1,5 +1,5 @@
 import { API_STREAM_BASE_URL } from "../../helpers/url_helper";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Container,
@@ -27,20 +27,33 @@ import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TableContainer from "../../components/Common/TableContainer";
 import AvatarSelector from "../../components/AvatarSelector";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 import profile1 from "/src/assets/images/profile-img.png";
 
 // MiniCards Component for KPI Cards
-const MiniCards = ({ title, text, iconClass }) => {
+const MiniCards = ({ title, value, iconClass, isLoading }) => {
+  const formattedValue =
+    value === null || value === undefined
+      ? "--"
+      : typeof value === "number"
+      ? value.toLocaleString()
+      : value;
+
   return (
-    <Col md="4">
-      <Card className="mini-stats-wid">
+    <Col md="4" sm="6" className="mb-3">
+      <Card className="mini-stats-wid h-100">
         <CardBody>
-          <div className="d-flex">
+          <div className="d-flex align-items-center">
             <div className="flex-grow-1">
               <p className="text-muted fw-medium mb-2">{title}</p>
-              <h4 className="mb-0">{text}</h4>
+              {isLoading ? (
+                <div className="placeholder-glow">
+                  <span className="placeholder col-6"></span>
+                </div>
+              ) : (
+                <h4 className="mb-0">{formattedValue}</h4>
+              )}
             </div>
             <div className="mini-stat-icon avatar-sm align-self-center rounded-circle bg-primary">
               <span className="avatar-title">
@@ -61,9 +74,19 @@ const EmployeeProfile = () => {
   const [appraisals, setAppraisals] = useState([]);
   const [initiatives, setInitiatives] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [appraisalsLoading, setAppraisalsLoading] = useState(false);
+  const [initiativesLoading, setInitiativesLoading] = useState(false);
+  const [skillsLoading, setSkillsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [alert, setAlert] = useState(null);
+  const [dashboardMetrics, setDashboardMetrics] = useState({
+    totalApplicants: 0,
+    totalHomeVisits: 0,
+    totalSkills: 0,
+  });
+  const [dashboardMetricsLoading, setDashboardMetricsLoading] = useState(true);
+  const [dashboardMetricsError, setDashboardMetricsError] = useState(null);
 
   // Modal states for each table
   const [appraisalModalOpen, setAppraisalModalOpen] = useState(false);
@@ -90,6 +113,7 @@ const EmployeeProfile = () => {
   const [trainingCourses, setTrainingCourses] = useState([]);
   const [trainingInstitutions, setTrainingInstitutions] = useState([]);
   const [trainingOutcomes, setTrainingOutcomes] = useState([]);
+  const fetchRequestRef = useRef(0);
 
   // Form for Appraisal
   const {
@@ -190,42 +214,180 @@ const EmployeeProfile = () => {
   document.title = "Employee Profile | Welfare App";
 
   useEffect(() => {
-    if (id) {
-      fetchEmployeeDetails();
-      fetchLookupData();
+    if (!id) {
+      return;
     }
+
+    setError(null);
+    setAlert(null);
+    fetchEmployeeDetails(id, { reset: true });
+    fetchLookupData();
   }, [id]);
 
-  const fetchEmployeeDetails = async () => {
-    try {
+  useEffect(() => {
+    if (!id) {
+      setDashboardMetrics({
+        totalApplicants: 0,
+        totalHomeVisits: 0,
+        totalSkills: 0,
+      });
+      setDashboardMetricsLoading(false);
+      setDashboardMetricsError(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadDashboardMetrics = async () => {
+      setDashboardMetricsLoading(true);
+      setDashboardMetricsError(null);
+
+      const endpoints = [
+        {
+          key: "totalApplicants",
+          url: `${API_BASE_URL}/employee/${id}/total-applicants`,
+        },
+        {
+          key: "totalHomeVisits",
+          url: `${API_BASE_URL}/employee/${id}/total-home-visits`,
+        },
+        {
+          key: "totalSkills",
+          url: `${API_BASE_URL}/employee/${id}/total-skills`,
+        },
+      ];
+
+      const labelMap = {
+        totalApplicants: "Total Applicants Created",
+        totalHomeVisits: "Total Home Visits",
+        totalSkills: "Total Skills",
+      };
+
+      try {
+        const responses = await Promise.allSettled(
+          endpoints.map(({ url }) => axiosApi.get(url))
+        );
+
+        if (!isMounted) {
+          return;
+        }
+
+        const nextMetrics = {
+          totalApplicants: 0,
+          totalHomeVisits: 0,
+          totalSkills: 0,
+        };
+        const failedLabels = [];
+
+        responses.forEach((result, index) => {
+          const { key } = endpoints[index];
+          if (result.status === "fulfilled") {
+            const count = result.value?.data?.count;
+            nextMetrics[key] =
+              typeof count === "number" ? count : parseInt(count, 10) || 0;
+          } else {
+            console.error(`Error fetching ${key}:`, result.reason);
+            failedLabels.push(labelMap[key]);
+          }
+        });
+
+        setDashboardMetrics(nextMetrics);
+        setDashboardMetricsError(
+          failedLabels.length
+            ? `Unable to load ${failedLabels.join(", ")}.`
+            : null
+        );
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+        console.error("Error fetching dashboard metrics:", error);
+        setDashboardMetrics({
+          totalApplicants: 0,
+          totalHomeVisits: 0,
+          totalSkills: 0,
+        });
+        setDashboardMetricsError(
+          "Unable to load dashboard metrics at this time."
+        );
+      } finally {
+        if (isMounted) {
+          setDashboardMetricsLoading(false);
+        }
+      }
+    };
+
+    loadDashboardMetrics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  const fetchEmployeeDetails = async (employeeId = id, options = {}) => {
+    if (!employeeId) {
+      return;
+    }
+
+    const { reset = false } = options;
+    const requestId = ++fetchRequestRef.current;
+
+    if (reset) {
+      setEmployee(null);
+      setAppraisals([]);
+      setInitiatives([]);
+      setSkills([]);
+    }
+
+    if (reset || !employee) {
       setLoading(true);
+    }
+    setError(null);
+    setAppraisalsLoading(true);
+    setInitiativesLoading(true);
+    setSkillsLoading(true);
+
+    try {
       const [employeeRes, appraisalsRes, initiativesRes, skillsRes] =
         await Promise.all([
-          axiosApi.get(`${API_BASE_URL}/employee/${id}`),
+          axiosApi.get(`${API_BASE_URL}/employee/${employeeId}`),
           axiosApi
             .get(
-              `${API_BASE_URL}/employeeAppraisal?employee_id=${id}`
+              `${API_BASE_URL}/employeeAppraisal?employee_id=${employeeId}`
             )
             .catch(() => ({ data: [] })),
           axiosApi
             .get(
-              `${API_BASE_URL}/employeeInitiative?employee_id=${id}`
+              `${API_BASE_URL}/employeeInitiative?employee_id=${employeeId}`
             )
             .catch(() => ({ data: [] })),
           axiosApi
-            .get(`${API_BASE_URL}/employeeSkills?employee_id=${id}`)
+            .get(`${API_BASE_URL}/employeeSkills?employee_id=${employeeId}`)
             .catch(() => ({ data: [] })),
         ]);
 
-      setEmployee(employeeRes.data);
+      if (fetchRequestRef.current !== requestId) {
+        return;
+      }
+
+      setEmployee(employeeRes.data || null);
       setAppraisals(appraisalsRes.data || []);
       setInitiatives(initiativesRes.data || []);
       setSkills(skillsRes.data || []);
     } catch (error) {
       console.error("Error fetching employee details:", error);
+      if (fetchRequestRef.current !== requestId) {
+        return;
+      }
       setError("Failed to fetch employee details");
     } finally {
+      if (fetchRequestRef.current !== requestId) {
+        return;
+      }
       setLoading(false);
+      setAppraisalsLoading(false);
+      setInitiativesLoading(false);
+      setSkillsLoading(false);
     }
   };
 
@@ -335,27 +497,26 @@ const EmployeeProfile = () => {
   };
 
   // Mini Cards Data
-  const miniCards = [
-    {
-      title: "Completed Projects",
-      iconClass: "bx-check-circle",
-      text: Array.isArray(appraisals) ? appraisals.length.toString() : "125",
-    },
-    {
-      title: "Pending Projects",
-      iconClass: "bx-hourglass",
-      text: Array.isArray(initiatives) ? initiatives.length.toString() : "12",
-    },
-    {
-      title: "Total Revenue",
-      iconClass: "bx-package",
-      text: `$${
-        Array.isArray(skills)
-          ? (skills.length * 1000).toLocaleString()
-          : "36,524"
-      }`,
-    },
-  ];
+  const miniCards = useMemo(
+    () => [
+      {
+        title: "Total Applicants Created",
+        iconClass: "bx-user-plus",
+        value: dashboardMetrics.totalApplicants,
+      },
+      {
+        title: "Total Home Visits",
+        iconClass: "bx-home",
+        value: dashboardMetrics.totalHomeVisits,
+      },
+      {
+        title: "Total Skills",
+        iconClass: "bxs-graduation",
+        value: dashboardMetrics.totalSkills,
+      },
+    ],
+    [dashboardMetrics]
+  );
 
   // ========== APPRAISAL CRUD ==========
   useEffect(() => {
@@ -415,11 +576,9 @@ const EmployeeProfile = () => {
         return;
       }
 
-      const currentUser = getUmmahAidUser();
-
       // Use JSON payload (no file uploads for appraisal)
       const payload = {
-        employee_id: parseInt(id),
+        employee_id: parseInt(id, 10),
         positions: data.Positions || "",
         attendance: data.Attendance || "",
         job_knowledge_skills: data.Job_Knowledge_Skills || "",
@@ -519,9 +678,8 @@ const EmployeeProfile = () => {
         return;
       }
 
-      const currentUser = getUmmahAidUser();
       const payload = {
-        employee_id: parseInt(id),
+        employee_id: parseInt(id, 10),
         idea: data.Idea || "",
         details: data.Details || "",
         idea_date: data.Idea_Date || null,
@@ -604,7 +762,7 @@ const EmployeeProfile = () => {
         Department: employee?.department ? String(employee.department) : "",
         HSEQ_Related: employee?.hseq_related || "N",
         // ✅ App Admin (user_type = 1) has no center_id
-        Center_ID: employee?.user_type === 1 ? "" : (employee?.center_id ? String(employee.center_id) : ""),
+        Center_ID: [1, 2].includes(employee?.user_type) ? "" : (employee?.center_id ? String(employee.center_id) : ""),
       });
       setSelectedAvatar(employee?.employee_avatar || "");
     }
@@ -612,14 +770,14 @@ const EmployeeProfile = () => {
 
   // ✅ Watch User_Type to conditionally show/hide Center field
   const selectedUserTypeEmployee = watchEmployee("User_Type");
-  const isAppAdminEmployee = selectedUserTypeEmployee === "1"; // App Admin (User_Type = 1) should not have center
+  const isGlobalAdminEmployee = selectedUserTypeEmployee === "1" || selectedUserTypeEmployee === "2"; // App Admin / HQ should not have center
 
   // ✅ Clear Center_ID when App Admin is selected in Employee Profile
   useEffect(() => {
-    if (isAppAdminEmployee) {
+    if (isGlobalAdminEmployee) {
       resetEmployee({
         ...watchEmployee(),
-        Center_ID: "", // Clear center_id for App Admin
+        Center_ID: "", // Clear center_id for App Admin / HQ
       });
     }
   }, [selectedUserTypeEmployee]); // Run when User_Type changes
@@ -662,8 +820,6 @@ const EmployeeProfile = () => {
         return;
       }
 
-      const currentUser = getUmmahAidUser();
-
       // Check if attachment is being uploaded
       const hasAttachment = data.Attachment && data.Attachment.length > 0;
 
@@ -671,7 +827,7 @@ const EmployeeProfile = () => {
         // Use FormData for file upload
         const formData = new FormData();
 
-        formData.append("employee_id", parseInt(id));
+        formData.append("employee_id", parseInt(id, 10));
         formData.append("course", data.Course || "");
         formData.append("institution", data.Institution || "");
         formData.append("date_conducted", data.Date_Conducted || "");
@@ -702,7 +858,7 @@ const EmployeeProfile = () => {
       } else {
         // Use JSON for regular update/create without file
         const payload = {
-          employee_id: parseInt(id),
+          employee_id: parseInt(id, 10),
           course: data.Course ? parseInt(data.Course) : null,
           institution: data.Institution ? parseInt(data.Institution) : null,
           date_conducted: data.Date_Conducted || null,
@@ -1092,7 +1248,6 @@ const EmployeeProfile = () => {
 
     // Save immediately
     try {
-      const currentUser = getUmmahAidUser();
       const payload = {
         employee_avatar: avatarUrl,
         updated_by: getAuditName(),
@@ -1124,8 +1279,6 @@ const EmployeeProfile = () => {
         return;
       }
 
-      const currentUser = getUmmahAidUser();
-
       // Convert form data to lowercase for PostgreSQL
       const payload = {
         name: data.Name,
@@ -1150,7 +1303,7 @@ const EmployeeProfile = () => {
         hseq_related: data.HSEQ_Related,
         employee_avatar: selectedAvatar || null,
         // ✅ App Admin (User_Type = 1) should have NULL center_id
-        center_id: data.User_Type === "1" ? null : (data.Center_ID ? parseInt(data.Center_ID) : employee?.center_id || null),
+        center_id: ["1", "2"].includes(data.User_Type) ? null : (data.Center_ID ? parseInt(data.Center_ID) : employee?.center_id || null),
         updated_by: getAuditName(),
       };
 
@@ -1279,7 +1432,7 @@ const EmployeeProfile = () => {
                 {/* Profile Summary Section */}
                 <CardBody className="pt-0 pb-3">
                   <Row>
-                    <Col sm="5">
+                    <Col sm="12" md="5">
                       <div className="avatar-md profile-user-wid mb-4">
                         <img
                           src={
@@ -1300,29 +1453,6 @@ const EmployeeProfile = () => {
                       </p> */}
                     </Col>
 
-                    <Col sm={7}>
-                      <div className="pt-4">
-                        <Row>
-                          <Col xs="6">
-                            <h5 className="font-size-15 mb-1">
-                              {Array.isArray(appraisals)
-                                ? appraisals.length
-                                : 2}
-                            </h5>
-                            <p className="text-muted mb-0">Projects</p>
-                          </Col>
-                          <Col xs="6">
-                            <h5 className="font-size-15 mb-1">
-                              $
-                              {Array.isArray(skills)
-                                ? (skills.length * 1000).toLocaleString()
-                                : "1,000"}
-                            </h5>
-                            <p className="text-muted mb-0">Revenue</p>
-                          </Col>
-                        </Row>
-                      </div>
-                    </Col>
                   </Row>
                 </CardBody>
 
@@ -1544,12 +1674,22 @@ const EmployeeProfile = () => {
                 {(miniCards || [])?.map((card, key) => (
                   <MiniCards
                     title={card.title}
-                    text={card.text}
+                    value={card.value}
                     iconClass={card.iconClass}
+                    isLoading={dashboardMetricsLoading}
                     key={"_card_" + key}
                   />
                 ))}
               </Row>
+              {dashboardMetricsError && (
+                <Row className="mt-2">
+                  <Col xs="12">
+                    <Alert color="warning" className="mb-0">
+                      {dashboardMetricsError}
+                    </Alert>
+                  </Col>
+                </Row>
+              )}
 
               {/* Employee Appraisal Card */}
               <Card>
@@ -1565,7 +1705,12 @@ const EmployeeProfile = () => {
                       Add New
                     </Button>
                   </div>
-                  {Array.isArray(appraisals) && appraisals.length > 0 ? (
+                  {appraisalsLoading ? (
+                    <div className="d-flex justify-content-center align-items-center gap-2 py-4">
+                      <Spinner size="sm" color="primary" />
+                      <span className="text-muted">Loading appraisals...</span>
+                    </div>
+                  ) : Array.isArray(appraisals) && appraisals.length > 0 ? (
                     <TableContainer
                       columns={appraisalColumns}
                       data={appraisals}
@@ -1594,7 +1739,12 @@ const EmployeeProfile = () => {
                       Add New
                     </Button>
                   </div>
-                  {Array.isArray(initiatives) && initiatives.length > 0 ? (
+                  {initiativesLoading ? (
+                    <div className="d-flex justify-content-center align-items-center gap-2 py-4">
+                      <Spinner size="sm" color="primary" />
+                      <span className="text-muted">Loading initiatives...</span>
+                    </div>
+                  ) : Array.isArray(initiatives) && initiatives.length > 0 ? (
                     <TableContainer
                       columns={initiativeColumns}
                       data={initiatives}
@@ -1619,7 +1769,12 @@ const EmployeeProfile = () => {
                       Add New
                     </Button>
                   </div>
-                  {Array.isArray(skills) && skills.length > 0 ? (
+                  {skillsLoading ? (
+                    <div className="d-flex justify-content-center align-items-center gap-2 py-4">
+                      <Spinner size="sm" color="primary" />
+                      <span className="text-muted">Loading skills...</span>
+                    </div>
+                  ) : Array.isArray(skills) && skills.length > 0 ? (
                     <TableContainer
                       columns={skillsColumns}
                       data={skills}
@@ -2827,7 +2982,7 @@ const EmployeeProfile = () => {
               </h6>
               <Row>
                 {/* ✅ Center field: Hidden/Disabled for App Admin (User_Type = 1) */}
-                {!isAppAdminEmployee && (
+                {!isGlobalAdminEmployee && (
                   <Col md={6}>
                     <FormGroup>
                       <Label for="Center_ID">

@@ -363,6 +363,16 @@ CREATE TABLE Period_As_Muslim (
     Updated_At TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE Hadith (
+    ID SERIAL PRIMARY KEY,
+    Hadith_Arabic TEXT NOT NULL,
+    Hadith_English TEXT NOT NULL,
+    Created_On TIMESTAMPTZ NOT NULL DEFAULT now(),
+    Created_By VARCHAR(255),
+    Updated_On TIMESTAMPTZ NOT NULL DEFAULT now(),
+    Updated_By VARCHAR(255)
+);
+
 -- Main Tables
 CREATE TABLE Center_Detail (
     ID SERIAL PRIMARY KEY,
@@ -1366,6 +1376,68 @@ INSERT INTO Period_As_Muslim (Name) VALUES
     ('3-7 Years'),
     ('7-14 Years');
 
+INSERT INTO Hadith (Hadith_Arabic, Hadith_English, Created_By, Updated_By) VALUES
+(
+    'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ',
+    'Actions are judged by intentions.',
+    'admin',
+    'admin'
+),
+(
+    'إِنَّمَا بُعِثْتُ لِأُتَمِّمَ صَالِحَ الأَخْلَاقِ',
+    'I was sent to perfect good character.',
+    'admin',
+    'admin'
+),
+(
+    'الرَّاحِمُونَ يَرْحَمُهُمُ الرَّحْمَٰنُ',
+    'The Most Merciful shows mercy to those who are merciful.',
+    'admin',
+    'admin'
+),
+(
+    'تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ',
+    'Smiling at your brother is a charity.',
+    'admin',
+    'admin'
+),
+(
+    'يَسِّرُوا وَلَا تُعَسِّرُوا',
+    'Make things easy and do not make them difficult.',
+    'admin',
+    'admin'
+),
+(
+    'لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ',
+    'None of you truly believes until he loves for his brother what he loves for himself.',
+    'admin',
+    'admin'
+),
+(
+    'اللَّهُ فِي عَوْنِ الْعَبْدِ مَا كَانَ الْعَبْدُ فِي عَوْنِ أَخِيهِ',
+    'Allah helps His servant as long as the servant helps his brother.',
+    'admin',
+    'admin'
+),
+(
+    'مِنْ حُسْنِ إِسْلَامِ الْمَرْءِ تَرْكُهُ مَا لَا يَعْنِيهِ',
+    'Part of a man’s good Islam is leaving what does not concern him.',
+    'admin',
+    'admin'
+),
+(
+    'الطُّهُورُ شَطْرُ الإِيمَانِ',
+    'Purity is half of faith.',
+    'admin',
+    'admin'
+),
+(
+    'الْمُؤْمِنُ الْقَوِيُّ خَيْرٌ وَأَحَبُّ إِلَى اللَّهِ مِنَ الْمُؤْمِنِ الضَّعِيفِ',
+    'The strong believer is better and more beloved to Allah than the weak believer.',
+    'admin',
+    'admin'
+);
+
 INSERT INTO Supplier_Category (Name) VALUES
     ('Food Supplier'),
     ('Medical Supplier'),
@@ -1498,7 +1570,7 @@ INSERT INTO Employee (
     Highest_Education_Level, Contact_Number, Emergency_Contact, Blood_Type, Department, HSEQ_Related, Created_By, Updated_By
 ) VALUES (
     'HQ', 'User', 'hquser', '12345', 2,
-    1, 1, 14, 1, 1, 3,
+    NULL, 1, 14, 1, 1, 3,
     '+27123456780', '+27123456780', 1, NULL, NULL, 'system', 'system'
 );
 

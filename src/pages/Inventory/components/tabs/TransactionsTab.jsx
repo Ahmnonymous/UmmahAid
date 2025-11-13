@@ -21,10 +21,10 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert }) => {
-  const { isOrgExecutive } = useRole(); // Read-only check
+  const { isOrgExecutive, centerId } = useRole(); // Read-only check
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -93,8 +93,6 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         item_id: itemId,
         transaction_type: data.Transaction_Type,
@@ -102,7 +100,7 @@ const TransactionsTab = ({ itemId, transactions, lookupData, onUpdate, showAlert
         transaction_date: data.Transaction_Date,
         notes: data.Notes,
         employee_id: data.Employee_ID || null,
-        center_id: currentUser?.center_id || 1,
+        center_id: centerId ?? null,
       };
 
       if (editItem) {

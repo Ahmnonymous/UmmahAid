@@ -1,8 +1,18 @@
 const db = require('../config/db');
+const { applyCenterFilter } = require('../utils/applyCenterFilter');
+
+const withCenterFilter = (sql, params, user, centerId, alias) => {
+    const { text, values } = applyCenterFilter(
+        { text: sql, values: params },
+        user,
+        { centerId, alias }
+    );
+    return { text, values };
+};
 
 class ReportsModel {
     // Center Audits Report
-    static async getCenterAudits(centerId = null) {
+    static async getCenterAudits(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -20,19 +30,16 @@ class ReportsModel {
                 FROM center_audits ca
             `;
             const params = [];
-            if (centerId) {
-                query += ` WHERE ca.center_id = $1`;
-                params.push(centerId);
-            }
-            query += ` ORDER BY ca.audit_date DESC`;
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'ca');
+            const finalQuery = `${text} ORDER BY ca.audit_date DESC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching center audits: ${error.message}`);
         }
     }
     // Applicant Details Report
-    static async getApplicantDetails(centerId = null) {
+    static async getApplicantDetails(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -96,14 +103,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE ad.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY ad.created_at DESC`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'ad');
+            const finalQuery = `${text} ORDER BY ad.created_at DESC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching applicant details: ${error.message}`);
@@ -111,7 +113,7 @@ class ReportsModel {
     }
 
     // Total Financial Assistance Report
-    static async getTotalFinancialAssistance(centerId = null) {
+    static async getTotalFinancialAssistance(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -143,12 +145,10 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE ad.center_id = $1`;
-                params.push(centerId);
-            }
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'ad');
             
-            query += `
+            const finalQuery = `
+                ${text}
                 GROUP BY
                     ad.name, ad.surname, ad.file_number, ad.cell_number,
                     ad.file_condition, ad.file_status, ad.employment_status, ad.health,
@@ -157,7 +157,7 @@ class ReportsModel {
                 ORDER BY total_financial DESC
             `;
             
-            const result = await db.query(query, params);
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching total financial assistance: ${error.message}`);
@@ -165,7 +165,7 @@ class ReportsModel {
     }
 
     // Financial Assistance Report
-    static async getFinancialAssistance(centerId = null) {
+    static async getFinancialAssistance(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -189,14 +189,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE fin.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY fin.date_of_assistance DESC`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'fin');
+            const finalQuery = `${text} ORDER BY fin.date_of_assistance DESC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching financial assistance: ${error.message}`);
@@ -204,7 +199,7 @@ class ReportsModel {
     }
 
     // Food Assistance Report
-    static async getFoodAssistance(centerId = null) {
+    static async getFoodAssistance(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -228,14 +223,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE fa.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY fa.distributed_date DESC`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'fa');
+            const finalQuery = `${text} ORDER BY fa.distributed_date DESC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching food assistance: ${error.message}`);
@@ -243,7 +233,7 @@ class ReportsModel {
     }
 
     // Home Visits Report
-    static async getHomeVisits(centerId = null) {
+    static async getHomeVisits(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -265,14 +255,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE hv.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY hv.visit_date DESC`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'hv');
+            const finalQuery = `${text} ORDER BY hv.visit_date DESC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching home visits: ${error.message}`);
@@ -280,7 +265,7 @@ class ReportsModel {
     }
 
     // Relationship Report
-    static async getRelationshipReport(centerId = null) {
+    static async getRelationshipReport(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -314,14 +299,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE rel.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY ad.name, rel.name`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'rel');
+            const finalQuery = `${text} ORDER BY ad.name, rel.name`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching relationship report: ${error.message}`);
@@ -329,7 +309,7 @@ class ReportsModel {
     }
 
     // Applicant Programs Report
-    static async getApplicantPrograms(centerId = null) {
+    static async getApplicantPrograms(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -363,14 +343,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE p.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY p.date_of_program DESC`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'p');
+            const finalQuery = `${text} ORDER BY p.date_of_program DESC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching applicant programs: ${error.message}`);
@@ -378,7 +353,7 @@ class ReportsModel {
     }
 
     // Financial Assessment Report
-    static async getFinancialAssessment(centerId = null) {
+    static async getFinancialAssessment(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -419,12 +394,10 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE fa.center_id = $1`;
-                params.push(centerId);
-            }
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'fa');
             
-            query += `
+            const finalQuery = `
+                ${text}
                 GROUP BY
                     ad.name, ad.surname, ad.file_number, ad.cell_number,
                     fs.name, es.name, fa.id, fa.total_income, fa.total_expenses, 
@@ -433,7 +406,7 @@ class ReportsModel {
                 ORDER BY fa.created_at DESC
             `;
             
-            const result = await db.query(query, params);
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching financial assessment: ${error.message}`);
@@ -441,7 +414,7 @@ class ReportsModel {
     }
 
     // Skills Matrix Report (Employee Skills)
-    static async getSkillsMatrix(centerId = null) {
+    static async getSkillsMatrix(centerId = null, user = {}) {
         try {
             let query = `
                 SELECT 
@@ -480,14 +453,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            if (centerId) {
-                query += ` WHERE es.center_id = $1`;
-                params.push(centerId);
-            }
-            
-            query += ` ORDER BY e.surname, e.name, es.date_expired ASC`;
-            
-            const result = await db.query(query, params);
+            const { text, values } = withCenterFilter(query, params, user, centerId, 'es');
+            const finalQuery = `${text} ORDER BY e.surname, e.name, es.date_expired ASC`;
+            const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching skills matrix: ${error.message}`);

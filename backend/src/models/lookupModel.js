@@ -34,7 +34,8 @@ const lookupModel = {
 
   delete: async (tableName, id) => {
     const query = `DELETE FROM ${tableName} WHERE ID = $1`;
-    await pool.query(query, [id]);
+    const res = await pool.query(query, [id]);
+    return res.rowCount > 0;
   }
 };
 

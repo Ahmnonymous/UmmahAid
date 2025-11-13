@@ -26,9 +26,9 @@ import TableContainer from "../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import { useRole } from "../../helpers/useRole";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 
 // Redux actions
 import {
@@ -41,7 +41,10 @@ import {
 const TableView = () => {
   const { table } = useParams();
   const dispatch = useDispatch();
-  const { isOrgExecutive } = useRole(); // Read-only check
+  const { isOrgExecutive, isGlobalAdmin } = useRole(); // Read-only check
+
+  const isHadithTable = table === "Hadith";
+  const isReadOnly = isOrgExecutive || (isHadithTable && !isGlobalAdmin);
 
   const { data, loading, error } = useSelector((state) => state.Lookup);
   const tableData = data[table] || [];
@@ -51,7 +54,7 @@ const TableView = () => {
 
   // --- Lookup Dialog State ---
   const [alert, setAlert] = useState(null);
-  const nameInputRef = useRef(null);
+  const primaryInputRef = useRef(null);
 
   // Delete confirmation hook
   const {
@@ -63,13 +66,21 @@ const TableView = () => {
     confirmDelete
   } = useDeleteConfirmation();
 
+  const defaultFormValues = useMemo(
+    () =>
+      isHadithTable
+        ? { hadith_arabic: "", hadith_english: "" }
+        : { name: "" },
+    [isHadithTable]
+  );
+
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
   } = useForm({
-    defaultValues: { name: "" },
+    defaultValues: defaultFormValues,
   });
 
   useEffect(() => {
@@ -79,14 +90,21 @@ const TableView = () => {
   }, [table, dispatch]);
 
   // Focus + reset logic for dialog
-  useEffect(() => {
-    if (showDialog) {
+useEffect(() => {
+  if (showDialog) {
+    if (isHadithTable) {
+      reset({
+        hadith_arabic: editItem?.hadith_arabic || "",
+        hadith_english: editItem?.hadith_english || "",
+      });
+    } else {
       reset({ name: editItem?.name || "" });
-      setTimeout(() => {
-        if (nameInputRef.current) nameInputRef.current.focus();
-      }, 100);
     }
-  }, [showDialog, editItem, reset]);
+    setTimeout(() => {
+      if (primaryInputRef.current) primaryInputRef.current.focus();
+    }, 100);
+  }
+}, [showDialog, editItem, reset, isHadithTable]);
 
   // --- Dialog alert helpers ---
   const showAlert = (message, color = "success") => {
@@ -147,6 +165,13 @@ const TableView = () => {
 
   // --- Table logic ---
   const handleAdd = () => {
+    if (isReadOnly) {
+      showAlert(
+        `You have read-only access to ${formatTableName(table)} records.`,
+        "info"
+      );
+      return;
+    }
     setEditItem(null);
     setShowDialog(true);
   };
@@ -157,16 +182,35 @@ const TableView = () => {
   };
 
   const handleSave = async (formData) => {
+    if (isReadOnly) {
+      setShowDialog(false);
+      return;
+    }
+
     try {
-      // Get current user from localStorage
-      const currentUser = getUmmahAidUser();
-      
       // Add audit fields based on workspace rules
-      const payload = { ...formData };
+      const payload = isHadithTable
+        ? {
+            hadith_arabic: formData.hadith_arabic?.trim(),
+            hadith_english: formData.hadith_english?.trim(),
+          }
+        : {
+            name: formData.name?.trim(),
+          };
+
+      const auditUser = getAuditName();
+      const timestamp = new Date().toISOString();
+
       if (editItem) {
-        payload.updated_by = getAuditName();
+        payload.updated_by = auditUser;
+        if (isHadithTable) {
+          payload.updated_on = timestamp;
+        }
       } else {
-        payload.created_by = getAuditName();
+        payload.created_by = auditUser;
+        if (isHadithTable) {
+          payload.created_on = timestamp;
+        }
       }
 
       if (editItem) {
@@ -205,51 +249,45 @@ const TableView = () => {
   };
 
   const handleDeleteClick = () => {
-    if (!editItem) return;
+    if (!editItem || isReadOnly) return;
 
-    const itemName = editItem.name || editItem.title || `${formatTableName(table)} #${editItem.id}`;
-    
-    showDeleteConfirmation({
-      id: editItem.id,
-      name: itemName,
-      type: formatTableName(table).toLowerCase(),
-      message: `This ${formatTableName(table).toLowerCase()} will be permanently removed from the system.`
-    }, async () => {
-      await handleDelete(editItem);
-    });
+    const itemName = isHadithTable
+      ? editItem.hadith_english ||
+        editItem.hadith_arabic ||
+        `${formatTableName(table)} #${editItem.id}`
+      : editItem.name ||
+        editItem.title ||
+        `${formatTableName(table)} #${editItem.id}`;
+
+    showDeleteConfirmation(
+      {
+        id: editItem.id,
+        name: itemName,
+        type: formatTableName(table).toLowerCase(),
+        message: `This ${formatTableName(
+          table
+        ).toLowerCase()} will be permanently removed from the system.`,
+      },
+      async () => {
+        await handleDelete(editItem);
+      }
+    );
   };
 
   const handleClose = () => {
-    reset({ name: "" });
+    reset(defaultFormValues);
     setShowDialog(false);
   };
 
-  const columns = useMemo(
-    () => [
-      {
-        header: "Name",
-        accessorKey: "name",
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (cell) => (
-          <span
-            style={{ cursor: "default", color: "inherit", textDecoration: "none" }}
-            onClick={() => handleEdit(cell.row.original)}
-            onMouseOver={(e) => {
-              e.currentTarget.style.color = "#0d6efd";
-              e.currentTarget.style.textDecoration = "underline";
-              e.currentTarget.style.cursor = "pointer";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.color = "inherit";
-              e.currentTarget.style.textDecoration = "none";
-              e.currentTarget.style.cursor = "default";
-            }}
-          >
-            {cell.getValue()}
-          </span>
-        ),
-      },
+  const formatDateValue = (value, includeTime = false) => {
+    if (!value) return "-";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return includeTime ? parsed.toLocaleString() : parsed.toLocaleDateString();
+  };
+
+  const columns = useMemo(() => {
+    const commonAuditColumns = [
       {
         header: "Created By",
         accessorKey: "created_by",
@@ -259,13 +297,11 @@ const TableView = () => {
       },
       {
         header: "Created On",
-        accessorKey: "created_at",
+        accessorKey: isHadithTable ? "created_on" : "created_at",
         enableSorting: true,
         enableColumnFilter: false,
-        cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
+        cell: (cell) =>
+          formatDateValue(cell.getValue(), isHadithTable /* include time */),
       },
       {
         header: "Updated By",
@@ -276,17 +312,61 @@ const TableView = () => {
       },
       {
         header: "Updated On",
-        accessorKey: "updated_at",
+        accessorKey: isHadithTable ? "updated_on" : "updated_at",
         enableSorting: true,
         enableColumnFilter: false,
-        cell: (cell) => {
-          const date = cell.getValue();
-          return date ? new Date(date).toLocaleDateString() : "-";
-        },
+        cell: (cell) =>
+          formatDateValue(cell.getValue(), isHadithTable /* include time */),
       },
-    ],
-    [tableData]
-  );
+    ];
+
+    if (isHadithTable) {
+      return [
+        {
+          header: "Hadith (Arabic)",
+          accessorKey: "hadith_arabic",
+          enableSorting: false,
+          enableColumnFilter: false,
+          cell: (cell) => (
+            <span
+              className={!isReadOnly ? "lookup-primary-cell interactive" : "lookup-primary-cell"}
+              onClick={() => !isReadOnly && handleEdit(cell.row.original)}
+            >
+              {cell.getValue()}
+            </span>
+          ),
+        },
+        {
+          header: "Hadith (English)",
+          accessorKey: "hadith_english",
+          enableSorting: false,
+          enableColumnFilter: false,
+          cell: (cell) => (
+            <span style={{ whiteSpace: "normal" }}>{cell.getValue()}</span>
+          ),
+        },
+        ...commonAuditColumns,
+      ];
+    }
+
+    return [
+      {
+        header: "Name",
+        accessorKey: "name",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => (
+          <span
+            className={!isReadOnly ? "lookup-primary-cell interactive" : "lookup-primary-cell"}
+            onClick={() => !isReadOnly && handleEdit(cell.row.original)}
+          >
+            {cell.getValue()}
+          </span>
+        ),
+      },
+      ...commonAuditColumns,
+    ];
+  }, [tableData, isHadithTable, isReadOnly]);
 
   const formatTableName = (tableName) => tableName.replace(/_/g, " ");
   document.title = `${formatTableName(table)} | Lookup Setup`;
@@ -308,13 +388,13 @@ const TableView = () => {
                       </Link>
                       <h4 className="card-title mb-0">
                         {formatTableName(table)}
-                        {isOrgExecutive && <span className="ms-2 badge bg-info">Read Only</span>}
+                        {isReadOnly && <span className="ms-2 badge bg-info">Read Only</span>}
                       </h4>
                     </div>
                   </Col>
                   <Col sm={6}>
                     <div className="text-sm-end">
-                      {!isOrgExecutive && (
+                      {!isReadOnly && (
                         <Button color="primary" style={{ borderRadius: 0 }} onClick={handleAdd}>
                           <i className="mdi mdi-plus me-1"></i> Add New
                         </Button>
@@ -340,7 +420,10 @@ const TableView = () => {
                 {!loading && tableData.length === 0 && (
                   <div className="alert alert-info" role="alert">
                     <i className="bx bx-info-circle me-2"></i>
-                    No {formatTableName(table)} found. Click "Add New" to create one.
+                    No {formatTableName(table)} found.{" "}
+                    {isReadOnly
+                      ? "You currently have read-only access to this lookup."
+                      : 'Click "Add New" to create one.'}
                   </div>
                 )}
 
@@ -387,47 +470,157 @@ const TableView = () => {
           </div>
         )}
 
-        <Modal isOpen={showDialog} toggle={handleClose} centered size="md" backdrop="static">
+        <Modal
+          isOpen={showDialog}
+          toggle={handleClose}
+          centered
+          size={isHadithTable ? "lg" : "md"}
+          backdrop="static"
+        >
           <ModalHeader toggle={handleClose}>
-            <i className={`bx ${editItem ? "bx-edit" : "bx-plus-circle"} me-2`}></i>
-            {editItem ? "Edit" : "Add New"} {formatTableName(table)}
+            <i
+              className={`bx ${
+                editItem
+                  ? isReadOnly
+                    ? "bx-show"
+                    : "bx-edit"
+                  : "bx-plus-circle"
+              } me-2`}
+            ></i>
+            {editItem
+              ? `${isReadOnly ? "View" : "Edit"} ${formatTableName(table)}`
+              : `Add New ${formatTableName(table)}`}
           </ModalHeader>
 
           <Form onSubmit={handleSubmit(handleSave)}>
             <ModalBody>
-              <FormGroup>
-                <Label for="name">
-                  Name <span className="text-danger">*</span>
-                </Label>
-                <Controller
-                  name="name"
-                  control={control}
-                  rules={{
-                    required: "Name is required",
-                    minLength: { value: 2, message: "Name must be at least 2 characters" },
-                    maxLength: { value: 100, message: "Name must not exceed 100 characters" },
-                    pattern: {
-                      value: /^[a-zA-Z0-9\s\-_.,()]+$/,
-                      message: "Name contains invalid characters",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <Input
-                      id="name"
-                      placeholder="Enter name"
-                      invalid={!!errors.name}
-                      innerRef={nameInputRef}
-                      {...field}
+              {isHadithTable ? (
+                <>
+                  <FormGroup>
+                    <Label for="hadith_arabic">
+                      Hadith (Arabic) <span className="text-danger">*</span>
+                    </Label>
+                    <Controller
+                      name="hadith_arabic"
+                      control={control}
+                      rules={{
+                        required: "Arabic text is required",
+                        minLength: {
+                          value: 4,
+                          message: "Arabic text must be at least 4 characters",
+                        },
+                      }}
+                      render={({ field }) => {
+                        const { ref, ...fieldProps } = field;
+                        return (
+                          <Input
+                            type="textarea"
+                            id="hadith_arabic"
+                            rows="4"
+                            placeholder="Enter the Hadith in Arabic"
+                            invalid={!!errors.hadith_arabic}
+                            disabled={isReadOnly}
+                            innerRef={(element) => {
+                              primaryInputRef.current = element;
+                              ref(element);
+                            }}
+                            {...fieldProps}
+                          />
+                        );
+                      }}
                     />
-                  )}
-                />
-                {errors.name && <FormFeedback>{errors.name.message}</FormFeedback>}
-              </FormGroup>
+                    {errors.hadith_arabic && (
+                      <FormFeedback>{errors.hadith_arabic.message}</FormFeedback>
+                    )}
+                  </FormGroup>
+
+                  <FormGroup>
+                    <Label for="hadith_english">
+                      Hadith (English Translation){" "}
+                      <span className="text-danger">*</span>
+                    </Label>
+                    <Controller
+                      name="hadith_english"
+                      control={control}
+                      rules={{
+                        required: "English translation is required",
+                        minLength: {
+                          value: 4,
+                          message:
+                            "English translation must be at least 4 characters",
+                        },
+                      }}
+                      render={({ field }) => {
+                        const { ref, ...fieldProps } = field;
+                        return (
+                          <Input
+                            type="textarea"
+                            id="hadith_english"
+                            rows="4"
+                            placeholder="Enter the Hadith translation in English"
+                            invalid={!!errors.hadith_english}
+                            disabled={isReadOnly}
+                            innerRef={ref}
+                            {...fieldProps}
+                          />
+                        );
+                      }}
+                    />
+                    {errors.hadith_english && (
+                      <FormFeedback>{errors.hadith_english.message}</FormFeedback>
+                    )}
+                  </FormGroup>
+                </>
+              ) : (
+                <FormGroup>
+                  <Label for="name">
+                    Name <span className="text-danger">*</span>
+                  </Label>
+                  <Controller
+                    name="name"
+                    control={control}
+                    rules={{
+                      required: "Name is required",
+                      minLength: {
+                        value: 2,
+                        message: "Name must be at least 2 characters",
+                      },
+                      maxLength: {
+                        value: 100,
+                        message: "Name must not exceed 100 characters",
+                      },
+                      pattern: {
+                        value: /^[a-zA-Z0-9\s\-_.,()]+$/,
+                        message: "Name contains invalid characters",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <Input
+                        id="name"
+                        placeholder="Enter name"
+                        invalid={!!errors.name}
+                        disabled={isReadOnly}
+                        innerRef={primaryInputRef}
+                        {...field}
+                      />
+                    )}
+                  />
+                  {errors.name && <FormFeedback>{errors.name.message}</FormFeedback>}
+                </FormGroup>
+              )}
+
+              {isReadOnly && (
+                <div className="alert alert-info mt-3 mb-0" role="alert">
+                  <i className="bx bx-info-circle me-2"></i>
+                  You have read-only access to this lookup. Please contact an App
+                  Admin or HQ user for changes.
+                </div>
+              )}
             </ModalBody>
 
             <ModalFooter className="d-flex justify-content-between">
               <div>
-                {editItem && !isOrgExecutive && (
+                {editItem && !isReadOnly && (
                   <Button color="danger" onClick={handleDeleteClick} disabled={isSubmitting}>
                     <i className="bx bx-trash me-1"></i> Delete
                   </Button>
@@ -444,7 +637,7 @@ const TableView = () => {
                   <i className="bx bx-x label-icon"></i> Cancel
                 </Button>
 
-                {!isOrgExecutive && (
+                {!isReadOnly && (
                   <Button color="success" type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
@@ -487,6 +680,21 @@ const TableView = () => {
           pauseOnHover
         />
       </Container>
+      <style jsx="true">{`
+        .lookup-primary-cell {
+          color: inherit;
+          text-decoration: none;
+        }
+
+        .lookup-primary-cell.interactive {
+          cursor: pointer;
+        }
+
+        .lookup-primary-cell.interactive:hover {
+          color: #0d6efd;
+          text-decoration: underline;
+        }
+      `}</style>
     </div>
   );
 };

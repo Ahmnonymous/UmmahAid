@@ -132,14 +132,14 @@ const RelationshipReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'File Number', 'Center Name', 'Applicant Name', 'Cell Number', 'Relationship Type',
+            'Center Name', 'File Number', 'Applicant Name', 'Cell Number', 'Relationship Type',
             'Relative Name', 'Relative Surname', 'ID Number', 'Age',
             'Employment Status', 'Gender', 'Education Level', 'Health Condition'
         ];
 
         const csvData = processedData.map(item => [
-            item.file_number || '',
             item.center_name || '',
+            item.file_number || '',
             `${item.name} ${item.surname}`,
             item.cell_number || '',
             item.relationship_type_name || '',
@@ -449,8 +449,8 @@ const RelationshipReport = () => {
                                         <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1750px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                         <tr>
-                                                            <th style={{minWidth: '120px'}}>File #</th>
                                                             <th style={{minWidth: '160px'}}>Center</th>
+                                                            <th style={{minWidth: '120px'}}>File #</th>
                                                             <th style={{minWidth: '150px'}}>Applicant</th>
                                                             <th style={{minWidth: '120px'}}>Contact</th>
                                                             <th style={{minWidth: '120px'}}>Relationship</th>
@@ -466,8 +466,8 @@ const RelationshipReport = () => {
                                         <tbody>
                                                         {groupItems.map((item, index) => (
                                                 <tr key={index}>
-                                                                <td><strong>{item.file_number || '-'}</strong></td>
                                                                 <td>{item.center_name || '-'}</td>
+                                                                <td><strong>{item.file_number || '-'}</strong></td>
                                                                 <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                                 <td><Badge color="primary">{item.relationship_type_name || '-'}</Badge></td>
@@ -495,10 +495,12 @@ const RelationshipReport = () => {
                                         <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1750px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
+                                                    <th style={{cursor: 'pointer', minWidth: '160px'}} onClick={() => handleSort('center_name')}>
+                                                        Center {getSortIcon('center_name')}
+                                                    </th>
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                         File Number {getSortIcon('file_number')}
                                                     </th>
-                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Applicant Name {getSortIcon('name')}
                                                     </th>
@@ -528,8 +530,8 @@ const RelationshipReport = () => {
                                             <tbody>
                                                 {paginatedData.map((item, index) => (
                                                     <tr key={index}>
-                                                        <td><strong>{item.file_number || '-'}</strong></td>
                                                         <td>{item.center_name || '-'}</td>
+                                                        <td><strong>{item.file_number || '-'}</strong></td>
                                                         <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                         <td><Badge color="primary">{item.relationship_type_name || '-'}</Badge></td>

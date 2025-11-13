@@ -17,9 +17,11 @@ const NationalityChart = ({ data }) => {
     colors: chartColors,
     legend: {
       show: true,
-      position: "right",
-      fontSize: "11px",
+      position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "12px",
       fontFamily: "inherit",
+      offsetY: 8,
     },
     dataLabels: {
       enabled: true,
@@ -38,8 +40,8 @@ const NationalityChart = ({ data }) => {
       {
         breakpoint: 1200,
         options: {
-          legend: {
-            position: "bottom",
+          chart: {
+            height: 260,
           },
         },
       },

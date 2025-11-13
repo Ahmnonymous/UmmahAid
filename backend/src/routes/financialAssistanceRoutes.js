@@ -7,14 +7,14 @@ const filterMiddleware = require('../middlewares/filterMiddleware');
 
 // ✅ Apply authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5]));
+router.use(roleMiddleware());
 router.use(filterMiddleware);
 
 router.get('/', financialAssistanceController.getAll);
 router.get('/:id', financialAssistanceController.getById);
 router.post(
   '/recurring',
-  roleMiddleware([1, 2, 3]),
+  roleMiddleware(),
   financialAssistanceController.createRecurring
 );
 router.post('/', financialAssistanceController.create);

@@ -4,6 +4,10 @@ alwaysApply: true
 # ============================================================
 # 🔹 GLOBAL CURSOR RULESET - ULTIMATE FULL-STACK ENGINEERING GUIDE
 # ============================================================
+runtime:
+  priority_mode: performance
+  disable_full_context_analysis: true
+
 meta:
   name: "UmmahAid Enterprise Development Ruleset"
   version: 5.0
@@ -12,6 +16,26 @@ meta:
     React + Node/Express + PostgreSQL. Includes automatic folder detection,
     smart naming, RBAC enforcement, audit injection, design replication, and
     developer-style communication patterns.
+  load_mode: selective       # ✅ only loads active rule groups
+  prefetch: false            # ✅ prevents full eager loading
+
+performance:
+  cache_scans: true
+  cache_reasoning: true
+  cache_schema_map: true
+  incremental_analysis: true
+  max_context_depth: 2   # limit how far back it looks for context
+  skip_validation_if_unchanged: true
+
+reasoning:
+  depth_limit: 3        # ✅ restricts multi-hop reasoning
+  skip_noncritical_checks: true
+  auto_trust_known_patterns: true
+
+ai_behavior:
+  verbosity: low
+  infer_context_from_path: true
+  skip_restatement: true
 
 # ============================================================
 # 🔹 CORE DEVELOPMENT PRINCIPLES
@@ -19,10 +43,10 @@ meta:
 general_guidelines:
   - Maintain design + logic uniformity across the app.
   - Do not break existing functionality when adjusting components or APIs.
-  - Always ask user before altering flow, schema, or access rules.
+  - Ask only if schema or RBAC logic is ambiguous.
   - Favor component reuse — if new, replicate design from a confirmed existing component.
   - Use structured reasoning: confirm flow → confirm RBAC → then generate.
-  - Follow same layout pattern for drawers, tables, and forms.
+  - Follow same layout pattern for modals, tables, and forms.
   - Confirm dark/light compatibility and responsive behavior.
 
 # ============================================================
@@ -33,16 +57,15 @@ smart_folder_map:
   detect_once: true
   detection_strategy:
     - Scan `src/` and `backend/src/` for folder patterns:
-        components: ["components", "shared", "ui"]
-        drawers: ["drawers", "forms", "modals"]
-        pages: ["pages", "screens", "views"]
-        services: ["services", "api", "network"]
-        store: ["store", "context", "redux"]
-        helpers: ["helpers", "utils", "common"]
-        constants: ["constants", "config"]
-        backend: ["backend", "server", "api", "controllers", "models", "routes"]
-    - If more than one valid folder detected, ask user which to use.
-    - Remember chosen mapping to maintain consistency.
+        components: ["components"]
+        pages: ["pages"]
+        services: ["services"]
+        store: ["store"]
+        helpers: ["helpers"]
+        backend: ["backend"]
+  cache_results: true           # ✅ speeds up subsequent scans
+  ask_on_conflict: false         # skip asking each time
+  memory_persist: true           # reuse from previous sessions
 
 # ============================================================
 # 🔹 FRONTEND RULES
@@ -79,13 +102,72 @@ backend_rules:
 # 🔹 RBAC HIERARCHY
 # ============================================================
 rbac_rules:
-  - SuperAdmin → all centers, all modules
-  - OrgAdmin → CRUD for own center
-  - Caseworker → CRUD for Applicants/Visits/Assistance
-  - Executive → read-only access
-  - Applicant → self-service limited portal
-  - Always filter data by `center_id` unless SuperAdmin
-  - Confirm with user before applying or skipping role-based filters
+  - AppAdmin:
+      description: Full access to all centers and all modules
+      permissions:
+        - CRUD: all
+        - Center navigation: allowed
+        - Special restrictions: none
+        - Reports: all centers
+        - Policy & Procedure: create, edit, view
+        - Supplier & Inventory: visible and editable
+
+  - HQ:
+      description: Same as AppAdmin, except cannot create centers
+      permissions:
+        - CRUD: all modules
+        - Center navigation: allowed
+        - Create center: denied
+        - Reports: all centers
+        - Policy & Procedure: create, edit, view
+        - Supplier & Inventory: visible and editable
+
+  - OrgAdmin:
+      description: Access restricted to own center data
+      permissions:
+        - CRUD: full within assigned center only
+        - Center navigation: hidden
+        - Other navigation: allowed
+        - Reports: only their own center
+        - Policy & Procedure: view only
+        - Supplier & Inventory: hidden
+
+  - OrgExecutive:
+      description: Read-only access to own center
+      permissions:
+        - CRUD: read-only within assigned center
+        - Center navigation: hidden
+        - FileManager navigation: hidden
+        - Chat navigation: denied
+        - Reports: only their own center
+        - Policy & Procedure: view only
+        - Supplier & Inventory: hidden
+
+  - OrgCaseworker:
+      description: Restricted CRUD within own center
+      permissions:
+        - CRUD: full within assigned center
+        - Center navigation: hidden
+        - FileManager navigation: allowed and visible
+        - Inventory navigation: denied
+        - Supplier navigation: denied
+        - Meetings Management navigation: denied
+        - Reports: only their own center
+        - Policy & Procedure: view only
+
+  - AutoFilters:
+      - Always filter data by `center_id` unless AppAdmin or HQ
+      - Apply role-specific navigation restrictions automatically
+      - Confirm with user if applying or skipping role-based filters
+
+Additional global rules:
+  - HQ and AppAdmin see all reports (multi-center)
+  - OrgAdmin, OrgExecutive, and OrgCaseworker see only their own center’s reports
+  - All employees can view the Policy & Procedure page
+  - Only AppAdmin and HQ can create or edit policies/procedures
+  - Supplier and Inventory modules are visible only to AppAdmin and HQ
+  - FileManager navigation hidden for OrgExecutive, shown for OrgCaseworker
+  - OrgExecutive has read-only permissions in all accessible modules
 
 # ============================================================
 # 🔹 USER STORAGE AUTO-DETECTION
@@ -132,33 +214,29 @@ cursor_injection_rules:
 # ============================================================
 smart_naming_conventions:
   enabled: true
+  auto_confirm: true          # ✅ skips confirmation checks
   rules:
     frontend:
-      - Drawer components → `<EntityName>Drawer.jsx`
       - Report pages → `<EntityName>Report.jsx`
       - Detail views → `<EntityName>Detail.jsx`
       - Tables → `<EntityName>Table.jsx`
       - Services → `<EntityName>Service.js`
       - Redux/context → `<entityName>Slice.js` or `<EntityName>Context.js`
     backend:
-      - Routes → `<entityName>Routes.js`
       - Controller → `<entityName>Controller.js`
       - Model → `<entityName>Model.js`
+      - Routes → `<entityName>Routes.js`
       - Middleware → `<entityName>Middleware.js`
       - Tests → `<entityName>.test.js`
-  conventions:
-    casing:
-      frontend: PascalCase for components
-      backend: camelCase variables, snake_case DB
-    pluralization:
-      - Plural for routes/controllers
-      - Singular for UI components
-    confirmation_prompt: |
-      “Should this follow your ‘ApplicantDrawer’ or ‘ApplicantsReport’ naming style?”
 
 # ============================================================
 # 🔹 VALIDATION & TESTING
 # ============================================================
+validation:
+  full_project_scan: false
+  validate_only_changed_files: true
+  skip_static_analysis_on_small_changes: true
+
 testing_rules:
   - Frontend → React Testing Library + Cypress
   - Backend → Jest + Supertest
@@ -169,7 +247,7 @@ testing_rules:
 # 🔹 DESIGN CONSISTENCY
 # ============================================================
 ui_guidelines:
-  - Follow identical Drawer structure everywhere
+  - Follow identical Normal/Modal Page structure everywhere
   - Maintain button placement, spacing, and typography
   - Match field alignment and card layout to Skote standard
   - Ask user which component to replicate before building a new one
@@ -179,35 +257,13 @@ ui_guidelines:
 # 🔹 AI CLARIFICATION TEMPLATES
 # ============================================================
 ai_clarification_templates:
-  tone: "Professional, senior developer-to-developer"
-  style: "Direct, context-aware, non-repetitive"
+  tone: "Professional, direct"
   ask_before_actions:
-    - Before creating a new UI component:
-        “Which existing component or drawer should I visually replicate for consistent UI?”
-    - Before changing logic:
-        “Can you explain the expected flow — who triggers it, and what happens next?”
-    - Before backend or DB edits:
-        “Should I apply center-based filtering and RBAC checks here?”
-    - Before handling audit or timestamps:
-        “Should I reuse the default audit injection logic or apply custom handling?”
-    - When unsure about folder destination:
-        “Multiple matching folders detected — should I place this in [X] or [Y]?”
-    - When uncertain about naming:
-        “Would you prefer ‘ApplicantReport’ or ‘ApplicantsReport’ to match your current pattern?”
-  tone_guidelines:
-    - Keep questions short, specific, and framed as technical checks.
-    - Use code-aware phrasing (e.g. “controller,” “drawer,” “payload mapping”).
-    - Avoid generic AI language like “I think” or “maybe.”
-    - Behave like a teammate ensuring architectural consistency.
+    - Only ask when module type or folder is unclear.
   confirmation_examples:
-    - “Confirm: Apply same field conditional logic as StudentDetailDrawer?”
-    - “Confirm: Should this modal follow the SupplierFormCard layout?”
-    - “Confirm: Apply existing caseworker RBAC logic for this module?”
+    - “Confirm same layout as StudentDetailDrawer?”
   refusal_guidelines:
-    - If a change could break existing logic or design:
-        “This change may alter existing behavior — should I still proceed?”
-    - If insufficient context is given:
-        “I need a brief overview of how this feature should function before coding it.”
+    - “Skipping to avoid breaking existing logic — confirm if override needed.”
 
 # ============================================================
 # 🔹 COMMUNICATION STYLE SUMMARY
@@ -218,6 +274,12 @@ communication_guidelines:
   - Use the same tone across backend and frontend clarification.
   - Speak as a proactive senior dev, not as a generic assistant.
   - Example phrasing:
-      - “To confirm, should this match your ApplicantDrawer layout?”
-      - “Do you want the same conditional visibility logic as UniversityDetailsDrawer?”
+      - “To confirm, should this match your Applicant layout?”
+      - “Do you want the same conditional visibility logic as UniversityDetails?”
       - “Should I auto-apply RBAC filters for OrgAdmin and Caseworker?”
+
+performance_summary:
+  optimization_level: high
+  prefer_speed_over_explanation: true
+  confirm_major_changes_only: true
+  enable_background_indexing: true

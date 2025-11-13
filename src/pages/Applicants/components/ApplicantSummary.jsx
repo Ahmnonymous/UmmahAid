@@ -27,7 +27,7 @@ import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../helpers/userStorage";
+import { getAuditName } from "../../../helpers/userStorage";
 import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 import { createFieldTabMap, handleTabbedFormErrors } from "../../../helpers/formErrorHandler";
 
@@ -39,6 +39,7 @@ const EDIT_APPLICANT_TAB_LABELS = {
 
 const EDIT_APPLICANT_TAB_FIELDS = {
   1: [
+    "Center_ID",
     "Name",
     "Surname",
     "ID_Number",
@@ -75,7 +76,7 @@ const EDIT_APPLICANT_TAB_FIELDS = {
 };
 
 const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
-  const { isOrgExecutive } = useRole(); // Read-only check
+  const { isOrgExecutive, isGlobalAdmin, centerId: userCenterId } = useRole(); // Role checks
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
   const signatureCanvasRef = useRef(null);
@@ -83,6 +84,9 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
   const [signatureDrawn, setSignatureDrawn] = useState(false);
   const [hideExistingSignature, setHideExistingSignature] = useState(false);
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState("");
+  const [centerOptions, setCenterOptions] = useState([]);
+  const [centerLoading, setCenterLoading] = useState(false);
+  const [centerLoadError, setCenterLoadError] = useState("");
 
   const getCanvasPos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
@@ -194,6 +198,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         Highest_Education_Level: applicant.highest_education_level || "",
         Marital_Status: applicant.marital_status || "",
         Employment_Status: applicant.employment_status || "",
+        Center_ID: applicant.center_id ? String(applicant.center_id) : "",
         Cell_Number: applicant.cell_number || "",
         Alternate_Number: applicant.alternate_number || "",
         Email_Address: applicant.email_address || "",
@@ -231,6 +236,41 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
     };
   }, [applicant, modalOpen, reset]);
 
+  useEffect(() => {
+    if (!isGlobalAdmin || !modalOpen) {
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchCenters = async () => {
+      try {
+        setCenterLoading(true);
+        setCenterLoadError("");
+        const response = await axiosApi.get(`${API_BASE_URL}/centerDetail`);
+        if (isActive) {
+          setCenterOptions(response.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching centers:", error);
+        if (isActive) {
+          setCenterOptions([]);
+          setCenterLoadError("Failed to load centers. Please try again.");
+        }
+      } finally {
+        if (isActive) {
+          setCenterLoading(false);
+        }
+      }
+    };
+
+    fetchCenters();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isGlobalAdmin, modalOpen]);
+
   const toggleModal = () => {
     setModalOpen(!modalOpen);
     if (!modalOpen) {
@@ -240,7 +280,15 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
+      const rawCenterId = isGlobalAdmin ? data.Center_ID : (applicant?.center_id ?? userCenterId ?? null);
+      const parsedCenterId = rawCenterId ? parseInt(rawCenterId, 10) : null;
+      const centerIdValue = Number.isNaN(parsedCenterId) ? null : parsedCenterId;
+
+      if (isGlobalAdmin && (centerIdValue === null || !rawCenterId)) {
+        showAlert("Center selection is required.", "danger");
+        return;
+      }
+
       let signatureBlob = null;
       if (signatureCanvasRef.current && signatureDrawn) {
         const dataUrl = signatureCanvasRef.current.toDataURL("image/png");
@@ -282,9 +330,13 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         if (data.Health && data.Health !== "") formData.append("health", data.Health);
         if (data.Skills && data.Skills !== "") formData.append("skills", data.Skills);
         
+        if (centerIdValue !== null) {
+          formData.append("center_id", String(centerIdValue));
+        }
+
         formData.append("signature", signatureBlob, "signature.png");
         formData.append("popia_agreement", data.POPIA_Agreement ? "Y" : "N");
-        formData.append("updated_by", currentUser?.username || "system");
+        formData.append("updated_by", getAuditName());
 
         await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -322,6 +374,10 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
           popia_agreement: data.POPIA_Agreement ? "Y" : "N",
           updated_by: getAuditName(),
         };
+
+        if (centerIdValue !== null) {
+          payload.center_id = centerIdValue;
+        }
 
         await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, payload);
       }
@@ -548,6 +604,41 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
             <TabContent activeTab={activeTab} className="pt-3">
               <TabPane tabId="1">
                 <Row>
+                  {isGlobalAdmin && (
+                    <Col md={4}>
+                      <FormGroup>
+                        <Label>
+                          Center <span className="text-danger">*</span>
+                        </Label>
+                        <Controller
+                          name="Center_ID"
+                          control={control}
+                          rules={{ required: "Center is required" }}
+                          render={({ field }) => (
+                            <Input
+                              type="select"
+                              {...field}
+                              disabled={centerLoading}
+                              invalid={!!errors.Center_ID}
+                            >
+                              <option value="">
+                                {centerLoading ? "Loading centers..." : "Select Center"}
+                              </option>
+                              {(centerOptions || []).map((center) => (
+                                <option key={center.id} value={center.id}>
+                                  {center.organisation_name}
+                                </option>
+                              ))}
+                            </Input>
+                          )}
+                        />
+                        {errors.Center_ID && <FormFeedback>{errors.Center_ID.message}</FormFeedback>}
+                        {centerLoadError && !errors.Center_ID && (
+                          <div className="text-danger small mt-1">{centerLoadError}</div>
+                        )}
+                      </FormGroup>
+                    </Col>
+                  )}
                   <Col md={4}>
                     <FormGroup>
                       <Label>Name <span className="text-danger">*</span></Label>

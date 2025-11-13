@@ -9,13 +9,14 @@ const filterMiddleware = require('../middlewares/filterMiddleware');
 router.use(authMiddleware);
 
 // ✅ Apply RBAC - Dashboard accessible by all staff
-router.use(roleMiddleware([1, 2, 3, 4, 5]));
+router.use(roleMiddleware());
 
 // ✅ Apply tenant filtering
 router.use(filterMiddleware);
 
 // Dashboard statistics endpoint
 router.get('/applicant-statistics', dashboardController.getApplicantStatistics);
+router.get('/statistics-applications', dashboardController.getStatisticsApplications);
 
 module.exports = router;
 

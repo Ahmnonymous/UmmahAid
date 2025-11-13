@@ -25,13 +25,15 @@ import { useForm, Controller } from "react-hook-form";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
+import { useRole } from "../../helpers/useRole";
 import InventoryListPanel from "./components/InventoryListPanel";
 import InventorySummary from "./components/InventorySummary";
 import SummaryMetrics from "./components/SummaryMetrics";
 import DetailTabs from "./components/DetailTabs";
 
 const InventoryManagement = () => {
+  const { centerId } = useRole();
   // Meta title
   document.title = "Inventory Management | Welfare App";
 
@@ -231,8 +233,6 @@ const InventoryManagement = () => {
 
   const onCreateSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         item_name: data.Item_Name,
         description: data.Description,
@@ -242,7 +242,7 @@ const InventoryManagement = () => {
         min_stock: data.Min_Stock ? parseFloat(data.Min_Stock) : null,
         cost_per_unit: data.Cost_Per_Unit ? parseFloat(data.Cost_Per_Unit) : null,
         supplier_id: data.Supplier_ID || null,
-        center_id: currentUser?.center_id || 1,
+        center_id: centerId ?? null,
         created_by: getAuditName(),
       };
 

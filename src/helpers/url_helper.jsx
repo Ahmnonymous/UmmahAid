@@ -119,7 +119,7 @@ export const GET_DASHBOARD_EMAILCHART = "/dashboard/email-chart";
 export const GET_WALLET_DATA = "/wallet-balance-data";
 
 //dashboard jobs
-export const GET_STATISTICS_DATA = "/Statistics-data";
+export const GET_STATISTICS_DATA = "/dashboard/statistics-applications";
 
 export const GET_EARNING_DATA = "/earning-charts-data";
 

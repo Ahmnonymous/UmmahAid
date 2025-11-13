@@ -1092,13 +1092,67 @@ const fakeBackend = () => {
   mock.onGet(new RegExp(`${url.GET_STATISTICS_DATA}/*`)).reply((config) => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const { params } = config;
-        if (statisticsApplications) {
-          const filteredVisitors = statisticsApplications.filter((msg) => msg.id === params.roomId);
-          // Passing fake JSON data as response
-          resolve([200, filteredVisitors]);
-        } else {
-          reject([400, "Cannot get statistics data"]);
+        try {
+          const durationId = Number(config?.params?.duration) || 1;
+          const fallback =
+            statisticsApplications.find((item) => item.id === durationId) ||
+            statisticsApplications[0];
+
+          if (!fallback || !fallback.data) {
+            reject([400, "Cannot get statistics data"]);
+            return;
+          }
+
+          const rawSeries = fallback.data;
+          const metricsSource = [
+            { key: "filesCreated", label: "Files Created", icon: "bx-folder-open", values: rawSeries.company || [] },
+            { key: "foodAidGiven", label: "Food Aid Given", icon: "bx-bowl-hot", values: rawSeries.newJobs || [] },
+            { key: "financialAidGiven", label: "Financial Aid Given", icon: "bx-wallet", values: rawSeries.totalJobs || [] },
+            { key: "homeVisitsDone", label: "Home Visits Done", icon: "bx-home-smile", values: rawSeries.jobView || [] },
+          ];
+
+          const baseDate = new Date(Date.UTC(2022, 0, 1));
+          const categories = metricsSource[0].values.map((_, index) => {
+            const dt = new Date(baseDate);
+            dt.setUTCMonth(dt.getUTCMonth() + index);
+            return dt.toISOString();
+          });
+
+          const categoryLabels = categories.map((isoString) => {
+            const dt = new Date(isoString);
+            return dt.toLocaleString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+          });
+
+          const metrics = metricsSource.map((metric) => {
+            const dataArray = Array.isArray(metric.values) ? metric.values : [];
+            const rangeTotal = dataArray.reduce((acc, val) => {
+              const numericVal = Number(val);
+              if (Number.isFinite(numericVal)) {
+                return acc + numericVal;
+              }
+              return acc;
+            }, 0);
+            return {
+              key: metric.key,
+              label: metric.label,
+              icon: metric.icon,
+              data: dataArray,
+              rangeTotal,
+              overallTotal: rangeTotal,
+            };
+          });
+
+          resolve([
+            200,
+            {
+              duration: durationId === 1 ? "year" : durationId === 2 ? "month" : "week",
+              categories,
+              categoryLabels,
+              metrics,
+            },
+          ]);
+        } catch (error) {
+          reject([400, error?.message || "Cannot get statistics data"]);
         }
       });
     });

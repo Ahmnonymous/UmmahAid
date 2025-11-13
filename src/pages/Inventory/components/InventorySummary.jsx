@@ -28,7 +28,7 @@ import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../helpers/userStorage";
+import { getAuditName } from "../../../helpers/userStorage";
 
 const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -110,8 +110,6 @@ const InventorySummary = ({ item, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         item_name: data.Item_Name,
         description: data.Description,

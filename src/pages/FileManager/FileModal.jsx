@@ -15,7 +15,8 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
+import { useRole } from "../../helpers/useRole";
 
 const FileModal = ({
   isOpen,
@@ -28,6 +29,7 @@ const FileModal = ({
 }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
+  const { user, centerId } = useRole();
 
   const {
     control,
@@ -58,10 +60,7 @@ const FileModal = ({
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
-      // Validate user session
-      if (!currentUser) {
+      if (!user) {
         showAlert("User session expired. Please login again.", "danger");
         return;
       }
@@ -77,19 +76,19 @@ const FileModal = ({
       }
       
       // Only append employee_id if it has a value
-      if (currentUser?.id) {
-        formData.append("employee_id", currentUser.id);
+      if (user?.id) {
+        formData.append("employee_id", user.id);
       }
       
       // Backend will handle App Admin (null center_id)
-      if (currentUser?.center_id) {
-        formData.append("center_id", currentUser.center_id);
+      if (centerId !== null && centerId !== undefined) {
+        formData.append("center_id", centerId);
       }
 
       if (editItem) {
-        formData.append("updated_by", currentUser?.username || "system");
+        formData.append("updated_by", getAuditName());
       } else {
-        formData.append("created_by", currentUser?.username || "system");
+        formData.append("created_by", getAuditName());
       }
 
       // Add file if selected

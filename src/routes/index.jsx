@@ -236,14 +236,14 @@ const authProtectedRoutes = [
   { path: "/crypto-orders", component: <CryptoOrders /> },
   { path: "/crypto-kyc-application", component: <CryptoKYCApplication /> },
 
-  // ✅ Chat - All users (roles 1,2,3,4,5)
-  { path: "/chat", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><Chat /></ProtectedRoute> },
+  // ✅ Chat - All roles except Org Executive (roles 1,2,3,5)
+  { path: "/chat", component: <ProtectedRoute allowedRoles={[1, 2, 3, 5]}><Chat /></ProtectedRoute> },
 
   // ✅ Policy Library - All users (roles 1,2,3,4,5)
   { path: "/policy-library", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><PolicyLibrary /></ProtectedRoute> },
 
-  // ✅ File Manager - All users (roles 1,2,3,4,5)
-  { path: "/FileManager", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><FileManager /></ProtectedRoute> },
+  // ✅ File Manager - All roles except Org Executive (roles 1,2,3,5)
+  { path: "/FileManager", component: <ProtectedRoute allowedRoles={[1, 2, 3, 5]}><FileManager /></ProtectedRoute> },
 
   // //calendar
   { path: "/calendar", component: <Calendar /> },
@@ -376,20 +376,20 @@ const authProtectedRoutes = [
 
   // ✅ Applicants - All staff roles (1,2,3,4,5) can view
   { path: "/applicants", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantManagement /></ProtectedRoute> },
-  // ✅ Create Applicant - Only Caseworker (role 5) can create applicants
-  { path: "/applicants/create", component: <ProtectedRoute allowedRoles={[5]}><CreateApplicant /></ProtectedRoute> },
+  // ✅ Create Applicant - All except Org Executive (role 4) can create applicants
+  { path: "/applicants/create", component: <ProtectedRoute allowedRoles={[1, 2, 3, 5]}><CreateApplicant /></ProtectedRoute> },
 
-  // ✅ Suppliers - All except Caseworkers (1,2,3,4)
-  { path: "/suppliers", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><SupplierManagement /></ProtectedRoute> },
+  // ✅ Suppliers - App Admin only
+  { path: "/suppliers", component: <ProtectedRoute allowedRoles={[1]}><SupplierManagement /></ProtectedRoute> },
 
-  // ✅ Inventory - All except Caseworkers (1,2,3,4)
-  { path: "/inventory", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4]}><InventoryManagement /></ProtectedRoute> },
+  // ✅ Inventory - App Admin only
+  { path: "/inventory", component: <ProtectedRoute allowedRoles={[1]}><InventoryManagement /></ProtectedRoute> },
 
-  // ✅ Centers - App Admin ONLY (1)
-  { path: "/centers", component: <ProtectedRoute allowedRoles={[1]}><CenterManagement /></ProtectedRoute> },
+  // ✅ Centers - App Admin (1) and HQ (2) can view (HQ is read-only)
+  { path: "/centers", component: <ProtectedRoute allowedRoles={[1, 2]}><CenterManagement /></ProtectedRoute> },
 
-  // ✅ Meetings - HQ & Org Admins (2,3)
-  { path: "/meetings", component: <ProtectedRoute allowedRoles={[2, 3]}><MeetingsManagement /></ProtectedRoute> },
+  // ✅ Meetings - App Admin, HQ, Org Admin (1,2,3)
+  { path: "/meetings", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><MeetingsManagement /></ProtectedRoute> },
 
   // ✅ Lookups - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded from frontend)
   { path: "/lookups", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><Lookups /></ProtectedRoute> },
@@ -403,15 +403,15 @@ const authProtectedRoutes = [
   // ✅ Applicant Statistics (backward compatibility) - All staff
   { path: "/applicant-statistics", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantStatistics /></ProtectedRoute> },
 
-  // ✅ Reports - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded)
-  { path: "/reports/applicant-details", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><ApplicantDetailsReport /></ProtectedRoute> },
-  { path: "/reports/total-financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><TotalFinancialAssistanceReport /></ProtectedRoute> },
-  { path: "/reports/financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><FinancialAssistanceReport /></ProtectedRoute> },
-  { path: "/reports/food-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><FoodAssistanceReport /></ProtectedRoute> },
-  { path: "/reports/home-visits", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><HomeVisitsReport /></ProtectedRoute> },
-  { path: "/reports/applicant-programs", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><ApplicantProgramsReport /></ProtectedRoute> },
-  { path: "/reports/relationship-report", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><RelationshipReport /></ProtectedRoute> },
-  { path: "/reports/skills-matrix", component: <ProtectedRoute allowedRoles={[1, 2, 3]}><SkillsMatrixReport /></ProtectedRoute> },
+  // ✅ Reports - All roles (Org Executive & Caseworker scoped to own center)
+  { path: "/reports/applicant-details", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantDetailsReport /></ProtectedRoute> },
+  { path: "/reports/total-financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><TotalFinancialAssistanceReport /></ProtectedRoute> },
+  { path: "/reports/financial-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><FinancialAssistanceReport /></ProtectedRoute> },
+  { path: "/reports/food-assistance", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><FoodAssistanceReport /></ProtectedRoute> },
+  { path: "/reports/home-visits", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><HomeVisitsReport /></ProtectedRoute> },
+  { path: "/reports/applicant-programs", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><ApplicantProgramsReport /></ProtectedRoute> },
+  { path: "/reports/relationship-report", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><RelationshipReport /></ProtectedRoute> },
+  { path: "/reports/skills-matrix", component: <ProtectedRoute allowedRoles={[1, 2, 3, 4, 5]}><SkillsMatrixReport /></ProtectedRoute> },
 
   //   // this route should be at the end of all other routes
   //   // eslint-disable-next-line react/display-name

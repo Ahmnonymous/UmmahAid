@@ -1,118 +1,129 @@
-﻿const pool = require('../config/db');
+﻿const pool = require("../config/db");
+const {
+  buildInsertFragments,
+  buildUpdateFragments,
+  scopeQuery,
+} = require("../utils/modelHelpers");
 
-const tableName = 'HSEQ_Toolbox_Meeting_Tasks';
+const tableName = "HSEQ_Toolbox_Meeting_Tasks";
 
 const hseqToolboxMeetingTasksModel = {
-  // ✅ getAll with tenant filtering
   getAll: async (meetingId = null, centerId = null, isMultiCenter = false) => {
     try {
-      let query = `SELECT * FROM ${tableName}`;
-      let params = [];
-      let paramIndex = 1;
+      let text = `SELECT * FROM ${tableName}`;
+      const values = [];
+      const conditions = [];
 
       if (meetingId) {
-        query += ` WHERE hseq_toolbox_meeting_id = $${paramIndex}`;
-        params.push(meetingId);
-        paramIndex++;
-      }
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        if (meetingId) {
-          query += ` AND center_id = $${paramIndex}`;
-        } else {
-          query += ` WHERE center_id = $${paramIndex}`;
-        }
-        params.push(centerId);
+        conditions.push(`hseq_toolbox_meeting_id = $${values.length + 1}`);
+        values.push(meetingId);
       }
 
-      query += ` ORDER BY completion_date DESC`;
+      if (conditions.length > 0) {
+        text += ` WHERE ${conditions.join(" AND ")}`;
+      }
 
-      const res = await pool.query(query, params);
+      text += " ORDER BY completion_date DESC";
+
+      const scoped = scopeQuery(
+        { text, values },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
       return res.rows;
     } catch (err) {
-      throw new Error("Error fetching all records from HSEQ_Toolbox_Meeting_Tasks: " + err.message);
+      throw new Error(
+        `Error fetching all records from ${tableName}: ${err.message}`,
+      );
     }
   },
 
-  // ✅ getById with tenant filtering
   getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
-      let where = `"id" = $1`;
-      const params = [id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND center_id = $2`;
-        params.push(centerId);
-      }
-      
-      const query = `SELECT * FROM ${tableName} WHERE ${where}`;
-      const res = await pool.query(query, params);
-      if (!res.rows[0]) return null;
+      const scoped = scopeQuery(
+        {
+          text: `SELECT * FROM ${tableName} WHERE "id" = $1`,
+          values: [id],
+        },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
 
+      const res = await pool.query(scoped.text, scoped.values);
+      if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {
-      throw new Error("Error fetching record by ID from HSEQ_Toolbox_Meeting_Tasks: " + err.message);
+      throw new Error(
+        `Error fetching record by ID from ${tableName}: ${err.message}`,
+      );
     }
   },
 
   create: async (fields) => {
     try {
-      const columns = Object.keys(fields).map(k => `"${k}"`).join(', ');
-      const values = Object.values(fields);
-      const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+      const { columns, values, placeholders } = buildInsertFragments(fields);
       const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders}) RETURNING *`;
       const res = await pool.query(query, values);
       return res.rows[0];
     } catch (err) {
-      throw new Error("Error creating record in HSEQ_Toolbox_Meeting_Tasks: " + err.message);
+      throw new Error(`Error creating record in ${tableName}: ${err.message}`);
     }
   },
 
-  // ✅ update with tenant filtering
   update: async (id, fields, centerId = null, isMultiCenter = false) => {
+    const existing = await hseqToolboxMeetingTasksModel.getById(
+      id,
+      centerId,
+      isMultiCenter,
+    );
+    if (!existing) {
+      return null;
+    }
+
     try {
-      const setClauses = Object.keys(fields).map((key, i) => `"${key}" = $${i + 1}`).join(', ');
-      const values = Object.values(fields);
-      let where = `"id" = $${values.length + 1}`;
-      const params = [...values, id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND center_id = $${values.length + 2}`;
-        params.push(centerId);
-      }
-      
-      const query = `UPDATE ${tableName} SET ${setClauses} WHERE ${where} RETURNING *`;
-      const res = await pool.query(query, params);
+      const { setClause, values } = buildUpdateFragments(fields);
+      const query = `UPDATE ${tableName} SET ${setClause} WHERE "id" = $${
+        values.length + 1
+      } RETURNING *`;
+      const res = await pool.query(query, [...values, id]);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
-      throw new Error("Error updating record in HSEQ_Toolbox_Meeting_Tasks: " + err.message);
+      throw new Error(`Error updating record in ${tableName}: ${err.message}`);
     }
   },
 
-  // ✅ delete with tenant filtering
   delete: async (id, centerId = null, isMultiCenter = false) => {
+    const existing = await hseqToolboxMeetingTasksModel.getById(
+      id,
+      centerId,
+      isMultiCenter,
+    );
+    if (!existing) {
+      return null;
+    }
+
     try {
-      let where = `"id" = $1`;
-      const params = [id];
-      
-      // ✅ Apply tenant filtering
-      if (centerId && !isMultiCenter) {
-        where += ` AND center_id = $2`;
-        params.push(centerId);
-      }
-      
-      const query = `DELETE FROM ${tableName} WHERE ${where} RETURNING *`;
-      const res = await pool.query(query, params);
+      const query = `DELETE FROM ${tableName} WHERE "id" = $1 RETURNING *`;
+      const res = await pool.query(query, [id]);
       if (res.rowCount === 0) return null;
       return res.rows[0];
     } catch (err) {
-      throw new Error("Error deleting record from HSEQ_Toolbox_Meeting_Tasks: " + err.message);
+      throw new Error(
+        `Error deleting record from ${tableName}: ${err.message}`,
+      );
     }
-  }
+  },
 };
 
 module.exports = hseqToolboxMeetingTasksModel;

@@ -100,6 +100,9 @@ const supplierEvaluationController = {
       });
       
       const data = await supplierEvaluationModel.update(req.params.id, mappedFields, req.center_id, req.isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -107,7 +110,10 @@ const supplierEvaluationController = {
   },
   delete: async (req, res) => { 
     try { 
-      await supplierEvaluationModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      const deleted = await supplierEvaluationModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

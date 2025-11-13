@@ -84,6 +84,9 @@ const applicantDetailsController = {
       // ✅ Only App Admin (role 1) bypasses filtering - HQ (role 2) should be filtered by center_id
       const isSuperAdmin = req.isAppAdmin || false; // Only App Admin, NOT HQ
       const data = await applicantDetailsModel.update(req.params.id, fields, centerId, isSuperAdmin); 
+      if (!data) {
+        return res.status(404).json({error: 'Not found'}); 
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Applicant_Details: " + err.message}); 
@@ -96,7 +99,10 @@ const applicantDetailsController = {
       const centerId = req.center_id || req.user?.center_id;
       // ✅ Only App Admin (role 1) bypasses filtering - HQ (role 2) should be filtered by center_id
       const isSuperAdmin = req.isAppAdmin || false; // Only App Admin, NOT HQ
-      await applicantDetailsModel.delete(req.params.id, centerId, isSuperAdmin); 
+      const deleted = await applicantDetailsModel.delete(req.params.id, centerId, isSuperAdmin); 
+      if (!deleted) {
+        return res.status(404).json({error: 'Not found'}); 
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

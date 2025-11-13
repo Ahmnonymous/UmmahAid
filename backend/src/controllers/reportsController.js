@@ -6,7 +6,7 @@ class ReportsController {
     static async getCenterAudits(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getCenterAudits(centerId);
+            const data = await ReportsModel.getCenterAudits(centerId, req.user);
             res.status(200).json({ success: true, data, count: data.length, message: 'Center audits report retrieved successfully' });
         } catch (error) {
             console.error('Error in getCenterAudits:', error);
@@ -17,7 +17,7 @@ class ReportsController {
     static async getApplicantDetails(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getApplicantDetails(centerId);
+            const data = await ReportsModel.getApplicantDetails(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -39,7 +39,7 @@ class ReportsController {
     static async getTotalFinancialAssistance(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getTotalFinancialAssistance(centerId);
+            const data = await ReportsModel.getTotalFinancialAssistance(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -61,7 +61,7 @@ class ReportsController {
     static async getFinancialAssistance(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getFinancialAssistance(centerId);
+            const data = await ReportsModel.getFinancialAssistance(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -83,7 +83,7 @@ class ReportsController {
     static async getFoodAssistance(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getFoodAssistance(centerId);
+            const data = await ReportsModel.getFoodAssistance(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -105,7 +105,7 @@ class ReportsController {
     static async getHomeVisits(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getHomeVisits(centerId);
+            const data = await ReportsModel.getHomeVisits(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -127,7 +127,7 @@ class ReportsController {
     static async getRelationshipReport(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getRelationshipReport(centerId);
+            const data = await ReportsModel.getRelationshipReport(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -149,7 +149,7 @@ class ReportsController {
     static async getApplicantPrograms(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getApplicantPrograms(centerId);
+            const data = await ReportsModel.getApplicantPrograms(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -171,7 +171,7 @@ class ReportsController {
     static async getFinancialAssessment(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getFinancialAssessment(centerId);
+            const data = await ReportsModel.getFinancialAssessment(centerId, req.user);
             
             res.status(200).json({
                 success: true,
@@ -193,7 +193,7 @@ class ReportsController {
     static async getSkillsMatrix(req, res) {
         try {
             const centerId = req.center_id; // Set by filterMiddleware
-            const data = await ReportsModel.getSkillsMatrix(centerId);
+            const data = await ReportsModel.getSkillsMatrix(centerId, req.user);
             
             res.status(200).json({
                 success: true,

@@ -28,7 +28,7 @@ import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../helpers/useRole";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser } from "../../../helpers/userStorage";
+import { getAuditName } from "../../../helpers/userStorage";
 import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 
 const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
@@ -106,8 +106,6 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         name: data.Name,
         registration_no: data.Registration_No,
@@ -117,7 +115,7 @@ const SupplierSummary = ({ supplier, lookupData, onUpdate, showAlert }) => {
         address: data.Address,
         category_id: data.Category_ID,
         status: data.Status,
-        updated_by: currentUser?.username || "system",
+        updated_by: getAuditName(),
       };
 
       await axiosApi.put(`${API_BASE_URL}/supplierProfile/${supplier.id}`, payload);

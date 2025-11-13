@@ -26,12 +26,13 @@ import { validateTabsAndNavigate } from "../../helpers/tabValidation";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 import CenterListPanel from "./components/CenterListPanel";
 import CenterSummary from "./components/CenterSummary";
 import SummaryMetrics from "./components/SummaryMetrics";
 import DetailTabs from "./components/DetailTabs";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
+import { useRole } from "../../helpers/useRole";
 
 const INITIAL_CENTER_METRICS = {
   totalApplicants: 0,
@@ -62,6 +63,9 @@ const CenterManagement = () => {
   const [lookupData, setLookupData] = useState({
     suburbs: [],
   });
+
+  const { canManageCenters } = useRole();
+  const canModifyCenters = canManageCenters();
 
   // Create form
   const {
@@ -222,6 +226,11 @@ const CenterManagement = () => {
   });
 
   const toggleCreateModal = () => {
+    if (!canModifyCenters && !createModalOpen) {
+      showAlert("You do not have permission to create centers.", "warning");
+      return;
+    }
+
     setCreateModalOpen(!createModalOpen);
     if (!createModalOpen) {
       setCreateActiveTab("1");
@@ -256,7 +265,11 @@ const CenterManagement = () => {
 
   const onCreateSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
+      if (!canModifyCenters) {
+        showAlert("You do not have permission to create centers.", "warning");
+        return;
+      }
+
       const hasLogo = data.Logo && data.Logo.length > 0;
       const hasQR = data.QR_Code_Service_URL && data.QR_Code_Service_URL.length > 0;
 
@@ -279,7 +292,7 @@ const CenterManagement = () => {
         formData.append("contact3", data.Contact3 || "");
         formData.append("npo_number", data.NPO_Number || "");
         formData.append("service_rating_email", data.Service_Rating_Email || "");
-        formData.append("created_by", currentUser?.username || "system");
+        formData.append("created_by", getAuditName());
 
         if (hasLogo) formData.append("logo", data.Logo[0]);
         if (hasQR) formData.append("qr_code_service_url", data.QR_Code_Service_URL[0]);
@@ -380,7 +393,14 @@ const CenterManagement = () => {
               onSearchChange={setSearchTerm}
               loading={loading}
               onRefresh={fetchCenters}
-              onCreateNew={() => setCreateModalOpen(true)}
+              canCreate={canModifyCenters}
+              onCreateNew={() => {
+                if (canModifyCenters) {
+                  setCreateModalOpen(true);
+                } else {
+                  showAlert("You do not have permission to create centers.", "warning");
+                }
+              }}
             />
           </Col>
 
@@ -400,6 +420,7 @@ const CenterManagement = () => {
                   lookupData={lookupData}
                   onUpdate={handleCenterUpdate}
                   showAlert={showAlert}
+                  canModify={canModifyCenters}
                 />
 
                 {/* Detail Tabs */}
@@ -424,7 +445,8 @@ const CenterManagement = () => {
         </Row>
 
         {/* Create Center Modal */}
-        <Modal isOpen={createModalOpen} toggle={toggleCreateModal} centered size="lg" backdrop="static">
+        {canModifyCenters && (
+          <Modal isOpen={createModalOpen} toggle={toggleCreateModal} centered size="lg" backdrop="static">
           <ModalHeader toggle={toggleCreateModal}>
             <i className="bx bx-plus-circle me-2"></i>
             Create New Center
@@ -687,6 +709,7 @@ const CenterManagement = () => {
             </ModalFooter>
           </Form>
         </Modal>
+        )}
       </Container>
     </div>
   );

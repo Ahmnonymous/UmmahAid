@@ -74,6 +74,9 @@ const attachmentsController = {
       }
       
       const data = await attachmentsModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Attachments: " + err.message}); 
@@ -85,7 +88,10 @@ const attachmentsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      await attachmentsModel.delete(req.params.id, centerId, isMultiCenter); 
+      const deleted = await attachmentsModel.delete(req.params.id, centerId, isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

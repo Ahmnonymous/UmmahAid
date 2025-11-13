@@ -5,9 +5,9 @@ const authenticateToken = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const filterMiddleware = require('../middlewares/filterMiddleware');
 
-// ✅ Apply authentication, RBAC, and tenant filtering
+// ✅ Apply authentication, RBAC, and tenant filtering (supplier module restricted to App Admin)
 router.use(authenticateToken);
-router.use(roleMiddleware([1, 2, 3, 4])); // All except Caseworkers
+router.use(roleMiddleware());
 router.use(filterMiddleware);
 
 router.get('/', supplierProfileController.getAll);

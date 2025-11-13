@@ -20,7 +20,7 @@ import DeleteConfirmationModal from "../../../components/Common/DeleteConfirmati
 import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../helpers/userStorage";
+import { getAuditName } from "../../../helpers/userStorage";
 
 const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -70,8 +70,6 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         meeting_date: data.Meeting_Date,
         conducted_by: data.Conducted_By,

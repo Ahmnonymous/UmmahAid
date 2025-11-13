@@ -125,13 +125,13 @@ const FinancialAssistanceReport = () => {
 
     const exportToCSV = () => {
         const headers = [
-            'File Number', 'Center Name', 'Name', 'Surname', 'Cell Number', 'Assistance Type',
+            'Center Name', 'File Number', 'Name', 'Surname', 'Cell Number', 'Assistance Type',
             'Financial Amount', 'Date of Assistance', 'Assisted By', 'Created At'
         ];
 
         const csvData = processedData.map(item => [
-            item.file_number || '',
             item.center_name || '',
+            item.file_number || '',
             item.name || '',
             item.surname || '',
             item.cell_number || '',
@@ -417,8 +417,8 @@ const FinancialAssistanceReport = () => {
                                                 <Table hover className="table-bordered table-nowrap table-sm" style={{ minWidth: '1100px' }}>
                                                     <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                                                             <tr>
-                                                                <th style={{minWidth: '120px'}}>File #</th>
                                                                 <th style={{minWidth: '160px'}}>Center</th>
+                                                                <th style={{minWidth: '120px'}}>File #</th>
                                                                 <th style={{minWidth: '150px'}}>Name</th>
                                                                 <th style={{minWidth: '120px'}}>Contact</th>
                                                                 <th style={{minWidth: '150px'}}>Assistance Type</th>
@@ -431,8 +431,8 @@ const FinancialAssistanceReport = () => {
                                         <tbody>
                                                             {groupItems.map((item, index) => (
                                                 <tr key={index}>
-                                                                    <td><strong>{item.file_number || '-'}</strong></td>
                                                                     <td>{item.center_name || '-'}</td>
+                                                                    <td><strong>{item.file_number || '-'}</strong></td>
                                                                     <td>{item.name} {item.surname}</td>
                                                                     <td>{item.cell_number || '-'}</td>
                                                                     <td>
@@ -461,10 +461,12 @@ const FinancialAssistanceReport = () => {
                                         <Table hover className="table-bordered table-nowrap" style={{ minWidth: '1100px' }}>
                                             <thead className="table-light" style={{ position: 'sticky', top: 0, zIndex: 1, whiteSpace: 'nowrap' }}>
                                                 <tr>
+                                                    <th style={{cursor: 'pointer', minWidth: '160px'}} onClick={() => handleSort('center_name')}>
+                                                        Center {getSortIcon('center_name')}
+                                                    </th>
                                                     <th style={{cursor: 'pointer', minWidth: '120px'}} onClick={() => handleSort('file_number')}>
                                                         File Number {getSortIcon('file_number')}
                                                     </th>
-                                                    <th style={{minWidth: '160px'}}>Center</th>
                                                     <th style={{cursor: 'pointer', minWidth: '150px'}} onClick={() => handleSort('name')}>
                                                         Name {getSortIcon('name')}
                                                     </th>
@@ -487,8 +489,8 @@ const FinancialAssistanceReport = () => {
                                             <tbody>
                                                 {paginatedData.map((item, index) => (
                                                     <tr key={index}>
-                                                        <td><strong>{item.file_number || '-'}</strong></td>
                                                         <td>{item.center_name || '-'}</td>
+                                                        <td><strong>{item.file_number || '-'}</strong></td>
                                                         <td>{item.name} {item.surname}</td>
                                                     <td>{item.cell_number || '-'}</td>
                                                     <td>

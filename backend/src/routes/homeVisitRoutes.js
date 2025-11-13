@@ -20,7 +20,7 @@ router.get('/:id/view-attachment-2', optionalAuthMiddleware, homeVisitController
 
 // ✅ All other endpoints - require authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5]));
+router.use(roleMiddleware());
 router.use(filterMiddleware);
 
 router.get('/', homeVisitController.getAll);

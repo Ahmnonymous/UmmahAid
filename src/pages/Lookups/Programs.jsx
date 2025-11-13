@@ -25,7 +25,7 @@ import TableContainer from "../../components/Common/TableContainer";
 import DeleteConfirmationModal from "../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../hooks/useDeleteConfirmation";
 import axiosApi from "../../helpers/api_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
 import { API_BASE_URL } from "../../helpers/url_helper";
 
 const Programs = () => {
@@ -223,9 +223,6 @@ const Programs = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Get current user from localStorage
-      const currentUser = getUmmahAidUser();
-      
       // Convert form fields to lowercase for PostgreSQL
       const payload = {
         person_trained_id: data.Person_Trained_ID ? parseInt(data.Person_Trained_ID) : null,

@@ -26,6 +26,7 @@ const Lookups = () => {
         { name: "Period As Muslim", table: "Period_As_Muslim", icon: "bxs-calendar" },
         { name: "File Condition", table: "File_Condition", icon: "bxs-detail" },
         { name: "File Status", table: "File_Status", icon: "bxs-file" },
+        { name: "Hadith", table: "Hadith", icon: "bxs-book-open" },
       ],
     },
     {

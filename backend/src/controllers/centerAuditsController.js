@@ -68,6 +68,9 @@ const centerAuditsController = {
       }
       
       const data = await centerAuditsModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Center_Audits: " + err.message}); 
@@ -76,7 +79,10 @@ const centerAuditsController = {
   
   delete: async (req, res) => { 
     try { 
-      await centerAuditsModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      const deleted = await centerAuditsModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

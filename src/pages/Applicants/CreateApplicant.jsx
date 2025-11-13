@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Container,
   Row,
@@ -25,7 +25,8 @@ import Breadcrumbs from "../../components/Common/Breadcrumb";
 import TopRightAlert from "../../components/Common/TopRightAlert";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
+import { useRole } from "../../helpers/useRole";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 import { createFieldTabMap, handleTabbedFormErrors } from "../../helpers/formErrorHandler";
 
@@ -37,6 +38,7 @@ const CREATE_APPLICANT_TAB_LABELS = {
 
 const CREATE_APPLICANT_TAB_FIELDS = {
   1: [
+    "Center_ID",
     "Name",
     "Surname",
     "ID_Number",
@@ -100,6 +102,10 @@ const CreateApplicant = () => {
   const signatureCanvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
   const [signatureDrawn, setSignatureDrawn] = useState(false);
+
+  const { isGlobalAdmin, centerId: userCenterId } = useRole();
+  const [centerOptions, setCenterOptions] = useState([]);
+  const [centerLoading, setCenterLoading] = useState(false);
 
   const startSignature = (e) => {
     e.preventDefault();
@@ -173,6 +179,7 @@ const CreateApplicant = () => {
     getValues,
   } = useForm({
     defaultValues: {
+      Center_ID: isGlobalAdmin ? "" : (userCenterId ? String(userCenterId) : ""),
       Name: "",
       Surname: "",
       ID_Number: "",
@@ -269,10 +276,44 @@ const CreateApplicant = () => {
     }
   };
 
-  const showAlert = (message, color = "success") => {
+  const showAlert = useCallback((message, color = "success") => {
     setAlert({ message, color });
     setTimeout(() => setAlert(null), 4000);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isGlobalAdmin) {
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchCenters = async () => {
+      try {
+        setCenterLoading(true);
+        const response = await axiosApi.get(`${API_BASE_URL}/centerDetail`);
+        if (isActive) {
+          setCenterOptions(response.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching centers:", error);
+        if (isActive) {
+          setCenterOptions([]);
+          showAlert("Failed to load centers. Please retry.", "warning");
+        }
+      } finally {
+        if (isActive) {
+          setCenterLoading(false);
+        }
+      }
+    };
+
+    fetchCenters();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isGlobalAdmin, showAlert]);
 
   const toggleTab = (tab) => {
     if (activeTab !== tab) {
@@ -282,7 +323,15 @@ const CreateApplicant = () => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
+      const rawCenterId = isGlobalAdmin ? data.Center_ID : (userCenterId ?? null);
+      const parsedCenterId = rawCenterId ? parseInt(rawCenterId, 10) : null;
+      const centerIdValue = Number.isNaN(parsedCenterId) ? null : parsedCenterId;
+
+      if (isGlobalAdmin && (centerIdValue === null || !rawCenterId)) {
+        showAlert("Center selection is required.", "danger");
+        return;
+      }
+
       let signatureBlob = null;
       if (signatureCanvasRef.current && signatureDrawn) {
         const dataUrl = signatureCanvasRef.current.toDataURL("image/png");
@@ -319,8 +368,10 @@ const CreateApplicant = () => {
         if (data.File_Status) formData.append("file_status", data.File_Status);
         formData.append("signature", signatureBlob, "signature.png");
         formData.append("popia_agreement", data.POPIA_Agreement ? "Y" : "N");
-        formData.append("center_id", currentUser?.center_id || 1);
-        formData.append("created_by", currentUser?.username || "system");
+        if (centerIdValue !== null) {
+          formData.append("center_id", String(centerIdValue));
+        }
+        formData.append("created_by", getAuditName());
 
         await axiosApi.post(`${API_BASE_URL}/applicantDetails`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -353,7 +404,7 @@ const CreateApplicant = () => {
           file_condition: data.File_Condition && data.File_Condition !== "" ? parseInt(data.File_Condition) : null,
           file_status: data.File_Status && data.File_Status !== "" ? parseInt(data.File_Status) : null,
           popia_agreement: data.POPIA_Agreement ? "Y" : "N",
-          center_id: currentUser?.center_id || 1,
+          center_id: centerIdValue ?? null,
           created_by: getAuditName(),
         };
 
@@ -374,7 +425,13 @@ const CreateApplicant = () => {
   const tabFieldGroups = useMemo(() => CREATE_APPLICANT_TAB_FIELDS, []);
   const fieldTabMap = useMemo(() => createFieldTabMap(tabFieldGroups), [tabFieldGroups]);
 
-  const requiredFields = ["Name", "Surname", "ID_Number", "File_Number", "POPIA_Agreement"];
+  const requiredFields = useMemo(() => {
+    const fields = ["Name", "Surname", "ID_Number", "File_Number", "POPIA_Agreement"];
+    if (isGlobalAdmin) {
+      fields.push("Center_ID");
+    }
+    return fields;
+  }, [isGlobalAdmin]);
 
   const handleFormError = (formErrors) =>
     handleTabbedFormErrors({
@@ -452,6 +509,39 @@ const CreateApplicant = () => {
                     {/* === TAB 1: PERSONAL INFO === */}
                     <TabPane tabId="1">
                       <Row>
+                        {isGlobalAdmin && (
+                          <Col md={6}>
+                            <FormGroup>
+                              <Label for="Center_ID">
+                                Center <span className="text-danger">*</span>
+                              </Label>
+                              <Controller
+                                name="Center_ID"
+                                control={control}
+                                rules={{ required: "Center is required" }}
+                                render={({ field }) => (
+                                  <Input
+                                    id="Center_ID"
+                                    type="select"
+                                    {...field}
+                                    disabled={centerLoading}
+                                    invalid={!!errors.Center_ID}
+                                  >
+                                    <option value="">
+                                      {centerLoading ? "Loading centers..." : "Select Center"}
+                                    </option>
+                                    {(centerOptions || []).map((center) => (
+                                      <option key={center.id} value={center.id}>
+                                        {center.organisation_name}
+                                      </option>
+                                    ))}
+                                  </Input>
+                                )}
+                              />
+                              {errors.Center_ID && <FormFeedback>{errors.Center_ID.message}</FormFeedback>}
+                            </FormGroup>
+                          </Col>
+                        )}
                         <Col md={6}>
                           <FormGroup>
                             <Label for="Name">Name <span className="text-danger">*</span></Label>

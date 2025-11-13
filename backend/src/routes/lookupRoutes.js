@@ -9,7 +9,7 @@ const filterMiddleware = require('../middlewares/filterMiddleware');
 // ✅ Lookups are global tables, accessible to all authenticated roles
 // ✅ All roles (1,2,3,4,5) can access lookup APIs - they're read-only reference data
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5])); // All roles can access lookup APIs
+router.use(roleMiddleware()); // All roles can access lookup APIs
 router.use(filterMiddleware); // Apply filter middleware (though lookups don't filter by center)
 
 router.get('/:table', lookupController.getAll);

@@ -20,7 +20,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -82,8 +82,6 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       // Check if file is being uploaded
       const hasFile = data.File && data.File.length > 0;
 
@@ -96,12 +94,12 @@ const AttachmentsTab = ({ applicantId, attachments, onUpdate, showAlert }) => {
         formData.append("file", data.File[0]);
 
         if (editItem) {
-          formData.append("updated_by", currentUser?.username || "system");
+          formData.append("updated_by", getAuditName());
           await axiosApi.put(`${API_BASE_URL}/attachments/${editItem.id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         } else {
-          formData.append("created_by", currentUser?.username || "system");
+          formData.append("created_by", getAuditName());
           await axiosApi.post(`${API_BASE_URL}/attachments`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });

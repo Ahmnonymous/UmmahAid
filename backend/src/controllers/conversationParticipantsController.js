@@ -38,6 +38,9 @@ const conversationParticipantsController = {
       // ✅ App Admin (center_id=null) can update all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
       const data = await conversationParticipantsModel.update(req.params.id, req.body, centerId);
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data);
     } catch(err) {
       res.status(500).json({error: err.message});
@@ -48,7 +51,10 @@ const conversationParticipantsController = {
     try {
       // ✅ App Admin (center_id=null) can delete all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
-      await conversationParticipantsModel.delete(req.params.id, centerId);
+      const deleted = await conversationParticipantsModel.delete(req.params.id, centerId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'});
     } catch(err) {
       res.status(500).json({error: err.message});

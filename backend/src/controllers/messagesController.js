@@ -74,6 +74,9 @@ const messagesController = {
       // ✅ App Admin (center_id=null) can update all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
       const data = await messagesModel.update(req.params.id, fields, centerId); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Messages: " + err.message}); 
@@ -84,7 +87,10 @@ const messagesController = {
     try { 
       // ✅ App Admin (center_id=null) can delete all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
-      await messagesModel.delete(req.params.id, centerId); 
+      const deleted = await messagesModel.delete(req.params.id, centerId); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

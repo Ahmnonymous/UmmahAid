@@ -59,6 +59,9 @@ const inventoryTransactionsController = {
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
       const data = await inventoryTransactionsModel.update(req.params.id, fields, centerId, isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({error: 'Not found'}); 
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -70,7 +73,10 @@ const inventoryTransactionsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      await inventoryTransactionsModel.delete(req.params.id, centerId, isMultiCenter); 
+      const deleted = await inventoryTransactionsModel.delete(req.params.id, centerId, isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({error: 'Not found'}); 
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

@@ -9,9 +9,10 @@
 // 4 = Org Executives (VIEW ONLY)
 // 5 = Org Caseworkers (Applicants/Tasks only)
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import PropTypes from "prop-types";
+import { useRole } from "../helpers/useRole";
 
 /**
  * Protected Route Component
@@ -22,45 +23,35 @@ import PropTypes from 'prop-types';
  * @param {number[]} props.allowedRoles - Array of role IDs that can access this route
  * @param {string} props.redirectTo - Path to redirect if unauthorized (default: /login)
  */
-const ProtectedRoute = ({ children, allowedRoles, redirectTo = '/login' }) => {
+const ProtectedRoute = ({ children, allowedRoles, redirectTo = "/unauthorized" }) => {
   try {
-    // Get current user from localStorage
-    const currentUser = JSON.parse(localStorage.getItem('UmmahAidUser'));
-    const authToken = localStorage.getItem('authToken');
-    
-    // Check if user is authenticated
-    if (!authToken || !currentUser) {
-      console.warn('🔒 ProtectedRoute: No auth token or user found, redirecting to login');
+    const { roleKey, userType, isAppAdmin } = useRole();
+    const authToken = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+    // Require authentication
+    if (!authToken || !roleKey) {
       return <Navigate to="/login" replace />;
     }
-    
-    const userType = currentUser?.user_type ? parseInt(currentUser.user_type) : null;
-    
-    // If no roles specified, just check for authentication
+
+    // If no specific roles provided, only authentication is required
     if (!allowedRoles || allowedRoles.length === 0) {
       return children;
     }
-    
-    // Convert allowedRoles to integers for comparison
-    const allowedRoleInts = allowedRoles.map(role => parseInt(role));
-    
-    // ✅ CORRECTED: App Admin (role 1) bypasses all restrictions
-    const isAppAdmin = userType === 1;
+
+    const allowedRoleInts = allowedRoles.map((role) => parseInt(role, 10));
+
+    // App Admin bypass other restrictions
     if (isAppAdmin) {
       return children;
     }
-    
-    // Check if user's role is in allowed roles
+
     if (userType && allowedRoleInts.includes(userType)) {
       return children;
     }
-    
-    // User is authenticated but not authorized
-    console.warn(`🔒 ProtectedRoute: User role ${userType} not in allowed roles [${allowedRoleInts.join(', ')}]`);
+
     return <Navigate to={redirectTo} replace />;
-    
   } catch (error) {
-    console.error('❌ ProtectedRoute error:', error);
+    console.error("❌ ProtectedRoute error:", error);
     return <Navigate to="/login" replace />;
   }
 };
@@ -73,7 +64,7 @@ ProtectedRoute.propTypes = {
 
 ProtectedRoute.defaultProps = {
   allowedRoles: [],
-  redirectTo: '/unauthorized',
+  redirectTo: "/unauthorized",
 };
 
 export default ProtectedRoute;

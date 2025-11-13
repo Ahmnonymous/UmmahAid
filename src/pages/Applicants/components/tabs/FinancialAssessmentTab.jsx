@@ -22,7 +22,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -82,8 +82,6 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
 
   const createFinancialAssessment = async () => {
     try {
-      const currentUser = getUmmahAidUser();
-
       const payload = {
         file_id: applicantId,
         total_income: 0,
@@ -149,8 +147,6 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
 
   const onSubmitIncome = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       const payload = {
         financial_assessment_id: financialAssessment.id,
         income_type_id: data.Income_Type_ID ? parseInt(data.Income_Type_ID) : null,
@@ -179,8 +175,6 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
 
   const onSubmitExpense = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       const payload = {
         financial_assessment_id: financialAssessment.id,
         expense_type_id: data.Expense_Type_ID ? parseInt(data.Expense_Type_ID) : null,

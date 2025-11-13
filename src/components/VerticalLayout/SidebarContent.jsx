@@ -21,7 +21,7 @@ const SidebarContent = (props) => {
   const path = useLocation();
   
   // ✅ Get user role information
-  const { isAppAdmin, isHQ, isOrgAdmin, isOrgExecutive, isCaseworker, hasRole } = useRole();
+  const { canAccessNav, canEditModule } = useRole();
 
   const activateParentDropdown = useCallback((item) => {
     item.classList.add("active");
@@ -170,8 +170,8 @@ const SidebarContent = (props) => {
               </Link>
             </li>
 
-            {/* ✅ Centers - App Admin ONLY (role 1) */}
-            {isAppAdmin && (
+            {/* ✅ Centers - App Admin & HQ (HQ read-only) */}
+            {canAccessNav("centers") && (
               <li>
                 <Link to="/centers">
                   <i className="bx bx-building"></i>
@@ -180,8 +180,8 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Meetings - HQ & Org Admins only (roles 2,3) */}
-            {hasRole([2, 3]) && (
+            {/* ✅ Meetings - restricted per RBAC */}
+            {canAccessNav("meetings") && (
               <li>
                 <Link to="/meetings">
                   <i className="bx bx-calendar"></i>
@@ -191,7 +191,7 @@ const SidebarContent = (props) => {
             )}
 
             {/* ✅ Suppliers - App Admin only */}
-            {isAppAdmin && (
+            {canAccessNav("suppliers") && (
               <li>
                 <Link to="/suppliers">
                   <i className="bx bx-store"></i>
@@ -201,7 +201,7 @@ const SidebarContent = (props) => {
             )}
 
             {/* ✅ Inventory - App Admin only */}
-            {isAppAdmin && (
+            {canAccessNav("inventory") && (
               <li>
                 <Link to="/inventory">
                   <i className="bx bx-box"></i>
@@ -210,8 +210,8 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Create Applicant - Only Caseworker (role 5) can create applicants */}
-            {hasRole([5]) && (
+            {/* ✅ Create Applicant - All except Org Executives (read-only) */}
+            {canEditModule("applicants") && (
               <li>
                 <Link to="/applicants/create">
                   <i className="bx bx-user-plus"></i>
@@ -229,7 +229,7 @@ const SidebarContent = (props) => {
             </li>
 
             {/* ✅ Reports - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
-            {hasRole([1, 2, 3]) && (
+            {canAccessNav("reports") && (
               <li>
                 <Link to="/#" className="has-arrow ">
                   <i className="bx bx-file-find"></i>
@@ -289,7 +289,7 @@ const SidebarContent = (props) => {
             )}
 
             {/* ✅ Lookup Setup - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
-            {hasRole([1, 2, 3]) && (
+            {canAccessNav("lookups") && (
               <li>
                 <Link to="/lookups">
                   <i className="bx bx-list-ul"></i>
@@ -298,7 +298,7 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {!isOrgExecutive && (
+            {canAccessNav("filemanager") && (
               <li>
                 <Link to="/FileManager">
                   <i className="bx bx-folder"></i>
@@ -307,7 +307,7 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {!isOrgExecutive && (
+            {canAccessNav("chat") && (
               <li>
                 <Link to="/chat">
                   <i className="bx bx-chat"></i>
@@ -316,12 +316,14 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            <li>
-              <Link to="/policy-library">
-                <i className="bx bx-file-blank"></i>
-                <span>{props.t("Policy & Procedure")}</span>
-              </Link>
-            </li>
+            {canAccessNav("policy") && (
+              <li>
+                <Link to="/policy-library">
+                  <i className="bx bx-file-blank"></i>
+                  <span>{props.t("Policy & Procedure")}</span>
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </SimpleBar>

@@ -18,6 +18,20 @@ const dashboardController = {
       res.status(500).json({ error: err.message });
     }
   },
+
+  getStatisticsApplications: async (req, res) => {
+    try {
+      const { duration } = req.query;
+      const centerId = req.center_id ?? req.user?.center_id ?? null;
+      const hasGlobalAccess = Boolean(req.isAppAdmin || req.isHQ);
+
+      const data = await dashboardModel.getStatisticsApplications(duration, centerId, hasGlobalAccess);
+      res.json(data);
+    } catch (err) {
+      console.error('Error in getStatisticsApplications:', err);
+      res.status(500).json({ error: err.message });
+    }
+  },
 };
 
 module.exports = dashboardController;

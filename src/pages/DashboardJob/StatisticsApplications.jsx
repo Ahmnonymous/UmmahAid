@@ -24,7 +24,26 @@ const StatisticsApplications = () => {
 
 
     const { statistic_data } = useSelector(DashboardjobProperties);
-    const statisticsData = statistic_data[0]?.data;
+    const statisticsData =
+        statistic_data && typeof statistic_data === "object"
+            ? statistic_data
+            : {
+                categories: [],
+                categoryLabels: [],
+                metrics: [],
+                duration: "year",
+            };
+
+    useEffect(() => {
+        const durationToTab = {
+            year: 1,
+            month: 2,
+            week: 3
+        };
+        if (statisticsData?.duration && durationToTab[statisticsData.duration] !== undefined) {
+            setActive(durationToTab[statisticsData.duration]);
+        }
+    }, [statisticsData?.duration]);
 
     const handleChangeChart = (chartType) => {
         setActive(chartType)
@@ -52,7 +71,11 @@ const StatisticsApplications = () => {
                                 </Nav>
                             </div>
                         </div>
-                        <StatisticsApplicationsChart seriesData={statisticsData} dataColors='["--bs-primary", "--bs-success", "--bs-warning", "--bs-info"]' dir="ltr" />
+                        <StatisticsApplicationsChart
+                            seriesData={statisticsData}
+                            dataColors='["--bs-primary", "--bs-success", "--bs-warning", "--bs-info"]'
+                            dir="ltr"
+                        />
                     </CardBody>
                 </Card>
             </Col>

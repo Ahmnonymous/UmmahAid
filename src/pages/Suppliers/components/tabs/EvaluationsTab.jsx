@@ -20,7 +20,7 @@ import DeleteConfirmationModal from "../../../../components/Common/DeleteConfirm
 import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 import { useRole } from "../../../../helpers/useRole";
 
 const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAlert }) => {
@@ -87,8 +87,6 @@ const EvaluationsTab = ({ supplierId, evaluations, lookupData, onUpdate, showAle
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
       const payload = {
         supplier_id: supplierId,
         eval_date: data.Eval_Date,

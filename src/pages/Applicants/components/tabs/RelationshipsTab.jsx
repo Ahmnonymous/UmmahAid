@@ -20,7 +20,7 @@ import useDeleteConfirmation from "../../../../hooks/useDeleteConfirmation";
 import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../../../helpers/userStorage";
+import { getAuditName } from "../../../../helpers/userStorage";
 
 const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -79,8 +79,6 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-
       const payload = {
         file_id: applicantId,
         relationship_type: data.Relationship_Type ? parseInt(data.Relationship_Type) : null,

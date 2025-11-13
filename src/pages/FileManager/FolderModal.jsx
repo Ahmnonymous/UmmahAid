@@ -14,7 +14,8 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
-import { getUmmahAidUser, getAuditName } from "../../helpers/userStorage";
+import { getAuditName } from "../../helpers/userStorage";
+import { useRole } from "../../helpers/useRole";
 
 const FolderModal = ({
   isOpen,
@@ -46,12 +47,11 @@ const FolderModal = ({
     }
   }, [editItem, currentFolder, isOpen, reset]);
 
+  const { user, centerId } = useRole();
+
   const onSubmit = async (data) => {
     try {
-      const currentUser = getUmmahAidUser();
-      
-      // Validate user session
-      if (!currentUser) {
+      if (!user) {
         showAlert("User session expired. Please login again.", "danger");
         return;
       }
@@ -59,8 +59,8 @@ const FolderModal = ({
       const payload = {
         name: data.name,
         parent_id: data.parent_id && data.parent_id !== "" ? parseInt(data.parent_id) : null,
-        employee_id: currentUser?.id || null,
-        center_id: currentUser?.center_id, // Backend will handle App Admin (null center_id)
+        employee_id: user?.id ?? null,
+        center_id: centerId ?? null,
       };
 
       if (editItem) {

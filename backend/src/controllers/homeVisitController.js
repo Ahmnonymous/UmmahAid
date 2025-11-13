@@ -105,6 +105,9 @@ const homeVisitController = {
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
       const data = await homeVisitModel.update(req.params.id, fields, centerId, isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Home_Visit: " + err.message}); 
@@ -116,7 +119,10 @@ const homeVisitController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      await homeVisitModel.delete(req.params.id, centerId, isMultiCenter); 
+      const deleted = await homeVisitModel.delete(req.params.id, centerId, isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

@@ -17,8 +17,10 @@ const EmploymentChart = ({ data }) => {
     colors: chartColors,
     legend: {
       show: true,
-      position: "right",
-      fontSize: "11px",
+      position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "12px",
+      offsetY: 8,
     },
     dataLabels: {
       enabled: true,
@@ -37,8 +39,8 @@ const EmploymentChart = ({ data }) => {
       {
         breakpoint: 1200,
         options: {
-          legend: {
-            position: "bottom",
+          chart: {
+            height: 260,
           },
         },
       },

@@ -19,7 +19,7 @@ router.get('/:id/view-signature', optionalAuthMiddleware, applicantDetailsContro
 
 // ✅ All other endpoints - require authentication, RBAC, and tenant filtering
 router.use(authMiddleware);
-router.use(roleMiddleware([1, 2, 3, 4, 5])); // All staff can access applicants
+router.use(roleMiddleware()); // All staff can access applicants
 router.use(filterMiddleware);
 
 router.get('/', applicantDetailsController.getAll);

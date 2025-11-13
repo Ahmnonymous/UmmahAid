@@ -97,6 +97,9 @@ const supplierDocumentController = {
       }
       
       const data = await supplierDocumentModel.update(req.params.id, fields, req.center_id, req.isMultiCenter); 
+      if (!data) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Supplier_Document: " + err.message}); 
@@ -105,7 +108,10 @@ const supplierDocumentController = {
   
   delete: async (req, res) => { 
     try { 
-      await supplierDocumentModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      const deleted = await supplierDocumentModel.delete(req.params.id, req.center_id, req.isMultiCenter); 
+      if (!deleted) {
+        return res.status(404).json({ error: "Not found" });
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

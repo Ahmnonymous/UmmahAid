@@ -83,6 +83,9 @@ const centerDetailController = {
       }
       
       const data = await centerDetailModel.update(req.params.id, fields); 
+      if (!data) {
+        return res.status(404).json({error: 'Not found'}); 
+      }
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error updating record in Center_Detail: " + err.message}); 
@@ -91,7 +94,10 @@ const centerDetailController = {
   
   delete: async (req, res) => { 
     try { 
-      await centerDetailModel.delete(req.params.id); 
+      const deleted = await centerDetailModel.delete(req.params.id); 
+      if (!deleted) {
+        return res.status(404).json({error: 'Not found'}); 
+      }
       res.json({message: 'Deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

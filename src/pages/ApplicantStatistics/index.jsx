@@ -10,6 +10,7 @@ import {
   Spinner,
   Alert,
 } from "reactstrap";
+import { Link } from "react-router-dom";
 
 // Import Components
 import WelcomeComp from "./WelcomeComp";
@@ -23,6 +24,9 @@ import SuburbsChart from "./SuburbsChart";
 import FileStatusChart from "./FileStatusChart";
 import FileConditionChart from "./FileConditionChart";
 import StatsCards from "./StatsCards";
+import StatisticsApplications from "./StatisticsApplications";
+import CandidateSection from "./CandidateSection";
+import { JobWidgetCharts } from "../DashboardJob/JobCharts";
 
 // Import Breadcrumb
 import Breadcrumbs from "../../components/Common/Breadcrumb";
@@ -54,6 +58,17 @@ const ApplicantStatistics = (props) => {
     totalApplicants: 0,
     activeApplicants: 0,
     newThisMonth: 0,
+    totalFoodAid: 0,
+    totalHomeVisits: 0,
+    totalPrograms: 0,
+    applicantsTrend: [0, 0, 0, 0, 0, 0, 0, 0],
+    foodAidTrend: [0, 0, 0, 0, 0, 0, 0, 0],
+    homeVisitsTrend: [0, 0, 0, 0, 0, 0, 0, 0],
+    programsTrend: [0, 0, 0, 0, 0, 0, 0, 0],
+    applicantsTrendChange: null,
+    foodAidTrendChange: null,
+    homeVisitsTrendChange: null,
+    programsTrendChange: null,
   });
 
   useEffect(() => {
@@ -83,6 +98,37 @@ const ApplicantStatistics = (props) => {
         totalApplicants: parseInt(data.summary?.total_applicants) || 0,
         activeApplicants: parseInt(data.summary?.active_applicants) || 0,
         newThisMonth: parseInt(data.summary?.new_this_month) || 0,
+        totalFoodAid: parseInt(data.summary?.total_food_aid) || 0,
+        totalHomeVisits: parseInt(data.summary?.total_home_visits) || 0,
+        totalPrograms: parseInt(data.summary?.total_programs) || 0,
+        applicantsTrend: Array.isArray(data.trends?.applicants)
+          ? data.trends.applicants.map((val) => Number(val) || 0)
+          : [0, 0, 0, 0, 0, 0, 0, 0],
+        foodAidTrend: Array.isArray(data.trends?.foodAid)
+          ? data.trends.foodAid.map((val) => Number(val) || 0)
+          : [0, 0, 0, 0, 0, 0, 0, 0],
+        homeVisitsTrend: Array.isArray(data.trends?.homeVisits)
+          ? data.trends.homeVisits.map((val) => Number(val) || 0)
+          : [0, 0, 0, 0, 0, 0, 0, 0],
+        programsTrend: Array.isArray(data.trends?.programs)
+          ? data.trends.programs.map((val) => Number(val) || 0)
+          : [0, 0, 0, 0, 0, 0, 0, 0],
+        applicantsTrendChange:
+          typeof data.trends?.applicantsChange === "number"
+            ? data.trends.applicantsChange
+            : null,
+        foodAidTrendChange:
+          typeof data.trends?.foodAidChange === "number"
+            ? data.trends.foodAidChange
+            : null,
+        homeVisitsTrendChange:
+          typeof data.trends?.homeVisitsChange === "number"
+            ? data.trends.homeVisitsChange
+            : null,
+        programsTrendChange:
+          typeof data.trends?.programsChange === "number"
+            ? data.trends.programsChange
+            : null,
       });
     } catch (error) {
       console.error("Error fetching statistics:", error);
@@ -159,6 +205,17 @@ const ApplicantStatistics = (props) => {
       totalApplicants: 800,
       activeApplicants: 520,
       newThisMonth: 45,
+      totalFoodAid: 320,
+      totalHomeVisits: 210,
+      totalPrograms: 95,
+      applicantsTrend: [680, 700, 720, 740, 760, 780, 795, 810],
+      foodAidTrend: [260, 270, 280, 290, 300, 305, 315, 320],
+      homeVisitsTrend: [160, 170, 180, 190, 195, 200, 205, 210],
+      programsTrend: [60, 65, 70, 75, 80, 85, 90, 95],
+      applicantsTrendChange: 2.01,
+      foodAidTrendChange: 1.59,
+      homeVisitsTrendChange: 2.44,
+      programsTrendChange: 6.4,
     };
   };
 
@@ -188,13 +245,115 @@ const ApplicantStatistics = (props) => {
 
           {/* Welcome Section & Stats Cards */}
           <Row>
-            <Col xl="4">
+            <Col>
               <WelcomeComp loading={loading} />
             </Col>
-            <Col xl="8">
+            {/* <Col xl="8">
               <StatsCards data={statsData} loading={loading} />
-            </Col>
+            </Col> */}
           </Row>
+
+          {/* Summary KPI Cards */}
+          <Row className="mb-4">
+            {[
+              {
+                title: "Total Applicants",
+                value: statsData.totalApplicants,
+                dataColors: '["--bs-primary", "--bs-transparent"]',
+                seriesName: "Total Applicants",
+                series: statsData.applicantsTrend,
+                change: statsData.applicantsTrendChange,
+              },
+              {
+                title: "Total Food Aid",
+                value: statsData.totalFoodAid,
+                dataColors: '["--bs-success", "--bs-transparent"]',
+                seriesName: "Total Food Aid",
+                series: statsData.foodAidTrend,
+                change: statsData.foodAidTrendChange,
+              },
+              {
+                title: "Total Home Visits",
+                value: statsData.totalHomeVisits,
+                dataColors: '["--bs-info", "--bs-transparent"]',
+                seriesName: "Total Home Visits",
+                series: statsData.homeVisitsTrend,
+                change: statsData.homeVisitsTrendChange,
+              },
+              {
+                title: "Total Programs",
+                value: statsData.totalPrograms,
+                dataColors: '["--bs-warning", "--bs-transparent"]',
+                seriesName: "Total Programs",
+                series: statsData.programsTrend,
+                change: statsData.programsTrendChange,
+              },
+            ].map((widget, index) => {
+              const seriesData =
+                Array.isArray(widget.series) && widget.series.length
+                  ? widget.series
+                  : [0, 0, 0, 0, 0, 0, 0, 0];
+              const changeValue =
+                typeof widget.change === "number" ? widget.change : null;
+
+              return (
+                <Col xl="3" lg="6" className="mb-3" key={widget.title + index}>
+                  <Card className="mini-stats-wid card-animate h-100">
+                    <CardBody className="d-flex flex-column">
+                      <div className="d-flex flex-grow-1">
+                        <div className="flex-grow-1">
+                          <p className="text-muted fw-medium">
+                            {widget.title}
+                          </p>
+                          <h4 className="mb-0">
+                            {(widget.value ?? 0).toLocaleString()}
+                          </h4>
+                        </div>
+                        <div className="flex-shrink-0 align-self-center">
+                          <JobWidgetCharts
+                            dataColors={widget.dataColors}
+                            series={[
+                              {
+                                name: widget.seriesName,
+                                data: seriesData,
+                              },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                      {changeValue !== null && (
+                        <div className="border-top pt-3 mt-3">
+                          <p className="mb-0">
+                            <span
+                              className={`badge badge-soft-${
+                                changeValue >= 0 ? "success" : "danger"
+                              } me-2`}
+                            >
+                              <i
+                                className={`bx bx-trending-${
+                                  changeValue >= 0 ? "up" : "down"
+                                } align-bottom me-1`}
+                              ></i>
+                              {Math.abs(changeValue).toFixed(2)}%
+                            </span>
+                            {changeValue >= 0 ? "Increase" : "Decrease"}{" "}
+                             last month
+                          </p>
+                        </div>
+                      )}
+                    </CardBody>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+
+          {/* Statistics Applications & Invite Friends */}
+          <Row>
+            <StatisticsApplications />
+            <CandidateSection />
+          </Row>
+
 
           {/* Charts Grid - Row 1 */}
           <Row>
