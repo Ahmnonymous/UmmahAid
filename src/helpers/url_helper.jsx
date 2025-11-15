@@ -6,8 +6,12 @@ export const API_BASE_URL = "";
 // Absolute base for non-axios navigation (anchors/iframes/window.open)
 // In dev, prefers VITE_API_URL if provided (e.g., http://localhost:5000/api)
 // In prod, defaults to same-origin '/api'
+const envRef =
+  typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : undefined;
+
 export const API_STREAM_BASE_URL =
-  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL) || "/api";
+  (envRef && envRef.VITE_API_URL) ||
+  (envRef && envRef.DEV ? "http://localhost:5000/api" : "/api");
 
 //REGISTER
 export const POST_FAKE_REGISTER = "/post-fake-register";

@@ -146,7 +146,7 @@ const personalFilesController = {
     try {
       // ✅ App Admin (center_id=null) can view all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
-      const record = await personalFilesModel.getById(req.params.id, centerId);
+      const record = await personalFilesModel.getByIdWithFile(req.params.id, centerId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
@@ -183,7 +183,7 @@ const personalFilesController = {
     try {
       // ✅ App Admin (center_id=null) can view all, others only their center
       const centerId = req.center_id || req.user?.center_id || null;
-      const record = await personalFilesModel.getById(req.params.id, centerId);
+      const record = await personalFilesModel.getByIdWithFile(req.params.id, centerId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
