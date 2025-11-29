@@ -9,6 +9,7 @@ const DetailTabs = ({
   lookupData,
   onUpdate,
   showAlert,
+  employees = [],
 }) => {
   const [activeTab, setActiveTab] = useState("all");
 
@@ -51,6 +52,7 @@ const DetailTabs = ({
                 lookupData={lookupData}
                 onUpdate={onUpdate}
                 showAlert={showAlert}
+                employees={employees}
               />
             </div>
           </TabPane>
@@ -62,6 +64,7 @@ const DetailTabs = ({
               lookupData={lookupData}
               onUpdate={onUpdate}
               showAlert={showAlert}
+              employees={employees}
             />
           </TabPane>
         </TabContent>

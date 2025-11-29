@@ -17,8 +17,8 @@ import {
 
 // import images
 import profile from "../../assets/images/profile-img.png";
-import logoImg from "../../assets/images/logo.svg";
-import lightlogo from "../../assets/images/logo-light.svg";
+import logoImg from "../../assets/images/logo.jpeg";
+import lightlogo from "../../assets/images/logo.jpeg";
 
 const Recoverpw = () => {
 

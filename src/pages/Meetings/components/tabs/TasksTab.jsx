@@ -23,7 +23,7 @@ import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getAuditName } from "../../../../helpers/userStorage";
 import { useRole } from "../../../../helpers/useRole";
 
-const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
+const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert, employees = [] }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const { centerId } = useRole();
@@ -47,15 +47,22 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
 
   useEffect(() => {
     if (modalOpen) {
+      // Find employee for responsible by matching name
+      const responsibleEmployee = employees.find(emp => {
+        const fullName = `${emp.name} ${emp.surname}`.trim();
+        return fullName === editItem?.responsible;
+      });
+      const responsibleValue = responsibleEmployee ? responsibleEmployee.id : "";
+
       reset({
         Task_Description: editItem?.task_description || "",
         Completion_Date: editItem?.completion_date ? editItem.completion_date.split('T')[0] : "",
-        Responsible: editItem?.responsible || "",
+        Responsible: responsibleValue,
         Status: editItem?.status || "",
         Notes: editItem?.notes || "",
       });
     }
-  }, [editItem, modalOpen, reset]);
+  }, [editItem, modalOpen, reset, employees]);
 
   const toggleModal = () => {
     setModalOpen(!modalOpen);
@@ -93,11 +100,17 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
+      // Get employee name for responsible (convert ID to name)
+      const responsibleEmployee = employees.find(emp => emp.id === data.Responsible);
+      const responsibleName = responsibleEmployee 
+        ? `${responsibleEmployee.name} ${responsibleEmployee.surname}`.trim()
+        : "";
+
       const payload = {
         hseq_toolbox_meeting_id: meetingId,
         task_description: data.Task_Description,
         completion_date: data.Completion_Date || null,
-        responsible: data.Responsible,
+        responsible: responsibleName,
         status: data.Status || null,
         notes: data.Notes,
         center_id: centerId ?? null,
@@ -282,7 +295,23 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert }) => {
                     name="Responsible"
                     control={control}
                     render={({ field }) => (
-                      <Input id="Responsible" type="text" {...field} />
+                      <Input
+                        id="Responsible"
+                        type="select"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const selectedId = e.target.value ? parseInt(e.target.value) : "";
+                          field.onChange(selectedId);
+                        }}
+                      >
+                        <option value="">Select employee...</option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.id}>
+                            {`${employee.name} ${employee.surname}`.trim()}
+                          </option>
+                        ))}
+                      </Input>
                     )}
                   />
                 </FormGroup>

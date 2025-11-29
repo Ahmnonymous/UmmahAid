@@ -7,8 +7,8 @@ import CardMaintenance from "./card-maintenance"
 
 //Import Images
 import maintenance from "../../assets/images/maintenance.svg"
-import logodark from "../../assets/images/logo-dark.png";
-import logolight from "../../assets/images/logo-light.png";
+import logodark from "../../assets/images/logo.jpeg";
+import logolight from "../../assets/images/logo.jpeg";
 
 const PagesMaintenance = () => {
 

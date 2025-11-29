@@ -9,7 +9,7 @@ import { useFormik } from "formik";
 
 // import images
 import profile from "../../assets/images/profile-img.png";
-import logo from "../../assets/images/logo.svg";
+import logo from "../../assets/images/logo.jpeg";
 
 const ForgetPasswordPage = () => {
   const validation = useFormik({

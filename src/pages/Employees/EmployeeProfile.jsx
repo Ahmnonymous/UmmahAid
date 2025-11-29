@@ -1839,10 +1839,17 @@ const EmployeeProfile = () => {
                     render={({ field }) => (
                       <Input
                         id="Attendance"
-                        placeholder="Enter attendance"
+                        type="select"
                         invalid={!!appraisalErrors.Attendance}
                         {...field}
-                      />
+                      >
+                        <option value="">Select rating</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </Input>
                     )}
                   />
                   {appraisalErrors.Attendance && (
@@ -1863,10 +1870,17 @@ const EmployeeProfile = () => {
                     render={({ field }) => (
                       <Input
                         id="Job_Knowledge_Skills"
-                        placeholder="Enter job knowledge & skills"
+                        type="select"
                         invalid={!!appraisalErrors.Job_Knowledge_Skills}
                         {...field}
-                      />
+                      >
+                        <option value="">Select rating</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </Input>
                     )}
                   />
                   {appraisalErrors.Job_Knowledge_Skills && (
@@ -1885,10 +1899,17 @@ const EmployeeProfile = () => {
                     render={({ field }) => (
                       <Input
                         id="Quality_of_Work"
-                        placeholder="Enter quality of work"
+                        type="select"
                         invalid={!!appraisalErrors.Quality_of_Work}
                         {...field}
-                      />
+                      >
+                        <option value="">Select rating</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </Input>
                     )}
                   />
                   {appraisalErrors.Quality_of_Work && (
@@ -1909,10 +1930,17 @@ const EmployeeProfile = () => {
                     render={({ field }) => (
                       <Input
                         id="Initiative_And_Motivation"
-                        placeholder="Enter initiative & motivation"
+                        type="select"
                         invalid={!!appraisalErrors.Initiative_And_Motivation}
                         {...field}
-                      />
+                      >
+                        <option value="">Select rating</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </Input>
                     )}
                   />
                   {appraisalErrors.Initiative_And_Motivation && (
@@ -1931,10 +1959,17 @@ const EmployeeProfile = () => {
                     render={({ field }) => (
                       <Input
                         id="Teamwork"
-                        placeholder="Enter teamwork"
+                        type="select"
                         invalid={!!appraisalErrors.Teamwork}
                         {...field}
-                      />
+                      >
+                        <option value="">Select rating</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </Input>
                     )}
                   />
                   {appraisalErrors.Teamwork && (
@@ -2185,10 +2220,16 @@ const EmployeeProfile = () => {
                 render={({ field }) => (
                   <Input
                     id="Status"
-                    placeholder="Enter status"
+                    type="select"
                     invalid={!!initiativeErrors.Status}
                     {...field}
-                  />
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </Input>
                 )}
               />
               {initiativeErrors.Status && (

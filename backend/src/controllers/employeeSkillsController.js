@@ -149,21 +149,28 @@ const employeeSkillsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const record = await employeeSkillsModel.getById(req.params.id, centerId, isMultiCenter);
+      const record = await employeeSkillsModel.getRawAttachment(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_mime || "application/octet-stream";
       const filename = record.attachment_filename || "attachment";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment;
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown attachment encoding");
+          }
         } else {
-          throw new Error("Unknown attachment encoding");
+          throw new Error("Invalid attachment data type");
         }
       }
   
@@ -187,23 +194,28 @@ const employeeSkillsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const record = await employeeSkillsModel.getById(req.params.id, centerId, isMultiCenter);
+      const record = await employeeSkillsModel.getRawAttachment(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_mime || "application/octet-stream";
       const filename = record.attachment_filename || "attachment";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment;
-  
-      // 🧩 Decode correctly depending on type
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex"); // PostgreSQL default format
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown attachment encoding");
+          }
         } else {
-          throw new Error("Unknown attachment encoding");
+          throw new Error("Invalid attachment data type");
         }
       }
   
@@ -211,12 +223,10 @@ const employeeSkillsController = {
         return res.status(500).send("Attachment buffer is empty or corrupted");
       }
   
-      // ✅ Proper download headers
       res.setHeader("Content-Type", mimeType);
       res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`);
       res.setHeader("Content-Length", buffer.length);
   
-      // ✅ Send binary content
       res.end(buffer);
     } catch (err) {
       console.error("Error downloading attachment:", err);

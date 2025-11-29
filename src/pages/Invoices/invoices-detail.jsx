@@ -9,8 +9,8 @@ import { isEmpty, map } from "lodash";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 
 //Import Image
-import logoDark from "../../assets/images/logo-dark.png";
-import logoLight from "../../assets/images/logo-light.png";
+import logoDark from "../../assets/images/logo.jpeg";
+import logoLight from "../../assets/images/logo.jpeg";
 import { getInvoiceDetail as onGetInvoiceDetail } from "../../store/invoices/actions";
 //redux
 import { useSelector, useDispatch } from "react-redux";

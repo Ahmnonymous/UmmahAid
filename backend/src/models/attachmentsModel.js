@@ -115,6 +115,32 @@ const attachmentsModel = {
       );
     }
   },
+
+  // Get raw file data without normalization (for viewing/downloading)
+  getRawFile: async (id, centerId = null, isMultiCenter = false) => {
+    try {
+      const scoped = scopeQuery(
+        {
+          text: `SELECT file, file_filename, file_mime, file_size FROM ${tableName} WHERE id = $1`,
+          values: [id],
+        },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
+      if (!res.rows[0]) return null;
+      return res.rows[0];
+    } catch (err) {
+      throw new Error(
+        `Error fetching raw file from ${tableName}: ${err.message}`,
+      );
+    }
+  },
 };
 
 module.exports = attachmentsModel;

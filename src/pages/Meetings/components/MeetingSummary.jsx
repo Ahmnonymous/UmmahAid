@@ -16,13 +16,14 @@ import {
   FormFeedback,
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
+import Select from "react-select";
 import DeleteConfirmationModal from "../../../components/Common/DeleteConfirmationModal";
 import useDeleteConfirmation from "../../../hooks/useDeleteConfirmation";
 import axiosApi from "../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getAuditName } from "../../../helpers/userStorage";
 
-const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
+const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert, employees = [] }) => {
   const [modalOpen, setModalOpen] = useState(false);
 
   // Delete confirmation hook
@@ -44,10 +45,31 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
 
   useEffect(() => {
     if (meeting && modalOpen) {
+      // Find employee for conducted_by by matching name
+      const conductedByEmployee = employees.find(emp => {
+        const fullName = `${emp.name} ${emp.surname}`.trim();
+        return fullName === meeting.conducted_by;
+      });
+      const conductedByValue = conductedByEmployee ? conductedByEmployee.id : "";
+
+      // Parse in_attendance (comma-separated names) to employee IDs
+      const inAttendanceNames = meeting.in_attendance 
+        ? meeting.in_attendance.split(',').map(name => name.trim()).filter(Boolean)
+        : [];
+      const inAttendanceValues = inAttendanceNames
+        .map(name => {
+          const emp = employees.find(e => {
+            const fullName = `${e.name} ${e.surname}`.trim();
+            return fullName === name;
+          });
+          return emp ? { value: emp.id, label: `${emp.name} ${emp.surname}`.trim() } : null;
+        })
+        .filter(Boolean);
+
       reset({
         Meeting_Date: meeting.meeting_date ? meeting.meeting_date.split('T')[0] : "",
-        Conducted_By: meeting.conducted_by || "",
-        In_Attendance: meeting.in_attendance || "",
+        Conducted_By: conductedByValue,
+        In_Attendance: inAttendanceValues,
         Guests: meeting.guests || "",
         Health_Discussions: meeting.health_discussions || "",
         Safety_Discussions: meeting.safety_discussions || "",
@@ -58,7 +80,7 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
         Feedback: meeting.feedback || "",
       });
     }
-  }, [meeting, modalOpen, reset]);
+  }, [meeting, modalOpen, reset, employees]);
 
   const toggleModal = () => {
     setModalOpen(!modalOpen);
@@ -70,10 +92,28 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
 
   const onSubmit = async (data) => {
     try {
+      // Get employee name for conducted_by (now it's just an ID)
+      const conductedByEmployee = employees.find(emp => emp.id === data.Conducted_By);
+      const conductedByName = conductedByEmployee 
+        ? `${conductedByEmployee.name} ${conductedByEmployee.surname}`.trim()
+        : "";
+
+      // Get employee names for in_attendance
+      const inAttendanceIds = Array.isArray(data.In_Attendance) 
+        ? data.In_Attendance.map(item => item?.value || item)
+        : [];
+      const inAttendanceNames = inAttendanceIds
+        .map(id => {
+          const emp = employees.find(e => e.id === id);
+          return emp ? `${emp.name} ${emp.surname}`.trim() : null;
+        })
+        .filter(Boolean)
+        .join(", ");
+
       const payload = {
         meeting_date: data.Meeting_Date,
-        conducted_by: data.Conducted_By,
-        in_attendance: data.In_Attendance,
+        conducted_by: conductedByName,
+        in_attendance: inAttendanceNames,
         guests: data.Guests,
         health_discussions: data.Health_Discussions,
         safety_discussions: data.Safety_Discussions,
@@ -221,7 +261,24 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
                     control={control}
                     rules={{ required: "Conducted by is required" }}
                     render={({ field }) => (
-                      <Input id="Conducted_By" type="text" invalid={!!errors.Conducted_By} {...field} />
+                      <Input
+                        id="Conducted_By"
+                        type="select"
+                        invalid={!!errors.Conducted_By}
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const selectedId = e.target.value ? parseInt(e.target.value) : "";
+                          field.onChange(selectedId);
+                        }}
+                      >
+                        <option value="">Select employee...</option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.id}>
+                            {`${employee.name} ${employee.surname}`.trim()}
+                          </option>
+                        ))}
+                      </Input>
                     )}
                   />
                   {errors.Conducted_By && <FormFeedback>{errors.Conducted_By.message}</FormFeedback>}
@@ -234,10 +291,126 @@ const MeetingSummary = ({ meeting, lookupData, onUpdate, showAlert }) => {
                   <Controller
                     name="In_Attendance"
                     control={control}
-                    render={({ field }) => (
-                      <Input id="In_Attendance" type="textarea" rows="2" {...field} />
-                    )}
+                    render={({ field }) => {
+                      const employeeOptions = employees.map(employee => ({
+                        value: employee.id,
+                        label: `${employee.name} ${employee.surname}`.trim(),
+                      }));
+
+                      // Get computed styles for theme-aware colors
+                      const getComputedStyle = () => {
+                        if (typeof window !== 'undefined' && document.documentElement) {
+                          const root = document.documentElement;
+                          const isDark = root.getAttribute('data-bs-theme') === 'dark';
+                          return {
+                            controlBg: isDark ? '#212529' : '#fff',
+                            menuBg: isDark ? '#212529' : '#fff',
+                            inputColor: isDark ? '#fff' : '#000',
+                            placeholderColor: isDark ? '#adb5bd' : '#6c757d',
+                            multiValueBg: isDark ? '#495057' : '#e7f3ff',
+                            multiValueLabelColor: isDark ? '#fff' : '#0066cc',
+                            multiValueRemoveBg: isDark ? '#6c757d' : '#cfe2ff',
+                            multiValueRemoveColor: isDark ? '#fff' : '#0066cc',
+                            borderColor: isDark ? '#495057' : '#ced4da',
+                            hoverBg: isDark ? '#343a40' : '#f8f9fa',
+                          };
+                        }
+                        return {
+                          controlBg: '#fff',
+                          menuBg: '#fff',
+                          inputColor: '#000',
+                          placeholderColor: '#6c757d',
+                          multiValueBg: '#e7f3ff',
+                          multiValueLabelColor: '#0066cc',
+                          multiValueRemoveBg: '#cfe2ff',
+                          multiValueRemoveColor: '#0066cc',
+                          borderColor: '#ced4da',
+                          hoverBg: '#f8f9fa',
+                        };
+                      };
+
+                      const themeColors = getComputedStyle();
+
+                      return (
+                        <Select
+                          {...field}
+                          isMulti
+                          options={employeeOptions}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          placeholder="Select employees..."
+                          value={Array.isArray(field.value) 
+                            ? field.value.map(val => {
+                                const id = val?.value || val;
+                                return employeeOptions.find(opt => opt.value === id);
+                              }).filter(Boolean)
+                            : []
+                          }
+                          onChange={(selected) => field.onChange(selected || [])}
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              backgroundColor: themeColors.controlBg,
+                              borderColor: state.isFocused ? '#86b7fe' : themeColors.borderColor,
+                              boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
+                              '&:hover': {
+                                borderColor: state.isFocused ? '#86b7fe' : themeColors.borderColor,
+                              },
+                            }),
+                            menu: (base) => ({
+                              ...base,
+                              backgroundColor: themeColors.menuBg,
+                              borderColor: themeColors.borderColor,
+                            }),
+                            input: (base) => ({
+                              ...base,
+                              color: themeColors.inputColor,
+                            }),
+                            placeholder: (base) => ({
+                              ...base,
+                              color: themeColors.placeholderColor,
+                            }),
+                            singleValue: (base) => ({
+                              ...base,
+                              color: themeColors.inputColor,
+                            }),
+                            multiValue: (base) => ({
+                              ...base,
+                              backgroundColor: themeColors.multiValueBg,
+                            }),
+                            multiValueLabel: (base) => ({
+                              ...base,
+                              color: themeColors.multiValueLabelColor,
+                            }),
+                            multiValueRemove: (base) => ({
+                              ...base,
+                              backgroundColor: themeColors.multiValueRemoveBg,
+                              color: themeColors.multiValueRemoveColor,
+                              '&:hover': {
+                                backgroundColor: themeColors.multiValueRemoveBg,
+                                color: themeColors.multiValueRemoveColor,
+                                opacity: 0.8,
+                              },
+                            }),
+                            option: (base, state) => ({
+                              ...base,
+                              backgroundColor: state.isSelected
+                                ? '#0d6efd'
+                                : state.isFocused
+                                ? themeColors.hoverBg
+                                : themeColors.menuBg,
+                              color: state.isSelected ? '#fff' : themeColors.inputColor,
+                              '&:active': {
+                                backgroundColor: '#0d6efd',
+                                color: '#fff',
+                              },
+                            }),
+                          }}
+                        />
+                      );
+                    }}
                   />
+                  <small className="text-muted">Select one or more employees who attended the meeting</small>
                 </FormGroup>
               </Col>
 

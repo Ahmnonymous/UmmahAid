@@ -100,21 +100,30 @@ const attachmentsController = {
 
   viewFile: async (req, res) => {
     try {
-      const record = await attachmentsModel.getById(req.params.id, req.center_id, req.isMultiCenter);
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const record = await attachmentsModel.getRawFile(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
       const mimeType = record.file_mime || "application/octet-stream";
       const filename = record.file_filename || "attachment";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.file;
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown file encoding");
+          }
         } else {
-          throw new Error("Unknown file encoding");
+          throw new Error("Invalid file data type");
         }
       }
   
@@ -135,22 +144,30 @@ const attachmentsController = {
 
   downloadFile: async (req, res) => {
     try {
-      const record = await attachmentsModel.getById(req.params.id, req.center_id, req.isMultiCenter);
+      const centerId = req.center_id || req.user?.center_id;
+      const isMultiCenter = req.isMultiCenter;
+      const record = await attachmentsModel.getRawFile(req.params.id, centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
       const mimeType = record.file_mime || "application/octet-stream";
       const filename = record.file_filename || "attachment";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.file;
-  
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown file encoding");
+          }
         } else {
-          throw new Error("Unknown file encoding");
+          throw new Error("Invalid file data type");
         }
       }
   

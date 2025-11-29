@@ -12,20 +12,9 @@ const Lookups = () => {
       icon: "bxs-user-circle",
       categories: [
         { name: "Nationality", table: "Nationality", icon: "bxs-flag-alt" },
-        { name: "Gender", table: "Gender", icon: "bxs-user" },
-        { name: "Race", table: "Race", icon: "bxs-group" },
-        { name: "Employment Status", table: "Employment_Status", icon: "bxs-briefcase" },
         { name: "Skills", table: "Skills", icon: "bxs-wrench" },
-        { name: "Education Level", table: "Education_Level", icon: "bxs-book" },
         { name: "Suburb", table: "Suburb", icon: "bxs-map" },
-        { name: "Dwelling Type", table: "Dwelling_Type", icon: "bxs-building-house" },
-        { name: "Dwelling Status", table: "Dwelling_Status", icon: "bxs-home" },
         { name: "Health Conditions", table: "Health_Conditions", icon: "bxs-first-aid" },
-        { name: "Marital Status", table: "Marital_Status", icon: "bxs-heart" },
-        { name: "Born Religion", table: "Born_Religion", icon: "bxs-card" },
-        { name: "Period As Muslim", table: "Period_As_Muslim", icon: "bxs-calendar" },
-        { name: "File Condition", table: "File_Condition", icon: "bxs-detail" },
-        { name: "File Status", table: "File_Status", icon: "bxs-file" },
         { name: "Hadith", table: "Hadith", icon: "bxs-book-open" },
       ],
     },
@@ -35,7 +24,6 @@ const Lookups = () => {
       icon: "bxs-briefcase-alt",
       categories: [
         { name: "Employee Details", table: "Employees", icon: "bxs-user-pin" },
-        { name: "Departments", table: "Departments", icon: "bxs-building" },
         { name: "Training Courses", table: "Training_Courses", icon: "bxs-book-open" },
         { name: "Training Institutions", table: "Training_Institutions", icon: "bxs-school" },
       ],
@@ -45,12 +33,9 @@ const Lookups = () => {
       color: "info",
       icon: "bxs-detail",
       categories: [
-        { name: "Tasks Status", table: "Tasks_Status", icon: "bxs-checkbox-checked" },
         { name: "Assistance Types", table: "Assistance_Types", icon: "bxs-heart" },
-        { name: "Relationship Types", table: "Relationship_Types", icon: "bxs-group" },
         { name: "Programs", table: "Programs", icon: "bxs-folder-open" },
         { name: "Hampers", table: "Hampers", icon: "bxs-basket" },
-        { name: "Means of Communication", table: "Means_of_communication", icon: "bxs-conversation" },
       ],
     },
     {
@@ -58,10 +43,6 @@ const Lookups = () => {
       color: "secondary",
       icon: "bxs-graduation",
       categories: [
-        { name: "Training Outcomes", table: "Training_Outcome", icon: "bxs-award" },
-        { name: "Training Levels", table: "Training_Level", icon: "bxs-layer" },
-        { name: "Blood Types", table: "Blood_Type", icon: "bxs-droplet" },
-        { name: "User Types", table: "User_Types", icon: "bxs-user-x" },
       ],
     },
     {
@@ -78,8 +59,6 @@ const Lookups = () => {
       color: "danger",
       icon: "bxs-file-blank",
       categories: [
-        { name: "Policy Procedure Types", table: "Policy_Procedure_Type", icon: "bxs-file-find" },
-        { name: "Policy Procedure Fields", table: "Policy_Procedure_Field", icon: "bxs-grid-alt" },
         { name: "Policy and Procedure", table: "Policy_And_Procedure", icon: "bxs-file-doc", customRoute: "/lookups/policy-and-procedure" },
       ],
     },
@@ -88,7 +67,6 @@ const Lookups = () => {
       color: "dark",
       icon: "bxs-store-alt",
       categories: [
-        { name: "Supplier Categories", table: "Supplier_Category", icon: "bxs-truck" },
       ],
     },
   ];
@@ -169,27 +147,27 @@ const Lookups = () => {
         <Breadcrumbs title="Administration" breadcrumbItem="Lookup Setup" />
 
          {/* Full-width Row for the largest group: Applicant Details (2 columns) */}
-         <Row className="mb-3">
-           <Col lg={12}>
-             {renderGroupCard(lookupGroups[0], 0, true)}
-           </Col>
-         </Row>
+         {lookupGroups[0].categories.length > 0 && (
+           <Row className="mb-3">
+             <Col lg={12}>
+               {renderGroupCard(lookupGroups[0], 0, true)}
+             </Col>
+           </Row>
+         )}
 
         {/* Balanced Row for remaining groups: Split into two columns with similar total items */}
         <Row className="g-3 h-100">
-          {/* Left Column: Employee Set Up (4 items) + Applicant Sub Details (6 items) = 10 items */}
+          {/* Left Column: Employee Set Up + Applicant Sub Details */}
           <Col lg={6} className="d-flex flex-column">
-            {renderGroupCard(lookupGroups[1], 1)} {/* Employee Set Up */}
-            {renderGroupCard(lookupGroups[2], 2)} {/* Applicant Sub Details */}
+            {lookupGroups[1].categories.length > 0 && renderGroupCard(lookupGroups[1], 1)} {/* Employee Set Up */}
+            {lookupGroups[2].categories.length > 0 && renderGroupCard(lookupGroups[2], 2)} {/* Applicant Sub Details */}
             <div className="flex-grow-1"></div> {/* Spacer to fill remaining space */}
           </Col>
 
-          {/* Right Column: Employee Training (4) + Financial (2) + Policy (2) + Supplier (1) = 9 items */}
+          {/* Right Column: Financial + Policy */}
           <Col lg={6} className="d-flex flex-column">
-            {renderGroupCard(lookupGroups[3], 3)} {/* Employee Training */}
-            {renderGroupCard(lookupGroups[4], 4)} {/* Financial Setup */}
-            {renderGroupCard(lookupGroups[5], 5)} {/* Policy Setup */}
-            {renderGroupCard(lookupGroups[6], 6)} {/* Supplier Setup */}
+            {lookupGroups[4].categories.length > 0 && renderGroupCard(lookupGroups[4], 4)} {/* Financial Setup */}
+            {lookupGroups[5].categories.length > 0 && renderGroupCard(lookupGroups[5], 5)} {/* Policy Setup */}
             <div className="flex-grow-1"></div> {/* Spacer to fill remaining space */}
           </Col>
         </Row>

@@ -3,8 +3,8 @@ import CarouselPage from "./CarouselPage"
 import { Col, Container, Row } from "reactstrap"
 
 // import images
-import logoDark from "../../assets/images/logo-dark.png"
-import logoLight from "../../assets/images/logo-light.png"
+import logoDark from "../../assets/images/logo.jpeg"
+import logoLight from "../../assets/images/logo.jpeg"
 import { Link } from "react-router-dom"
 
 const EmailVerification2 = () => {

@@ -7,8 +7,8 @@ import { Link } from "react-router-dom";
 // Import menuDropdown
 import ProfileMenu from "../CommonForBoth/TopbarDropdown/ProfileMenu";
 
-import logo from "../../assets/images/logo.svg";
-import logoLightSvg from "../../assets/images/logo-light.svg";
+import logo from "../../assets/images/logo.jpeg";
+import logoLightSvg from "../../assets/images/logo.jpeg";
 
 //i18n
 import { withTranslation } from "react-i18next";

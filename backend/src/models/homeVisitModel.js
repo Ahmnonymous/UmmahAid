@@ -123,6 +123,32 @@ const homeVisitModel = {
       );
     }
   },
+
+  // Get raw attachment data without normalization (for viewing/downloading)
+  getRawAttachment: async (id, attachmentField, centerId = null, isMultiCenter = false) => {
+    try {
+      const scoped = scopeQuery(
+        {
+          text: `SELECT ${attachmentField}, ${attachmentField}_filename, ${attachmentField}_mime, ${attachmentField}_size FROM ${tableName} WHERE id = $1`,
+          values: [id],
+        },
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
+      if (!res.rows[0]) return null;
+      return res.rows[0];
+    } catch (err) {
+      throw new Error(
+        `Error fetching raw attachment from ${tableName}: ${err.message}`,
+      );
+    }
+  },
 };
 
 module.exports = homeVisitModel;

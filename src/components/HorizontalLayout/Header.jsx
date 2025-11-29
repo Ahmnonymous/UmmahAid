@@ -11,10 +11,10 @@ import { showRightSidebarAction, toggleLeftmenu } from "/src/store/actions";
 // Import menuDropdown
 import ProfileMenu from "../CommonForBoth/TopbarDropdown/ProfileMenu";
 
-import logo from "../../assets/images/logo.svg";
-import logoLight from "../../assets/images/logo-light.png";
-import logoLightSvg from "../../assets/images/logo-light.svg";
-import logoDark from "../../assets/images/logo-dark.png";
+import logo from "../../assets/images/logo.jpeg";
+import logoLight from "../../assets/images/logo.jpeg";
+import logoLightSvg from "../../assets/images/logo.jpeg";
+import logoDark from "../../assets/images/logo.jpeg";
 
 //i18n
 import { withTranslation } from "react-i18next";

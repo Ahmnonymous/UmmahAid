@@ -109,6 +109,32 @@ const messagesModel = {
       );
     }
   },
+
+  // Get raw attachment data without normalization (for viewing/downloading)
+  getRawAttachment: async (id, centerId = null) => {
+    try {
+      const scoped = scopeQuery(
+        {
+          text: `SELECT attachment, attachment_filename, attachment_mime, attachment_size FROM ${tableName} WHERE id = $1`,
+          values: [id],
+        },
+        {
+          centerId,
+          isSuperAdmin: centerId === null,
+          column: "center_id",
+          enforce: centerId !== null,
+        },
+      );
+
+      const res = await pool.query(scoped.text, scoped.values);
+      if (!res.rows[0]) return null;
+      return res.rows[0];
+    } catch (err) {
+      throw new Error(
+        `Error fetching raw attachment from ${tableName}: ${err.message}`,
+      );
+    }
+  },
 };
 
 module.exports = messagesModel;

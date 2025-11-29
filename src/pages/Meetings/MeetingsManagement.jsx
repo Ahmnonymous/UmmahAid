@@ -16,6 +16,7 @@ import {
   Button,
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
+import Select from "react-select";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
@@ -37,7 +38,8 @@ const MeetingsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [alert, setAlert] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const { centerId } = useRole();
+  const [employees, setEmployees] = useState([]);
+  const { centerId, isGlobalAdmin } = useRole();
 
   // Detail data states
   const [tasks, setTasks] = useState([]);
@@ -59,6 +61,7 @@ const MeetingsManagement = () => {
   useEffect(() => {
     fetchMeetings();
     fetchLookupData();
+    fetchEmployees();
   }, []);
 
   // Fetch detail data when a meeting is selected
@@ -96,6 +99,26 @@ const MeetingsManagement = () => {
     } catch (error) {
       console.error("Error fetching lookup data:", error);
       showAlert("Failed to fetch lookup data", "warning");
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await axiosApi.get(`${API_BASE_URL}/employee`);
+      
+      // Filter employees by center if not global admin
+      const centerEmployees =
+        isGlobalAdmin || centerId === null || centerId === undefined
+          ? response.data
+          : response.data.filter(
+              (employee) =>
+                String(employee.center_id ?? "") === String(centerId ?? "")
+            );
+
+      setEmployees(centerEmployees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      showAlert("Failed to fetch employees", "warning");
     }
   };
 
@@ -200,7 +223,7 @@ const MeetingsManagement = () => {
       resetCreateForm({
         Meeting_Date: "",
         Conducted_By: "",
-        In_Attendance: "",
+        In_Attendance: [],
         Guests: "",
         Health_Discussions: "",
         Safety_Discussions: "",
@@ -215,10 +238,28 @@ const MeetingsManagement = () => {
 
   const onCreateSubmit = async (data) => {
     try {
+      // Get employee name for conducted_by (now it's just an ID)
+      const conductedByEmployee = employees.find(emp => emp.id === data.Conducted_By);
+      const conductedByName = conductedByEmployee 
+        ? `${conductedByEmployee.name} ${conductedByEmployee.surname}`.trim()
+        : "";
+
+      // Get employee names for in_attendance
+      const inAttendanceIds = Array.isArray(data.In_Attendance) 
+        ? data.In_Attendance.map(item => item?.value || item)
+        : [];
+      const inAttendanceNames = inAttendanceIds
+        .map(id => {
+          const emp = employees.find(e => e.id === id);
+          return emp ? `${emp.name} ${emp.surname}`.trim() : null;
+        })
+        .filter(Boolean)
+        .join(", ");
+
       const payload = {
         meeting_date: data.Meeting_Date,
-        conducted_by: data.Conducted_By,
-        in_attendance: data.In_Attendance,
+        conducted_by: conductedByName,
+        in_attendance: inAttendanceNames,
         guests: data.Guests,
         health_discussions: data.Health_Discussions,
         safety_discussions: data.Safety_Discussions,
@@ -302,6 +343,7 @@ const MeetingsManagement = () => {
                   lookupData={lookupData}
                   onUpdate={handleMeetingUpdate}
                   showAlert={showAlert}
+                  employees={employees}
                 />
 
                 {/* Detail Tabs */}
@@ -312,6 +354,7 @@ const MeetingsManagement = () => {
                   lookupData={lookupData}
                   onUpdate={handleDetailUpdate}
                   showAlert={showAlert}
+                  employees={employees}
                 />
               </>
             ) : (
@@ -362,7 +405,24 @@ const MeetingsManagement = () => {
                       control={createControl}
                       rules={{ required: "Conducted by is required" }}
                       render={({ field }) => (
-                        <Input id="Conducted_By" type="text" invalid={!!createErrors.Conducted_By} {...field} />
+                        <Input
+                          id="Conducted_By"
+                          type="select"
+                          invalid={!!createErrors.Conducted_By}
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const selectedId = e.target.value ? parseInt(e.target.value) : "";
+                            field.onChange(selectedId);
+                          }}
+                        >
+                          <option value="">Select employee...</option>
+                          {employees.map((employee) => (
+                            <option key={employee.id} value={employee.id}>
+                              {`${employee.name} ${employee.surname}`.trim()}
+                            </option>
+                          ))}
+                        </Input>
                       )}
                     />
                     {createErrors.Conducted_By && <FormFeedback>{createErrors.Conducted_By.message}</FormFeedback>}
@@ -375,10 +435,126 @@ const MeetingsManagement = () => {
                     <Controller
                       name="In_Attendance"
                       control={createControl}
-                      render={({ field }) => (
-                        <Input id="In_Attendance" type="textarea" rows="2" {...field} />
-                      )}
+                      render={({ field }) => {
+                        const employeeOptions = employees.map(employee => ({
+                          value: employee.id,
+                          label: `${employee.name} ${employee.surname}`.trim(),
+                        }));
+
+                        // Get computed styles for theme-aware colors
+                        const getComputedStyle = () => {
+                          if (typeof window !== 'undefined' && document.documentElement) {
+                            const root = document.documentElement;
+                            const isDark = root.getAttribute('data-bs-theme') === 'dark';
+                            return {
+                              controlBg: isDark ? '#212529' : '#fff',
+                              menuBg: isDark ? '#212529' : '#fff',
+                              inputColor: isDark ? '#fff' : '#000',
+                              placeholderColor: isDark ? '#adb5bd' : '#6c757d',
+                              multiValueBg: isDark ? '#495057' : '#e7f3ff',
+                              multiValueLabelColor: isDark ? '#fff' : '#0066cc',
+                              multiValueRemoveBg: isDark ? '#6c757d' : '#cfe2ff',
+                              multiValueRemoveColor: isDark ? '#fff' : '#0066cc',
+                              borderColor: isDark ? '#495057' : '#ced4da',
+                              hoverBg: isDark ? '#343a40' : '#f8f9fa',
+                            };
+                          }
+                          return {
+                            controlBg: '#fff',
+                            menuBg: '#fff',
+                            inputColor: '#000',
+                            placeholderColor: '#6c757d',
+                            multiValueBg: '#e7f3ff',
+                            multiValueLabelColor: '#0066cc',
+                            multiValueRemoveBg: '#cfe2ff',
+                            multiValueRemoveColor: '#0066cc',
+                            borderColor: '#ced4da',
+                            hoverBg: '#f8f9fa',
+                          };
+                        };
+
+                        const themeColors = getComputedStyle();
+
+                        return (
+                          <Select
+                            {...field}
+                            isMulti
+                            options={employeeOptions}
+                            className="react-select-container"
+                            classNamePrefix="react-select"
+                            placeholder="Select employees..."
+                            value={Array.isArray(field.value) 
+                              ? field.value.map(val => {
+                                  const id = val?.value || val;
+                                  return employeeOptions.find(opt => opt.value === id);
+                                }).filter(Boolean)
+                              : []
+                            }
+                            onChange={(selected) => field.onChange(selected || [])}
+                            styles={{
+                              control: (base, state) => ({
+                                ...base,
+                                backgroundColor: themeColors.controlBg,
+                                borderColor: state.isFocused ? '#86b7fe' : themeColors.borderColor,
+                                boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
+                                '&:hover': {
+                                  borderColor: state.isFocused ? '#86b7fe' : themeColors.borderColor,
+                                },
+                              }),
+                              menu: (base) => ({
+                                ...base,
+                                backgroundColor: themeColors.menuBg,
+                                borderColor: themeColors.borderColor,
+                              }),
+                              input: (base) => ({
+                                ...base,
+                                color: themeColors.inputColor,
+                              }),
+                              placeholder: (base) => ({
+                                ...base,
+                                color: themeColors.placeholderColor,
+                              }),
+                              singleValue: (base) => ({
+                                ...base,
+                                color: themeColors.inputColor,
+                              }),
+                              multiValue: (base) => ({
+                                ...base,
+                                backgroundColor: themeColors.multiValueBg,
+                              }),
+                              multiValueLabel: (base) => ({
+                                ...base,
+                                color: themeColors.multiValueLabelColor,
+                              }),
+                              multiValueRemove: (base) => ({
+                                ...base,
+                                backgroundColor: themeColors.multiValueRemoveBg,
+                                color: themeColors.multiValueRemoveColor,
+                                '&:hover': {
+                                  backgroundColor: themeColors.multiValueRemoveBg,
+                                  color: themeColors.multiValueRemoveColor,
+                                  opacity: 0.8,
+                                },
+                              }),
+                              option: (base, state) => ({
+                                ...base,
+                                backgroundColor: state.isSelected
+                                  ? '#0d6efd'
+                                  : state.isFocused
+                                  ? themeColors.hoverBg
+                                  : themeColors.menuBg,
+                                color: state.isSelected ? '#fff' : themeColors.inputColor,
+                                '&:active': {
+                                  backgroundColor: '#0d6efd',
+                                  color: '#fff',
+                                },
+                              }),
+                            }}
+                          />
+                        );
+                      }}
                     />
+                    <small className="text-muted">Select one or more employees who attended the meeting</small>
                   </FormGroup>
                 </Col>
 
@@ -390,6 +566,84 @@ const MeetingsManagement = () => {
                       control={createControl}
                       render={({ field }) => (
                         <Input id="Guests" type="textarea" rows="2" {...field} />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Health_Discussions">Health Discussions</Label>
+                    <Controller
+                      name="Health_Discussions"
+                      control={createControl}
+                      render={({ field }) => (
+                        <Input id="Health_Discussions" type="textarea" rows="2" {...field} />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Safety_Discussions">Safety Discussions</Label>
+                    <Controller
+                      name="Safety_Discussions"
+                      control={createControl}
+                      render={({ field }) => (
+                        <Input id="Safety_Discussions" type="textarea" rows="2" {...field} />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Quality_Discussions">Quality Discussions</Label>
+                    <Controller
+                      name="Quality_Discussions"
+                      control={createControl}
+                      render={({ field }) => (
+                        <Input id="Quality_Discussions" type="textarea" rows="2" {...field} />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Productivity_Discussions">Productivity Discussions</Label>
+                    <Controller
+                      name="Productivity_Discussions"
+                      control={createControl}
+                      render={({ field }) => (
+                        <Input id="Productivity_Discussions" type="textarea" rows="2" {...field} />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={12}>
+                  <FormGroup>
+                    <Label for="Environment_Discussions">Environment Discussions</Label>
+                    <Controller
+                      name="Environment_Discussions"
+                      control={createControl}
+                      render={({ field }) => (
+                        <Input id="Environment_Discussions" type="textarea" rows="2" {...field} />
+                      )}
+                    />
+                  </FormGroup>
+                </Col>
+
+                <Col md={12}>
+                  <FormGroup>
+                    <Label for="General_Discussion">General Discussion</Label>
+                    <Controller
+                      name="General_Discussion"
+                      control={createControl}
+                      render={({ field }) => (
+                        <Input id="General_Discussion" type="textarea" rows="2" {...field} />
                       )}
                     />
                   </FormGroup>

@@ -5,8 +5,8 @@ import { Col, Container, Form, FormFeedback, Input, Label, Row } from "reactstra
 import * as Yup from "yup";
 import { useFormik } from "formik";
 
-import logoDark from "../../assets/images/logo-dark.png";
-import logoLight from "../../assets/images/logo-light.png";
+import logoDark from "../../assets/images/logo.jpeg";
+import logoLight from "../../assets/images/logo.jpeg";
 import CarouselPage from "./CarouselPage";
 
 const Recoverpw2 = () => {

@@ -134,21 +134,28 @@ const homeVisitController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const record = await homeVisitModel.getById(req.params.id, centerId, isMultiCenter);
+      const record = await homeVisitModel.getRawAttachment(req.params.id, "attachment_1", centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment_1) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_1_mime || "application/octet-stream";
       const filename = record.attachment_1_filename || "attachment_1";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment_1;
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown attachment encoding");
+          }
         } else {
-          throw new Error("Unknown attachment encoding");
+          throw new Error("Invalid attachment data type");
         }
       }
   
@@ -172,22 +179,28 @@ const homeVisitController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const record = await homeVisitModel.getById(req.params.id, centerId, isMultiCenter);
+      const record = await homeVisitModel.getRawAttachment(req.params.id, "attachment_1", centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment_1) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_1_mime || "application/octet-stream";
       const filename = record.attachment_1_filename || "attachment_1";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment_1;
-  
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown attachment encoding");
+          }
         } else {
-          throw new Error("Unknown attachment encoding");
+          throw new Error("Invalid attachment data type");
         }
       }
   
@@ -211,21 +224,28 @@ const homeVisitController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const record = await homeVisitModel.getById(req.params.id, centerId, isMultiCenter);
+      const record = await homeVisitModel.getRawAttachment(req.params.id, "attachment_2", centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment_2) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_2_mime || "application/octet-stream";
       const filename = record.attachment_2_filename || "attachment_2";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment_2;
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown attachment encoding");
+          }
         } else {
-          throw new Error("Unknown attachment encoding");
+          throw new Error("Invalid attachment data type");
         }
       }
   
@@ -249,22 +269,28 @@ const homeVisitController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const record = await homeVisitModel.getById(req.params.id, centerId, isMultiCenter);
+      const record = await homeVisitModel.getRawAttachment(req.params.id, "attachment_2", centerId, isMultiCenter);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment_2) return res.status(404).send("No attachment found");
   
       const mimeType = record.attachment_2_mime || "application/octet-stream";
       const filename = record.attachment_2_filename || "attachment_2";
   
+      // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment_2;
-  
-      if (typeof buffer === "string") {
-        if (buffer.startsWith("\\x")) {
-          buffer = Buffer.from(buffer.slice(2), "hex");
-        } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
-          buffer = Buffer.from(buffer, "base64");
+      
+      // Ensure it's a Buffer
+      if (!Buffer.isBuffer(buffer)) {
+        if (typeof buffer === "string") {
+          if (buffer.startsWith("\\x")) {
+            buffer = Buffer.from(buffer.slice(2), "hex");
+          } else if (/^[A-Za-z0-9+/=]+$/.test(buffer)) {
+            buffer = Buffer.from(buffer, "base64");
+          } else {
+            throw new Error("Unknown attachment encoding");
+          }
         } else {
-          throw new Error("Unknown attachment encoding");
+          throw new Error("Invalid attachment data type");
         }
       }
   

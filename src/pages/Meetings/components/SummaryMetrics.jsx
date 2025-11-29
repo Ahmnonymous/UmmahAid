@@ -3,37 +3,16 @@ import { Row, Col, Card, CardBody } from "reactstrap";
 
 const SummaryMetrics = ({ meetings, tasks }) => {
   // Calculate metrics
-  const totalMeetings = meetings.length;
-  
-  const recentMeetings = meetings.filter((meeting) => {
-    const meetingDate = new Date(meeting.meeting_date);
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    return meetingDate >= threeMonthsAgo;
-  }).length;
-
   const totalTasks = tasks.length;
 
   const completedTasks = tasks.filter(task => 
-    task.status && String(task.status).toLowerCase() === "1" || 
-    (task.status_name && task.status_name.toLowerCase() === "complete")
+    task.status && (String(task.status).toLowerCase() === "1" || 
+    (task.status_name && task.status_name.toLowerCase() === "complete"))
   ).length;
 
+  const incompleteTasks = totalTasks - completedTasks;
+
   const metrics = [
-    {
-      title: "Total Meetings",
-      value: totalMeetings,
-      icon: "bx-calendar",
-      color: "primary",
-      bgColor: "#556ee6",
-    },
-    {
-      title: "Recent (3M)",
-      value: recentMeetings,
-      icon: "bx-time-five",
-      color: "info",
-      bgColor: "#50a5f1",
-    },
     {
       title: "Total Tasks",
       value: totalTasks,
@@ -42,19 +21,19 @@ const SummaryMetrics = ({ meetings, tasks }) => {
       bgColor: "#f1b44c",
     },
     {
-      title: "Completed Tasks",
-      value: completedTasks,
-      icon: "bx-check-circle",
-      color: "success",
-      bgColor: "#34c38f",
+      title: "Incomplete Tasks",
+      value: incompleteTasks,
+      icon: "bx-x-circle",
+      color: "danger",
+      bgColor: "#f46a6a",
     },
   ];
 
   return (
-    <Row>
+    <Row className="g-3 mb-4">
       {metrics.map((metric, index) => (
-        <Col xl={3} md={6} sm={12} key={index}>
-          <Card className="mini-stats-wid mb-3">
+        <Col xl={6} md={6} sm={12} key={index}>
+          <Card className="mini-stats-wid mb-0 h-100">
             <CardBody>
               <div className="d-flex">
                 <div className="flex-grow-1">

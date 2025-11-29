@@ -11,8 +11,8 @@ import { useFormik } from "formik";
 
 // import images
 import profile from "../../assets/images/profile-img.png";
-import logo from "../../assets/images/logo.svg";
-import lightlogo from "../../assets/images/logo-light.svg";
+import logo from "../../assets/images/logo.jpeg";
+import lightlogo from "../../assets/images/logo.jpeg";
 
 const Login = () => {
   const [show, setShow] = useState(false);

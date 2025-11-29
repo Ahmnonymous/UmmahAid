@@ -16,8 +16,8 @@ import { Link } from "react-router-dom";
 
 // import images
 import profileImg from "../../assets/images/profile-img.png";
-import logo from "../../assets/images/logo.svg";
-import lightlogo from "../../assets/images/logo-light.svg";
+import logo from "../../assets/images/logo.jpeg";
+import lightlogo from "../../assets/images/logo.jpeg";
 
 const Register = () => {
   document.title = "Register | UmmahAid - Admin & Dashboard";
