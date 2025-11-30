@@ -19,16 +19,20 @@ const normalizeFiles = (records = []) =>
   });
 
 const personalFilesModel = {
-  getAll: async (centerId = null) => {
+  getAll: async (username = null) => {
     try {
-      const scoped = scopeQuery(`SELECT * FROM ${tableName}`, {
-        centerId,
-        isSuperAdmin: centerId === null,
-        column: "center_id",
-        enforce: centerId !== null,
-      });
+      let text = `SELECT * FROM ${tableName}`;
+      const values = [];
+      
+      // ✅ Filter by created_by (username) - each user sees only their own files
+      if (username) {
+        text += ` WHERE "Created_By" = $1`;
+        values.push(username);
+      }
 
-      const res = await pool.query(scoped.text, scoped.values);
+      text += ` ORDER BY "Created_At" DESC`;
+
+      const res = await pool.query(text, values);
       return normalizeFiles(res.rows);
     } catch (err) {
       throw new Error(
@@ -37,22 +41,18 @@ const personalFilesModel = {
     }
   },
 
-  getById: async (id, centerId = null) => {
+  getById: async (id, username = null) => {
     try {
-      const scoped = scopeQuery(
-        {
-          text: `SELECT * FROM ${tableName} WHERE id = $1`,
-          values: [id],
-        },
-        {
-          centerId,
-          isSuperAdmin: centerId === null,
-          column: "center_id",
-          enforce: centerId !== null,
-        },
-      );
+      let text = `SELECT * FROM ${tableName} WHERE id = $1`;
+      const values = [id];
+      
+      // ✅ Filter by created_by (username) - each user sees only their own files
+      if (username) {
+        text += ` AND "Created_By" = $2`;
+        values.push(username);
+      }
 
-      const res = await pool.query(scoped.text, scoped.values);
+      const res = await pool.query(text, values);
       if (!res.rows[0]) return null;
       return normalizeFiles(res.rows)[0];
     } catch (err) {
@@ -62,22 +62,18 @@ const personalFilesModel = {
     }
   },
 
-  getByIdWithFile: async (id, centerId = null) => {
+  getByIdWithFile: async (id, username = null) => {
     try {
-      const scoped = scopeQuery(
-        {
-          text: `SELECT * FROM ${tableName} WHERE id = $1`,
-          values: [id],
-        },
-        {
-          centerId,
-          isSuperAdmin: centerId === null,
-          column: "center_id",
-          enforce: centerId !== null,
-        },
-      );
+      let text = `SELECT * FROM ${tableName} WHERE id = $1`;
+      const values = [id];
+      
+      // ✅ Filter by created_by (username) - each user sees only their own files
+      if (username) {
+        text += ` AND "Created_By" = $2`;
+        values.push(username);
+      }
 
-      const res = await pool.query(scoped.text, scoped.values);
+      const res = await pool.query(text, values);
       if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {
@@ -98,18 +94,25 @@ const personalFilesModel = {
     }
   },
 
-  update: async (id, fields, centerId = null) => {
-    const existing = await personalFilesModel.getById(id, centerId);
+  update: async (id, fields, username = null) => {
+    const existing = await personalFilesModel.getById(id, username);
     if (!existing) {
       return null;
     }
 
     try {
       const { setClause, values } = buildUpdateFragments(fields);
-      const query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${
-        values.length + 1
-      } RETURNING *`;
-      const res = await pool.query(query, [...values, id]);
+      let query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${values.length + 1}`;
+      const queryValues = [...values, id];
+      
+      // ✅ Filter by created_by (username) - each user can only update their own files
+      if (username) {
+        query += ` AND "Created_By" = $${queryValues.length + 1}`;
+        queryValues.push(username);
+      }
+      
+      query += ` RETURNING *`;
+      const res = await pool.query(query, queryValues);
       if (res.rowCount === 0) return null;
       return normalizeFiles(res.rows)[0];
     } catch (err) {
@@ -117,15 +120,24 @@ const personalFilesModel = {
     }
   },
 
-  delete: async (id, centerId = null) => {
-    const existing = await personalFilesModel.getById(id, centerId);
+  delete: async (id, username = null) => {
+    const existing = await personalFilesModel.getById(id, username);
     if (!existing) {
       return null;
     }
 
     try {
-      const query = `DELETE FROM ${tableName} WHERE id = $1 RETURNING *`;
-      const res = await pool.query(query, [id]);
+      let query = `DELETE FROM ${tableName} WHERE id = $1`;
+      const values = [id];
+      
+      // ✅ Filter by created_by (username) - each user can only delete their own files
+      if (username) {
+        query += ` AND "Created_By" = $2`;
+        values.push(username);
+      }
+      
+      query += ` RETURNING *`;
+      const res = await pool.query(query, values);
       if (res.rowCount === 0) return null;
       return normalizeFiles(res.rows)[0];
     } catch (err) {

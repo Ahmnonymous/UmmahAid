@@ -4,20 +4,9 @@ const fs = require('fs').promises;
 const personalFilesController = {
   getAll: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) sees all, others see only their center
-      let centerId = req.center_id || req.user?.center_id || null;
-      
-      // ✅ Normalize centerId: convert to integer or null
-      if (centerId !== null && centerId !== undefined) {
-        centerId = parseInt(centerId);
-        if (isNaN(centerId)) {
-          centerId = null; // Invalid number becomes null
-        }
-      } else {
-        centerId = null; // Explicitly set to null
-      }
-      
-      const data = await personalFilesModel.getAll(centerId); 
+      // ✅ Each user sees only their own files - filter by created_by (username)
+      const username = req.user?.username || null;
+      const data = await personalFilesModel.getAll(username); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -26,9 +15,9 @@ const personalFilesController = {
   
   getById: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) sees all, others see only their center
-      const centerId = req.center_id || req.user?.center_id || null;
-      const data = await personalFilesModel.getById(req.params.id, centerId); 
+      // ✅ Each user sees only their own files - filter by created_by (username)
+      const username = req.user?.username || null;
+      const data = await personalFilesModel.getById(req.params.id, username); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -116,9 +105,9 @@ const personalFilesController = {
         await fs.unlink(file.path);
       }
       
-      // ✅ App Admin (center_id=null) can update all, others only their center
-      const centerId = req.center_id || req.user?.center_id || null;
-      const data = await personalFilesModel.update(req.params.id, fields, centerId); 
+      // ✅ Each user can only update their own files - filter by created_by (username)
+      const username = req.user?.username || null;
+      const data = await personalFilesModel.update(req.params.id, fields, username); 
       if (!data) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -130,9 +119,9 @@ const personalFilesController = {
   
   delete: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) can delete all, others only their center
-      const centerId = req.center_id || req.user?.center_id || null;
-      const deleted = await personalFilesModel.delete(req.params.id, centerId); 
+      // ✅ Each user can only delete their own files - filter by created_by (username)
+      const username = req.user?.username || null;
+      const deleted = await personalFilesModel.delete(req.params.id, username); 
       if (!deleted) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -144,9 +133,9 @@ const personalFilesController = {
 
   viewFile: async (req, res) => {
     try {
-      // ✅ App Admin (center_id=null) can view all, others only their center
-      const centerId = req.center_id || req.user?.center_id || null;
-      const record = await personalFilesModel.getByIdWithFile(req.params.id, centerId);
+      // ✅ Each user can only view their own files - filter by created_by (username)
+      const username = req.user?.username || null;
+      const record = await personalFilesModel.getByIdWithFile(req.params.id, username);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
@@ -181,9 +170,9 @@ const personalFilesController = {
 
   downloadFile: async (req, res) => {
     try {
-      // ✅ App Admin (center_id=null) can view all, others only their center
-      const centerId = req.center_id || req.user?.center_id || null;
-      const record = await personalFilesModel.getByIdWithFile(req.params.id, centerId);
+      // ✅ Each user can only download their own files - filter by created_by (username)
+      const username = req.user?.username || null;
+      const record = await personalFilesModel.getByIdWithFile(req.params.id, username);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   

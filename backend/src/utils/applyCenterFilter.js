@@ -58,10 +58,35 @@ const ensureInteger = (value) => {
 
 const appendCenterClause = (sql, columnRef, placeholder) => {
   const hasWhere = /\bwhere\b/i.test(sql);
-  if (hasWhere) {
-    return `${sql} AND ${columnRef} = ${placeholder}`;
+  
+  // Check if there's an ORDER BY, GROUP BY, or LIMIT clause
+  const orderByMatch = sql.match(/\bORDER\s+BY\b/i);
+  const groupByMatch = sql.match(/\bGROUP\s+BY\b/i);
+  const limitMatch = sql.match(/\bLIMIT\b/i);
+  
+  // Find the position where we should insert the new condition
+  let insertPosition = sql.length;
+  if (orderByMatch) {
+    insertPosition = Math.min(insertPosition, orderByMatch.index);
   }
-  return `${sql} WHERE ${columnRef} = ${placeholder}`;
+  if (groupByMatch) {
+    insertPosition = Math.min(insertPosition, groupByMatch.index);
+  }
+  if (limitMatch) {
+    insertPosition = Math.min(insertPosition, limitMatch.index);
+  }
+  
+  if (hasWhere) {
+    // Insert AND clause before ORDER BY/GROUP BY/LIMIT
+    const beforeClause = sql.substring(0, insertPosition).trim();
+    const afterClause = sql.substring(insertPosition);
+    return `${beforeClause} AND ${columnRef} = ${placeholder}${afterClause ? ' ' + afterClause : ''}`;
+  }
+  
+  // Insert WHERE clause before ORDER BY/GROUP BY/LIMIT
+  const beforeClause = sql.substring(0, insertPosition).trim();
+  const afterClause = sql.substring(insertPosition);
+  return `${beforeClause} WHERE ${columnRef} = ${placeholder}${afterClause ? ' ' + afterClause : ''}`;
 };
 
 /**
