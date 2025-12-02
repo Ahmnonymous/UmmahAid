@@ -26,11 +26,11 @@ const personalFilesModel = {
       
       // ✅ Filter by created_by (username) - each user sees only their own files
       if (username) {
-        text += ` WHERE "Created_By" = $1`;
+        text += ` WHERE created_by = $1`;
         values.push(username);
       }
 
-      text += ` ORDER BY "Created_At" DESC`;
+      text += ` ORDER BY created_at DESC`;
 
       const res = await pool.query(text, values);
       return normalizeFiles(res.rows);
@@ -48,7 +48,7 @@ const personalFilesModel = {
       
       // ✅ Filter by created_by (username) - each user sees only their own files
       if (username) {
-        text += ` AND "Created_By" = $2`;
+        text += ` AND created_by = $2`;
         values.push(username);
       }
 
@@ -69,7 +69,7 @@ const personalFilesModel = {
       
       // ✅ Filter by created_by (username) - each user sees only their own files
       if (username) {
-        text += ` AND "Created_By" = $2`;
+        text += ` AND created_by = $2`;
         values.push(username);
       }
 
@@ -107,7 +107,7 @@ const personalFilesModel = {
       
       // ✅ Filter by created_by (username) - each user can only update their own files
       if (username) {
-        query += ` AND "Created_By" = $${queryValues.length + 1}`;
+        query += ` AND created_by = $${queryValues.length + 1}`;
         queryValues.push(username);
       }
       
@@ -132,7 +132,7 @@ const personalFilesModel = {
       
       // ✅ Filter by created_by (username) - each user can only delete their own files
       if (username) {
-        query += ` AND "Created_By" = $2`;
+        query += ` AND created_by = $2`;
         values.push(username);
       }
       

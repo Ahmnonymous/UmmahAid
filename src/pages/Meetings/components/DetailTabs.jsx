@@ -19,7 +19,11 @@ const DetailTabs = ({
     }
   };
 
-  const tasksForMeeting = (tasks || []).filter((x) => x.hseq_toolbox_meeting_id === meetingId);
+  // Backend already scopes tasks by meeting_id in
+  // GET /hseqToolboxMeetingTasks?meeting_id=..., so we can use
+  // the tasks array directly without extra filtering that might
+  // fail on type differences (number vs string).
+  const tasksForMeeting = tasks || [];
 
   const tabs = [
     { id: "all", label: "Show All" },

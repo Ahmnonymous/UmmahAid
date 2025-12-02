@@ -1,4 +1,5 @@
 ﻿const hseqToolboxMeetingTasksModel = require('../models/hseqToolboxMeetingTasksModel');
+const hseqToolboxMeetingModel = require('../models/hseqToolboxMeetingModel');
 
 const hseqToolboxMeetingTasksController = {
   getAll: async (req, res) => { 
@@ -36,8 +37,37 @@ const hseqToolboxMeetingTasksController = {
       fields.created_by = username;
       fields.updated_by = username;
       
-      // ✅ Add center_id
-      fields.center_id = req.center_id || req.user?.center_id;
+      // ✅ Determine center_id
+      // Normal users (OrgAdmin, OrgCaseworker, etc.) use their own center_id
+      let centerId = req.center_id || req.user?.center_id || null;
+
+      // AppAdmin / HQ don't have a center_id, so inherit it from the parent meeting
+      if (!centerId) {
+        const meetingId =
+          fields.hseq_toolbox_meeting_id || fields.HSEQ_Toolbox_Meeting_ID;
+
+        if (meetingId) {
+          try {
+            // isMultiCenter = true so scopeQuery won't enforce a center filter
+            const meeting = await hseqToolboxMeetingModel.getById(
+              meetingId,
+              null,
+              true,
+            );
+            if (meeting && meeting.center_id) {
+              centerId = meeting.center_id;
+            }
+          } catch (innerErr) {
+            // If we can't resolve the meeting, fall back to null and let DB validation handle it
+            console.error(
+              "Error resolving center_id from HSEQ_Toolbox_Meeting:",
+              innerErr,
+            );
+          }
+        }
+      }
+
+      fields.center_id = centerId;
       
       const data = await hseqToolboxMeetingTasksModel.create(fields); 
       res.status(201).json(data); 

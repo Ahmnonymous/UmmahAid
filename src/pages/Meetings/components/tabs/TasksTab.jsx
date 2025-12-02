@@ -83,7 +83,13 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert, employees
 
   const getStatusBadge = (statusId) => {
     if (!statusId || !lookupData.taskStatuses) return <Badge color="light">Unknown</Badge>;
-    const status = lookupData.taskStatuses.find(s => s.id === statusId);
+
+    // IDs from backend/lookup may be numbers while the task.status field can be
+    // a string (or vice versa). Normalize both sides to strings before compare
+    // so we always find the correct lookup row.
+    const status = lookupData.taskStatuses.find(
+      (s) => String(s.id) === String(statusId)
+    );
     const statusName = status ? status.name : "Unknown";
 
     switch (statusName?.toLowerCase()) {
@@ -155,7 +161,7 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert, employees
   };
 
   const columns = useMemo(
-    () => [
+  () => [
       {
         header: "Task Description",
         accessorKey: "task_description",
@@ -216,6 +222,43 @@ const TasksTab = ({ meetingId, tasks, lookupData, onUpdate, showAlert, employees
         enableSorting: true,
         enableColumnFilter: false,
         cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Created At",
+        accessorKey: "created_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const value = cell.getValue();
+          if (!value) return "-";
+          const date = new Date(value);
+          return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`;
+        },
+      },
+      {
+        header: "Updated By",
+        accessorKey: "updated_by",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
+        header: "Updated At",
+        accessorKey: "updated_at",
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const value = cell.getValue();
+          if (!value) return "-";
+          const date = new Date(value);
+          return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`;
+        },
       },
     ],
     [lookupData.taskStatuses]

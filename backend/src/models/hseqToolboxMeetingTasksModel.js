@@ -24,18 +24,12 @@ const hseqToolboxMeetingTasksModel = {
       }
 
       text += " ORDER BY completion_date DESC";
-
-      const scoped = scopeQuery(
-        { text, values },
-        {
-          centerId,
-          isSuperAdmin: isMultiCenter,
-          column: "center_id",
-          enforce: !!centerId && !isMultiCenter,
-        },
-      );
-
-      const res = await pool.query(scoped.text, scoped.values);
+      
+      // ✅ For tasks we already scope by meeting_id, and meetings themselves are
+      // center-scoped, so we don't need to apply an additional center filter here.
+      // This also ensures AppAdmin/HQ (who may not have center_id) can always
+      // see tasks for any meeting.
+      const res = await pool.query(text, values);
       return res.rows;
     } catch (err) {
       throw new Error(

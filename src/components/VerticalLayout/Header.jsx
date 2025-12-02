@@ -7,8 +7,12 @@ import { Link } from "react-router-dom";
 // Import menuDropdown
 import ProfileMenu from "../CommonForBoth/TopbarDropdown/ProfileMenu";
 
-import logo from "../../assets/images/logo.jpeg";
-import logoLightSvg from "../../assets/images/logo.jpeg";
+// Brand logos (keep favicon as-is; these only affect in-app headers)
+import ummahAidDark from "../../assets/images/UmmahAid-dark.png";
+import ummahAidLight from "../../assets/images/UmmahAid-light.png";
+
+const logo = ummahAidDark;          // small dark logo
+const logoLightSvg = ummahAidLight; // small light logo
 
 //i18n
 import { withTranslation } from "react-i18next";
@@ -40,13 +44,13 @@ const Header = props => {
             <div className="navbar-brand-box d-lg-none d-md-block">
               <Link to="/" className="logo logo-dark">
                 <span className="logo-sm">
-                  <img src={logo} alt="" height="22" />
+                  <img src={logo} alt="UmmahAid" height="28" />
                 </span>
               </Link>
 
               <Link to="/" className="logo logo-light">
                 <span className="logo-sm">
-                  <img src={logoLightSvg} alt="" height="22" />
+                  <img src={logoLightSvg} alt="UmmahAid" height="28" />
                 </span>
               </Link>
             </div>

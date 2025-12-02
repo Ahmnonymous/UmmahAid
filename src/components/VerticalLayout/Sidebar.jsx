@@ -9,31 +9,44 @@ import SidebarContent from "./SidebarContent";
 
 import { Link } from "react-router-dom";
 
-import logo from "../../assets/images/logo.jpeg";
-import logoLightPng from "../../assets/images/logo.jpeg";
-import logoLightSvg from "../../assets/images/logo.jpeg";
-import logoDark from "../../assets/images/logo.jpeg";
+// Brand logos (keep favicon as-is; these only affect in-app chrome)
+import ummahAidDark from "../../assets/images/UmmahAid-dark.png";
+import ummahAidLight from "../../assets/images/UmmahAid-light.png";
+import { leftSideBarThemeTypes } from "../../constants/layout";
 
 const Sidebar = (props) => {
+  // Decide which logo variant to show based on "Left Sidebar Color Options"
+  const sidebarTheme = props.layout?.leftSideBarTheme;
+  const useLightLogo =
+    sidebarTheme === leftSideBarThemeTypes.DARK ||
+    sidebarTheme === leftSideBarThemeTypes.COLORED ||
+    sidebarTheme === leftSideBarThemeTypes.WINTER ||
+    sidebarTheme === leftSideBarThemeTypes.LADYLIP ||
+    sidebarTheme === leftSideBarThemeTypes.PLUMPLATE ||
+    sidebarTheme === leftSideBarThemeTypes.STRONGBLISS ||
+    sidebarTheme === leftSideBarThemeTypes.GREATWHALE;
+
+  const activeLogo = useLightLogo ? ummahAidLight : ummahAidDark;
+
   return (
     <React.Fragment>
       <div className="vertical-menu">
         <div className="navbar-brand-box">
           <Link to="/" className="logo logo-dark">
             <span className="logo-sm">
-              <img src={logo} alt="" height="22" />
+              <img src={activeLogo} alt="UmmahAid" height="90" />
             </span>
             <span className="logo-lg">
-              <img src={logoDark} alt="" height="17" />
+              <img src={activeLogo} alt="UmmahAid" height="100" />
             </span>
           </Link>
 
           <Link to="/" className="logo logo-light">
             <span className="logo-sm">
-              <img src={logoLightSvg} alt="" height="22" />
+              <img src={activeLogo} alt="UmmahAid" height="90" />
             </span>
             <span className="logo-lg">
-              <img src={logoLightPng} alt="" height="19" />
+              <img src={activeLogo} alt="UmmahAid" height="100" />
             </span>
           </Link>
         </div>
