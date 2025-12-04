@@ -34,19 +34,19 @@ const Sidebar = (props) => {
         <div className="navbar-brand-box">
           <Link to="/" className="logo logo-dark">
             <span className="logo-sm">
-              <img src={activeLogo} alt="UmmahAid" height="90" />
+              <img src={activeLogo} alt="UmmahAid" height="22" />
             </span>
             <span className="logo-lg">
-              <img src={activeLogo} alt="UmmahAid" height="100" />
+              <img src={activeLogo} alt="UmmahAid" height="24" />
             </span>
           </Link>
 
           <Link to="/" className="logo logo-light">
             <span className="logo-sm">
-              <img src={activeLogo} alt="UmmahAid" height="90" />
+              <img src={activeLogo} alt="UmmahAid" height="22" />
             </span>
             <span className="logo-lg">
-              <img src={activeLogo} alt="UmmahAid" height="100" />
+              <img src={activeLogo} alt="UmmahAid" height="24" />
             </span>
           </Link>
         </div>
