@@ -134,6 +134,26 @@ const SidebarContent = (props) => {
     const metisMenu = new MetisMenu("#side-menu");
     activeMenu();
 
+    // Force Personal section to always be expanded
+    setTimeout(() => {
+      const allLis = Array.from(document.querySelectorAll('#side-menu > li'));
+      const personalLi = allLis.find(li => {
+        const link = li.querySelector('a');
+        return link && link.textContent.includes('Personal');
+      });
+      
+      if (personalLi) {
+        personalLi.classList.add('mm-active');
+        const subMenu = personalLi.querySelector('ul.sub-menu');
+        if (subMenu) {
+          subMenu.classList.add('mm-show');
+          subMenu.style.display = 'block';
+          // Prevent MetisMenu from collapsing it
+          subMenu.setAttribute('data-keep-open', 'true');
+        }
+      }
+    }, 100);
+
     // Cleanup on component unmount
     return () => {
       metisMenu.dispose();
@@ -286,39 +306,50 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Lookup Setup - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
+            {/* ✅ Personal Section - Always open */}
+            {(canAccessNav("filemanager") || canAccessNav("chat") || canAccessNav("policy")) && (
+              <li className="mm-active">
+                <Link to="/#" style={{ pointerEvents: "none", cursor: "default" }}>
+                  <i className="bx bx-user"></i>
+                  <span>{props.t("Personal")}</span>
+                </Link>
+                <ul className="sub-menu mm-show" aria-expanded="true" style={{ display: "block" }}>
+                  {canAccessNav("filemanager") && (
+                    <li>
+                      <Link to="/FileManager">
+                        <i className="bx bx-folder"></i>
+                        <span>{props.t("File Manager")}</span>
+                      </Link>
+                    </li>
+                  )}
+
+                  {canAccessNav("chat") && (
+                    <li>
+                      <Link to="/chat">
+                        <i className="bx bx-chat"></i>
+                        <span>{props.t("Chat")}</span>
+                      </Link>
+                    </li>
+                  )}
+
+                  {canAccessNav("policy") && (
+                    <li>
+                      <Link to="/policy-library">
+                        <i className="bx bx-file-blank"></i>
+                        <span>{props.t("Policy & Procedure")}</span>
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </li>
+            )}
+
+            {/* ✅ Administration - App Admin, HQ, Org Admin (Org Executive and Caseworkers excluded) */}
             {canAccessNav("lookups") && (
               <li>
                 <Link to="/lookups">
                   <i className="bx bx-list-ul"></i>
-                  <span>{props.t("Lookup Setup")}</span>
-                </Link>
-              </li>
-            )}
-
-            {canAccessNav("filemanager") && (
-              <li>
-                <Link to="/FileManager">
-                  <i className="bx bx-folder"></i>
-                  <span>{props.t("File Manager")}</span>
-                </Link>
-              </li>
-            )}
-
-            {canAccessNav("chat") && (
-              <li>
-                <Link to="/chat">
-                  <i className="bx bx-chat"></i>
-                  <span>{props.t("Chat")}</span>
-                </Link>
-              </li>
-            )}
-
-            {canAccessNav("policy") && (
-              <li>
-                <Link to="/policy-library">
-                  <i className="bx bx-file-blank"></i>
-                  <span>{props.t("Policy & Procedure")}</span>
+                  <span>{props.t("Administration")}</span>
                 </Link>
               </li>
             )}
