@@ -1,0 +1,63 @@
+{
+  "items": [
+    {
+      "distribution_id": 2,
+      "product": 1,
+      "qty": 1,
+      "created_by": "AMEER",
+      "datestamp": "2025-08-13T00:00:00Z",
+      "file_number": 66666
+    },
+    {
+      "distribution_id": 21,
+      "product": 3,
+      "qty": 1,
+      "created_by": "HAMZA",
+      "datestamp": "2025-08-27T00:00:00Z",
+      "file_number": 66666
+    },
+    {
+      "distribution_id": 5,
+      "product": 3,
+      "qty": 1,
+      "created_by": "HAMZA",
+      "datestamp": "2025-08-13T00:00:00Z",
+      "file_number": 66666
+    },
+    {
+      "distribution_id": 1,
+      "product": 1,
+      "qty": 7,
+      "created_by": "HAMZA",
+      "datestamp": "2025-08-12T00:00:00Z",
+      "file_number": 1
+    },
+    {
+      "distribution_id": 3,
+      "product": 1,
+      "qty": 2,
+      "created_by": "HAMZA",
+      "datestamp": "2025-08-13T00:00:00Z",
+      "file_number": 66666
+    },
+    {
+      "distribution_id": 4,
+      "product": 3,
+      "qty": 11,
+      "created_by": "HAMZA",
+      "datestamp": "2025-08-13T00:00:00Z",
+      "file_number": 66666
+    },
+    {
+      "distribution_id": 41,
+      "product": 21,
+      "qty": 3,
+      "created_by": "HAMZA",
+      "datestamp": "2025-09-04T00:00:00Z",
+      "file_number": 66666
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/GOOD_DISTRIBUTION"
+  }
+}

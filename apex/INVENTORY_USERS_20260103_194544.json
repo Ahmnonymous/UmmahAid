@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "user_id": 1,
+      "username": "AMEER",
+      "password": "C959D020B87D91DC97FB3FB309EB4AAA",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "AMEER",
+      "surname": "AMEER"
+    },
+    {
+      "user_id": 2,
+      "username": "ARIFF",
+      "password": "A56784CEC8B08578B01FE04DBC014FE5",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "ARIFF",
+      "surname": "ARIFF"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/INVENTORY_USERS"
+  }
+}

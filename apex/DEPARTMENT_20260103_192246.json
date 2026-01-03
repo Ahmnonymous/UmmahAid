@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "department_id": 2,
+      "department": "Finance"
+    },
+    {
+      "department_id": 1,
+      "department": "Welfare"
+    },
+    {
+      "department_id": 3,
+      "department": "Administration"
+    },
+    {
+      "department_id": 4,
+      "department": "Development"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/DEPARTMENT"
+  }
+}

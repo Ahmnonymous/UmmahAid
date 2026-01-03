@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "qualification_id": 2,
+      "qualification": "Matric"
+    },
+    {
+      "qualification_id": 22,
+      "qualification": "Grade 1 - 7"
+    },
+    {
+      "qualification_id": 3,
+      "qualification": "Diploma"
+    },
+    {
+      "qualification_id": 5,
+      "qualification": "Honor Degree"
+    },
+    {
+      "qualification_id": 1,
+      "qualification": "Incomplete School"
+    },
+    {
+      "qualification_id": 4,
+      "qualification": "Degree"
+    },
+    {
+      "qualification_id": 21,
+      "qualification": "No Schooling"
+    },
+    {
+      "qualification_id": 23,
+      "qualification": "Grade 8 - 12"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/QUALIFICATIONS"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "id": 22,
+      "donor_name": "Muslim Prison Board (MPB)",
+      "address": "3 Gem Towers, 98 Overport Dr, Durban, 40",
+      "contact_name": "Cassim Jadwat ",
+      "contact_cell": "0823456156",
+      "email_address": "info@mpbkzn.org",
+      "industry": "Welfare ",
+      "masjid": null,
+      "opentoemployees": "No",
+      "relationshiptoentity": "Employee",
+      "createdby": "HAMZA"
+    },
+    {
+      "id": 21,
+      "donor_name": "Freedom Stationary",
+      "address": null,
+      "contact_name": null,
+      "contact_cell": null,
+      "email_address": null,
+      "industry": null,
+      "masjid": null,
+      "opentoemployees": null,
+      "relationshiptoentity": null,
+      "createdby": "HAMZA"
+    },
+    {
+      "id": 1,
+      "donor_name": "Willowton",
+      "address": "23 Sirkon",
+      "contact_name": "Essa",
+      "contact_cell": "078362008",
+      "email_address": "Luqiez.03@gmail.com",
+      "industry": "Manufacturing",
+      "masjid": "La Mercy",
+      "opentoemployees": "Yes",
+      "relationshiptoentity": "Owner",
+      "createdby": "HAMZA"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/DONOR_DETAILS"
+  }
+}

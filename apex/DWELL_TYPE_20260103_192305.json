@@ -1,0 +1,43 @@
+{
+  "items": [
+    {
+      "dwell_type_id": 1,
+      "dwell_type": "Backroom(s) (brick)"
+    },
+    {
+      "dwell_type_id": 4,
+      "dwell_type": "Own House /Flat"
+    },
+    {
+      "dwell_type_id": 8,
+      "dwell_type": "None"
+    },
+    {
+      "dwell_type_id": 2,
+      "dwell_type": "Hostel / Hotel"
+    },
+    {
+      "dwell_type_id": 3,
+      "dwell_type": "Old-Age home"
+    },
+    {
+      "dwell_type_id": 5,
+      "dwell_type": "Rented House /Flat"
+    },
+    {
+      "dwell_type_id": 21,
+      "dwell_type": "Homeless on Street"
+    },
+    {
+      "dwell_type_id": 6,
+      "dwell_type": "Shack"
+    },
+    {
+      "dwell_type_id": 7,
+      "dwell_type": "Shelter"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/DWELL_TYPE"
+  }
+}

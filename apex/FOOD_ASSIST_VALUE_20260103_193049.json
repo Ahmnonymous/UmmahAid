@@ -1,0 +1,43 @@
+{
+  "items": [
+    {
+      "value_id": 1,
+      "food_assistance": 1,
+      "value_date": "2023-06-07T00:00:00Z",
+      "value": 744.88
+    },
+    {
+      "value_id": 2,
+      "food_assistance": 2,
+      "value_date": "2023-06-13T00:00:00Z",
+      "value": 893.33
+    },
+    {
+      "value_id": 21,
+      "food_assistance": 22,
+      "value_date": "2023-07-08T00:00:00Z",
+      "value": 516.36
+    },
+    {
+      "value_id": 22,
+      "food_assistance": 21,
+      "value_date": "2023-07-08T00:00:00Z",
+      "value": 178.12
+    },
+    {
+      "value_id": 41,
+      "food_assistance": 41,
+      "value_date": "2023-07-31T00:00:00Z",
+      "value": 750
+    },
+    {
+      "value_id": 42,
+      "food_assistance": 42,
+      "value_date": "2023-07-31T00:00:00Z",
+      "value": 603.3
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/FOOD_ASSIST_VALUE"
+  }
+}

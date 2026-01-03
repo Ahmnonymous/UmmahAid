@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "category_id": 1,
+      "product_category": "Baking"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/PRODUCT_CATEGORY"
+  }
+}

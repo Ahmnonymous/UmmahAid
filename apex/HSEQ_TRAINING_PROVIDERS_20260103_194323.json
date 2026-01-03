@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "institute_name": "Mancosa",
+      "contact_person": "Belal",
+      "contact_number": 783672009,
+      "email_addrress": "Luqiez.03@gmail.com",
+      "seta_number": 232323,
+      "address": "23 Samora Road",
+      "created_by": "HAMZA",
+      "trainers_timestamp": null
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/HSEQ_TRAINING_PROVIDERS"
+  }
+}

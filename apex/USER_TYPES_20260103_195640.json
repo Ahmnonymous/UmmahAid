@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "type_id": 2,
+      "user_type": "Approver 1"
+    },
+    {
+      "type_id": 21,
+      "user_type": "Data Entry Person "
+    },
+    {
+      "type_id": 5,
+      "user_type": "Data Entry Person"
+    },
+    {
+      "type_id": 1,
+      "user_type": "Administrator"
+    },
+    {
+      "type_id": 3,
+      "user_type": "Approver 2"
+    },
+    {
+      "type_id": 4,
+      "user_type": "Approver 3"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/USER_TYPES"
+  }
+}

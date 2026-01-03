@@ -1,0 +1,179 @@
+{
+  "items": [
+    {
+      "skill_id": 221,
+      "skills": "Doctor"
+    },
+    {
+      "skill_id": 321,
+      "skills": "Pilot"
+    },
+    {
+      "skill_id": 341,
+      "skills": "Gardner"
+    },
+    {
+      "skill_id": 281,
+      "skills": "General Factory Work"
+    },
+    {
+      "skill_id": 1,
+      "skills": "Tiler"
+    },
+    {
+      "skill_id": 5,
+      "skills": "Plumber"
+    },
+    {
+      "skill_id": 9,
+      "skills": "Fork Lift Driver"
+    },
+    {
+      "skill_id": 13,
+      "skills": "Home Industry"
+    },
+    {
+      "skill_id": 15,
+      "skills": "Hospitality"
+    },
+    {
+      "skill_id": 16,
+      "skills": "Computer Literate "
+    },
+    {
+      "skill_id": 17,
+      "skills": "Sewing"
+    },
+    {
+      "skill_id": 19,
+      "skills": "Welding"
+    },
+    {
+      "skill_id": 42,
+      "skills": "Alim"
+    },
+    {
+      "skill_id": 43,
+      "skills": "Secretarial"
+    },
+    {
+      "skill_id": 20,
+      "skills": "Mechanic"
+    },
+    {
+      "skill_id": 53,
+      "skills": "Sales"
+    },
+    {
+      "skill_id": 44,
+      "skills": "Child Care"
+    },
+    {
+      "skill_id": 46,
+      "skills": "Shop Assistant"
+    },
+    {
+      "skill_id": 48,
+      "skills": "Supervisory"
+    },
+    {
+      "skill_id": 52,
+      "skills": "Cashier"
+    },
+    {
+      "skill_id": 2,
+      "skills": "Electrician"
+    },
+    {
+      "skill_id": 3,
+      "skills": "Domestic"
+    },
+    {
+      "skill_id": 4,
+      "skills": "Care Giver"
+    },
+    {
+      "skill_id": 6,
+      "skills": "Driver"
+    },
+    {
+      "skill_id": 7,
+      "skills": "Admin/Reception"
+    },
+    {
+      "skill_id": 8,
+      "skills": "Call Centre"
+    },
+    {
+      "skill_id": 10,
+      "skills": "Warehousing"
+    },
+    {
+      "skill_id": 11,
+      "skills": "Sales & Marketing"
+    },
+    {
+      "skill_id": 12,
+      "skills": "Data Capturer"
+    },
+    {
+      "skill_id": 14,
+      "skills": "Security"
+    },
+    {
+      "skill_id": 18,
+      "skills": "Culinary"
+    },
+    {
+      "skill_id": 21,
+      "skills": "Panel Beater"
+    },
+    {
+      "skill_id": 41,
+      "skills": "Teacher"
+    },
+    {
+      "skill_id": 45,
+      "skills": "Barber"
+    },
+    {
+      "skill_id": 47,
+      "skills": "Shipping"
+    },
+    {
+      "skill_id": 49,
+      "skills": "Management"
+    },
+    {
+      "skill_id": 50,
+      "skills": "Printing Company"
+    },
+    {
+      "skill_id": 51,
+      "skills": "CCTV Technician"
+    },
+    {
+      "skill_id": 301,
+      "skills": "Rigger / Truck Drive"
+    },
+    {
+      "skill_id": 241,
+      "skills": "Auto Detailer"
+    },
+    {
+      "skill_id": 242,
+      "skills": "Handy Man"
+    },
+    {
+      "skill_id": 243,
+      "skills": "Fitness Trainer"
+    },
+    {
+      "skill_id": 261,
+      "skills": "Pharmacy Assistant"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/SKILLS"
+  }
+}

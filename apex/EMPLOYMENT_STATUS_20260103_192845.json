@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "status_id": 3,
+      "employment_status": "Student"
+    },
+    {
+      "status_id": 21,
+      "employment_status": "Pensioner"
+    },
+    {
+      "status_id": 61,
+      "employment_status": "Disabled Grant"
+    },
+    {
+      "status_id": 4,
+      "employment_status": "Unemployed"
+    },
+    {
+      "status_id": 41,
+      "employment_status": "Self Employed"
+    },
+    {
+      "status_id": 1,
+      "employment_status": "Full Time Employed"
+    },
+    {
+      "status_id": 2,
+      "employment_status": "Part-Time Employed"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/EMPLOYMENT_STATUS"
+  }
+}

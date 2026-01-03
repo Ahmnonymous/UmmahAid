@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "case_id": 2,
+      "case": "Caution"
+    },
+    {
+      "case_id": 4,
+      "case": "Satisfactory"
+    },
+    {
+      "case_id": 5,
+      "case": "Ignore"
+    },
+    {
+      "case_id": 1,
+      "case": "High Risk"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/CASE_CONDITION"
+  }
+}

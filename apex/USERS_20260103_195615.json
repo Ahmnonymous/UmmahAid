@@ -1,0 +1,187 @@
+{
+  "items": [
+    {
+      "user_id": 101,
+      "username": "LAMEEZ",
+      "password": "39B66E4EFC54621ECA348938B9F6BFBE",
+      "user_type": 5,
+      "employee_id": 1022,
+      "firstname": null,
+      "surname": null
+    },
+    {
+      "user_id": 81,
+      "username": "RAZIA",
+      "password": "DBBCE2C3B4F724E4FC47FB956645AC0E",
+      "user_type": 5,
+      "employee_id": 21,
+      "firstname": null,
+      "surname": null
+    },
+    {
+      "user_id": 1061,
+      "username": "TASNEEM",
+      "password": "859E9138BEB22EC5CCBEE078103FE6F0",
+      "user_type": 1,
+      "employee_id": 41,
+      "firstname": "Tasneem ",
+      "surname": "Nasiri"
+    },
+    {
+      "user_id": 1063,
+      "username": "SARAH",
+      "password": "307BA939C3776F4834178F22EA859596",
+      "user_type": 1,
+      "employee_id": 43,
+      "firstname": "Sarah",
+      "surname": "Phiri"
+    },
+    {
+      "user_id": 1066,
+      "username": "SAMEERA",
+      "password": "4225F3D6FC21661B833496A0D2D0F1D4",
+      "user_type": 1,
+      "employee_id": 44,
+      "firstname": "Sameera",
+      "surname": "Mahomed"
+    },
+    {
+      "user_id": 1062,
+      "username": "RASHIDA",
+      "password": "C1CC29DA9DC4BC648A081826569FD331",
+      "user_type": 1,
+      "employee_id": 42,
+      "firstname": "Rashida",
+      "surname": "Patel"
+    },
+    {
+      "user_id": 1064,
+      "username": "HAMZA",
+      "password": "DB7094106AEF6155E5FB171838F15324",
+      "user_type": 3,
+      "employee_id": 2,
+      "firstname": "Hamza",
+      "surname": "Chinsamy"
+    },
+    {
+      "user_id": 1065,
+      "username": "ARIFF",
+      "password": "A56784CEC8B08578B01FE04DBC014FE5",
+      "user_type": 3,
+      "employee_id": 3,
+      "firstname": "Ariff",
+      "surname": "Sheikh"
+    },
+    {
+      "user_id": 1201,
+      "username": "MUHAMMAD",
+      "password": "C10CBFB86636F42206CF698DBB7B966B",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "Muhammad",
+      "surname": "Bassa"
+    },
+    {
+      "user_id": 1042,
+      "username": "AMEER",
+      "password": "C959D020B87D91DC97FB3FB309EB4AAA",
+      "user_type": 2,
+      "employee_id": 4,
+      "firstname": "Ameer",
+      "surname": "Choonara"
+    },
+    {
+      "user_id": 1101,
+      "username": "KWESI",
+      "password": "F22AE3A4DD535088A80C920A95D7CB35",
+      "user_type": 1,
+      "employee_id": 61,
+      "firstname": null,
+      "surname": null
+    },
+    {
+      "user_id": 1181,
+      "username": "EBENSANT",
+      "password": "88106BA0730A116E4989643BB32AE1CE",
+      "user_type": 3,
+      "employee_id": 1001,
+      "firstname": "EBEN",
+      "surname": "ASAANTE"
+    },
+    {
+      "user_id": 1221,
+      "username": "CRAIG",
+      "password": "84CF451EAFEA525AF6A61B1ED94428D2",
+      "user_type": 3,
+      "employee_id": 121,
+      "firstname": null,
+      "surname": null
+    },
+    {
+      "user_id": 1121,
+      "username": "YASEEN",
+      "password": "5FF6F3E54E0FBEA1EFB1806B01F1B883",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "Yaseen",
+      "surname": "Solanki"
+    },
+    {
+      "user_id": 1067,
+      "username": "LUQMAAN",
+      "password": "FFABB19CE801A54E727968945D119BBA",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "Luqmaan",
+      "surname": "Chimsay"
+    },
+    {
+      "user_id": 1141,
+      "username": "BAKARI",
+      "password": "D197F0B5AEBFEB9AC74D0EA0A431825A",
+      "user_type": 1,
+      "employee_id": 101,
+      "firstname": "Hawa",
+      "surname": "Bakari"
+    },
+    {
+      "user_id": 83,
+      "username": "URAAZ",
+      "password": "9836DF9EC513249C9298E838B93B2B20",
+      "user_type": 3,
+      "employee_id": 1002,
+      "firstname": null,
+      "surname": null
+    },
+    {
+      "user_id": 84,
+      "username": "IRSHAADH",
+      "password": "397D4DD93C1547F57ADA711FDF630269",
+      "user_type": 3,
+      "employee_id": 1003,
+      "firstname": null,
+      "surname": null
+    },
+    {
+      "user_id": 62,
+      "username": "RABIA",
+      "password": "68835ACE342C8E1E6D25F76A03C33DCC",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "Rabia",
+      "surname": "Mbandlwa"
+    },
+    {
+      "user_id": 121,
+      "username": "ZAID",
+      "password": "30A731705DDE39E83DDDF6CFD31DD704",
+      "user_type": null,
+      "employee_id": null,
+      "firstname": "Zaid",
+      "surname": "Mia"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/USERS"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": 41,
+      "meeting_date": "2025-03-12T00:00:00Z",
+      "conducted_by": "Hamza",
+      "in_attendence": "Sameera:Muhammad:Tasneem:Hamza",
+      "guests": "None",
+      "health_discussions": "Asked Team if any issues in building regarding the compromising of their health - \r\nThey all responded No.",
+      "safety_discussions": "TN - Every body has blocked off the aircon - TB Guest coming into the office - The aircon is being switched off - The Staff should not be switching the aircon off rather wear a jersey if feeling cold. Sanitizer to be reintroduced after the Foot and mouth disease outbreak.",
+      "quality_discussions": null,
+      "environment_discussions": "Today Pest Control guys Came without Notification - Hamza was informed Yesterday and did not inform his team.",
+      "general_discussion": "Bassa appreciates the extra hours during Ramadan earning sawaab. Moulana was requested to call Stigligh  yesterday unfortunately did not manage to call guest in Richards Bay. The Call was made today. The Printer is not working properly - Mitabyte to look at the machine.\r\nKPA - Discussion held to be completed and discussed -\r\n9th April 2025 - Renal Day - To Be held at Mariam Bee - Venue Booked in Feb - anticipated 90 Guest - Young, old & Bold - Meals to be provided TBC - Yaseen Manjera & Exotic",
+      "feedback": null,
+      "created_by": "HAMZA",
+      "toolbox_timestamp": null
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/HSEQ_TOOLBOX_MEETING"
+  }
+}

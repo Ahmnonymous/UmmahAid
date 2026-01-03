@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "position_id": 1,
+      "position": "Administrator"
+    },
+    {
+      "position_id": 2,
+      "position": "Accountant"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/POSITION"
+  }
+}

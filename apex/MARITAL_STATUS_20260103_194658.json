@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "status_id": 2,
+      "marital_status": "Nikkah"
+    },
+    {
+      "status_id": 4,
+      "marital_status": "Widow(er)"
+    },
+    {
+      "status_id": 23,
+      "marital_status": "Married (not-Islamic)"
+    },
+    {
+      "status_id": 1,
+      "marital_status": "Single"
+    },
+    {
+      "status_id": 3,
+      "marital_status": "Seperated / Divorced"
+    },
+    {
+      "status_id": 21,
+      "marital_status": "Deserted"
+    },
+    {
+      "status_id": 22,
+      "marital_status": "Living Together"
+    },
+    {
+      "status_id": 24,
+      "marital_status": "Talaaq / Fasakh"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/MARITAL_STATUS"
+  }
+}

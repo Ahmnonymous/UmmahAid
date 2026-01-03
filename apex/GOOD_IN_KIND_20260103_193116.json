@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "product_id": 21,
+      "product": "Wooden Chairs",
+      "description": "Wooden Chairs oak brown",
+      "created_by": null,
+      "datestamp": null,
+      "stock": 27
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/GOOD_IN_KIND"
+  }
+}

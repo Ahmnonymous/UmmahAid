@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "gender_code": "F",
+      "gender": "Female"
+    },
+    {
+      "id": 2,
+      "gender_code": "M",
+      "gender": "Male"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/GENDER"
+  }
+}

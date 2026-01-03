@@ -1,0 +1,247 @@
+{
+  "items": [
+    {
+      "suburb_id": 265,
+      "suburb": "Kenville"
+    },
+    {
+      "suburb_id": 21,
+      "suburb": "Durban North"
+    },
+    {
+      "suburb_id": 23,
+      "suburb": "Shallcross"
+    },
+    {
+      "suburb_id": 25,
+      "suburb": "Umlazi"
+    },
+    {
+      "suburb_id": 26,
+      "suburb": "Umzinyathi"
+    },
+    {
+      "suburb_id": 181,
+      "suburb": "Kokstad"
+    },
+    {
+      "suburb_id": 61,
+      "suburb": "Cato Manor"
+    },
+    {
+      "suburb_id": 63,
+      "suburb": "South Beach"
+    },
+    {
+      "suburb_id": 65,
+      "suburb": "Reservoir Hills"
+    },
+    {
+      "suburb_id": 71,
+      "suburb": "Newlands"
+    },
+    {
+      "suburb_id": 74,
+      "suburb": "Lamontville"
+    },
+    {
+      "suburb_id": 84,
+      "suburb": "Parlock"
+    },
+    {
+      "suburb_id": 85,
+      "suburb": "Marianhill"
+    },
+    {
+      "suburb_id": 86,
+      "suburb": "Berea"
+    },
+    {
+      "suburb_id": 101,
+      "suburb": "Musgrave"
+    },
+    {
+      "suburb_id": 43,
+      "suburb": "Mayville"
+    },
+    {
+      "suburb_id": 83,
+      "suburb": "Sherwood"
+    },
+    {
+      "suburb_id": 102,
+      "suburb": "Amanzimtoti"
+    },
+    {
+      "suburb_id": 1,
+      "suburb": "Durban"
+    },
+    {
+      "suburb_id": 3,
+      "suburb": "Tongaat"
+    },
+    {
+      "suburb_id": 44,
+      "suburb": "Umbilo"
+    },
+    {
+      "suburb_id": 45,
+      "suburb": "Waterloo"
+    },
+    {
+      "suburb_id": 46,
+      "suburb": "North Beach"
+    },
+    {
+      "suburb_id": 62,
+      "suburb": "Sydenham"
+    },
+    {
+      "suburb_id": 64,
+      "suburb": "Wentworth"
+    },
+    {
+      "suburb_id": 68,
+      "suburb": "Umzinto"
+    },
+    {
+      "suburb_id": 69,
+      "suburb": "Springfield"
+    },
+    {
+      "suburb_id": 70,
+      "suburb": "Inanda"
+    },
+    {
+      "suburb_id": 73,
+      "suburb": "Merebank"
+    },
+    {
+      "suburb_id": 75,
+      "suburb": "Chesterville"
+    },
+    {
+      "suburb_id": 76,
+      "suburb": "Umbumbulo"
+    },
+    {
+      "suburb_id": 201,
+      "suburb": "Avoca"
+    },
+    {
+      "suburb_id": 221,
+      "suburb": "Clarendon"
+    },
+    {
+      "suburb_id": 222,
+      "suburb": "Imbali"
+    },
+    {
+      "suburb_id": 223,
+      "suburb": "Northdale"
+    },
+    {
+      "suburb_id": 224,
+      "suburb": "Lester Park"
+    },
+    {
+      "suburb_id": 22,
+      "suburb": "Bonella"
+    },
+    {
+      "suburb_id": 24,
+      "suburb": "Thorn wood"
+    },
+    {
+      "suburb_id": 27,
+      "suburb": "Isipingo"
+    },
+    {
+      "suburb_id": 28,
+      "suburb": "Clare Estate"
+    },
+    {
+      "suburb_id": 161,
+      "suburb": "Umhlatuzana"
+    },
+    {
+      "suburb_id": 66,
+      "suburb": "Pinetown"
+    },
+    {
+      "suburb_id": 67,
+      "suburb": "Savanah Park"
+    },
+    {
+      "suburb_id": 72,
+      "suburb": " Bluff"
+    },
+    {
+      "suburb_id": 81,
+      "suburb": "Umgeni"
+    },
+    {
+      "suburb_id": 121,
+      "suburb": "Austerville"
+    },
+    {
+      "suburb_id": 225,
+      "suburb": "Raisethorpe"
+    },
+    {
+      "suburb_id": 2,
+      "suburb": "Overport"
+    },
+    {
+      "suburb_id": 4,
+      "suburb": "Verulam"
+    },
+    {
+      "suburb_id": 5,
+      "suburb": "Phoenix"
+    },
+    {
+      "suburb_id": 6,
+      "suburb": "Chatsworth"
+    },
+    {
+      "suburb_id": 41,
+      "suburb": "Kwamashu"
+    },
+    {
+      "suburb_id": 47,
+      "suburb": "Morningside"
+    },
+    {
+      "suburb_id": 82,
+      "suburb": "Hillgrove"
+    },
+    {
+      "suburb_id": 141,
+      "suburb": "Asherville"
+    },
+    {
+      "suburb_id": 202,
+      "suburb": "Effingham"
+    },
+    {
+      "suburb_id": 285,
+      "suburb": "Bellair"
+    },
+    {
+      "suburb_id": 245,
+      "suburb": "Mobeni"
+    },
+    {
+      "suburb_id": 305,
+      "suburb": "Stanger"
+    },
+    {
+      "suburb_id": 286,
+      "suburb": "Glenmore"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/TITLE"
+  }
+}

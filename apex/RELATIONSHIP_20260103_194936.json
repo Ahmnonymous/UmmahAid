@@ -1,0 +1,115 @@
+{
+  "items": [
+    {
+      "relation_id": 42,
+      "relationship": "Daughter"
+    },
+    {
+      "relation_id": 81,
+      "relationship": "Son in law"
+    },
+    {
+      "relation_id": 121,
+      "relationship": "Stepmum"
+    },
+    {
+      "relation_id": 122,
+      "relationship": "Stepdad"
+    },
+    {
+      "relation_id": 123,
+      "relationship": "Stepson"
+    },
+    {
+      "relation_id": 124,
+      "relationship": "Stepdaughter"
+    },
+    {
+      "relation_id": 2,
+      "relationship": "Father"
+    },
+    {
+      "relation_id": 6,
+      "relationship": "Sister"
+    },
+    {
+      "relation_id": 61,
+      "relationship": "Ex Wife"
+    },
+    {
+      "relation_id": 83,
+      "relationship": "Grandson"
+    },
+    {
+      "relation_id": 101,
+      "relationship": "Niece"
+    },
+    {
+      "relation_id": 102,
+      "relationship": "Nephew"
+    },
+    {
+      "relation_id": 141,
+      "relationship": "Mother in Law"
+    },
+    {
+      "relation_id": 142,
+      "relationship": "Father in Law "
+    },
+    {
+      "relation_id": 41,
+      "relationship": "Son"
+    },
+    {
+      "relation_id": 43,
+      "relationship": "Domestic"
+    },
+    {
+      "relation_id": 62,
+      "relationship": "Ex Husband"
+    },
+    {
+      "relation_id": 1,
+      "relationship": "Brother"
+    },
+    {
+      "relation_id": 3,
+      "relationship": "GrandParent"
+    },
+    {
+      "relation_id": 4,
+      "relationship": "Cousin"
+    },
+    {
+      "relation_id": 5,
+      "relationship": "Mother"
+    },
+    {
+      "relation_id": 21,
+      "relationship": "Husband"
+    },
+    {
+      "relation_id": 22,
+      "relationship": "Wife"
+    },
+    {
+      "relation_id": 82,
+      "relationship": "Daughter in law"
+    },
+    {
+      "relation_id": 84,
+      "relationship": "Granddaughter"
+    },
+    {
+      "relation_id": 221,
+      "relationship": "Aunty"
+    },
+    {
+      "relation_id": 222,
+      "relationship": "Uncle"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/RELATIONSHIP"
+  }
+}

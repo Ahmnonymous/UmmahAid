@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "status_id": 2,
+      "file_status": "Dormant"
+    },
+    {
+      "status_id": 3,
+      "file_status": "Once Off"
+    },
+    {
+      "status_id": 1,
+      "file_status": "Active"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/FILE_STATUS"
+  }
+}

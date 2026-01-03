@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "language_id": 2,
+      "language": "French"
+    },
+    {
+      "language_id": 1,
+      "language": "English"
+    },
+    {
+      "language_id": 3,
+      "language": "Arabic"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/LANGUAGE"
+  }
+}

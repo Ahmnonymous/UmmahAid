@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "collect_id": 41,
+      "product": 21,
+      "description": null,
+      "qty": 30,
+      "cost": 40,
+      "donor": "Willowton",
+      "received_date": "2025-09-04T00:00:00Z",
+      "collected_by": "Luqmaan"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/GOOD_KIND_RECEIVED"
+  }
+}

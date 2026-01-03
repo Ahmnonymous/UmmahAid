@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "level_id": 1,
+      "mgr_name": "AMEER",
+      "mgr_email": "AMEER@GMAIL.COM",
+      "level_code": 1
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/APPROVAL_LEVELS"
+  }
+}

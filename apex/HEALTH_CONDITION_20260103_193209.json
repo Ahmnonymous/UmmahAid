@@ -1,0 +1,95 @@
+{
+  "items": [
+    {
+      "condition_id": 21,
+      "condition": "Obesity"
+    },
+    {
+      "condition_id": 142,
+      "condition": "Fybromyalgia"
+    },
+    {
+      "condition_id": 22,
+      "condition": "Able bodied"
+    },
+    {
+      "condition_id": 24,
+      "condition": "Amputee"
+    },
+    {
+      "condition_id": 43,
+      "condition": "Mental Health"
+    },
+    {
+      "condition_id": 44,
+      "condition": "Pensioner – No Health Issues"
+    },
+    {
+      "condition_id": 121,
+      "condition": "Hemorrhage"
+    },
+    {
+      "condition_id": 45,
+      "condition": "Chronic - Other"
+    },
+    {
+      "condition_id": 81,
+      "condition": "Substance Abuse - Drugs"
+    },
+    {
+      "condition_id": 141,
+      "condition": "Tumour "
+    },
+    {
+      "condition_id": 3,
+      "condition": "Tuberculosis"
+    },
+    {
+      "condition_id": 4,
+      "condition": "Heart Complications"
+    },
+    {
+      "condition_id": 23,
+      "condition": "Disabled"
+    },
+    {
+      "condition_id": 41,
+      "condition": "Blind"
+    },
+    {
+      "condition_id": 82,
+      "condition": "Substance Abuse - Alcoholic"
+    },
+    {
+      "condition_id": 101,
+      "condition": "Kidney/Dialysis"
+    },
+    {
+      "condition_id": 122,
+      "condition": "Anxiety & Depression"
+    },
+    {
+      "condition_id": 1,
+      "condition": "Aids/HIV"
+    },
+    {
+      "condition_id": 2,
+      "condition": "Cancer"
+    },
+    {
+      "condition_id": 5,
+      "condition": "Diabetes"
+    },
+    {
+      "condition_id": 42,
+      "condition": "Deaf Mute"
+    },
+    {
+      "condition_id": 61,
+      "condition": "Eye Conditions"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/HEALTH_CONDITION"
+  }
+}

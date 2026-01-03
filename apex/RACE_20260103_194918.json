@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "race_id": 1,
+      "race": "African"
+    },
+    {
+      "race_id": 2,
+      "race": "Indian"
+    },
+    {
+      "race_id": 3,
+      "race": "Coloured"
+    },
+    {
+      "race_id": 4,
+      "race": "White"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/RACE"
+  }
+}

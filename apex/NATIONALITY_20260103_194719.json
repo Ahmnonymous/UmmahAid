@@ -1,0 +1,119 @@
+{
+  "items": [
+    {
+      "nationality_id": 4,
+      "nationality": "Angola"
+    },
+    {
+      "nationality_id": 7,
+      "nationality": "Congo"
+    },
+    {
+      "nationality_id": 8,
+      "nationality": "Equatorial Guinea"
+    },
+    {
+      "nationality_id": 10,
+      "nationality": "Kenya"
+    },
+    {
+      "nationality_id": 12,
+      "nationality": "Mozambique"
+    },
+    {
+      "nationality_id": 13,
+      "nationality": "Nigeria"
+    },
+    {
+      "nationality_id": 14,
+      "nationality": "Uganda"
+    },
+    {
+      "nationality_id": 3,
+      "nationality": "Botswana"
+    },
+    {
+      "nationality_id": 6,
+      "nationality": "Central African Republic"
+    },
+    {
+      "nationality_id": 9,
+      "nationality": "Ghana"
+    },
+    {
+      "nationality_id": 81,
+      "nationality": "Egyptian"
+    },
+    {
+      "nationality_id": 1,
+      "nationality": "South African"
+    },
+    {
+      "nationality_id": 15,
+      "nationality": "Pakistan"
+    },
+    {
+      "nationality_id": 61,
+      "nationality": "Ivory Coast"
+    },
+    {
+      "nationality_id": 101,
+      "nationality": "Zimbabwe"
+    },
+    {
+      "nationality_id": 5,
+      "nationality": "Burundi"
+    },
+    {
+      "nationality_id": 11,
+      "nationality": "Malawi"
+    },
+    {
+      "nationality_id": 41,
+      "nationality": "N/A"
+    },
+    {
+      "nationality_id": 62,
+      "nationality": "Sierra Leone"
+    },
+    {
+      "nationality_id": 63,
+      "nationality": "Liberia"
+    },
+    {
+      "nationality_id": 64,
+      "nationality": "Zambia"
+    },
+    {
+      "nationality_id": 2,
+      "nationality": "Lesotho"
+    },
+    {
+      "nationality_id": 21,
+      "nationality": "Tanzania"
+    },
+    {
+      "nationality_id": 121,
+      "nationality": "COMOROS"
+    },
+    {
+      "nationality_id": 221,
+      "nationality": "United Kingdom"
+    },
+    {
+      "nationality_id": 241,
+      "nationality": "Somalian"
+    },
+    {
+      "nationality_id": 281,
+      "nationality": "Ethiopian"
+    },
+    {
+      "nationality_id": 261,
+      "nationality": "Rwanda"
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/NATIONALITY"
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "items": [
+    {
+      "assistance": "Car Repairs",
+      "assist_id": 1
+    },
+    {
+      "assistance": "Business Start Up",
+      "assist_id": 2
+    },
+    {
+      "assistance": "Bursary Chef Classes",
+      "assist_id": 3
+    },
+    {
+      "assistance": "MPB",
+      "assist_id": 4
+    },
+    {
+      "assistance": "Uniform",
+      "assist_id": 5
+    },
+    {
+      "assistance": "Courses-Plumbing",
+      "assist_id": 6
+    },
+    {
+      "assistance": "Courses-Welding",
+      "assist_id": 7
+    },
+    {
+      "assistance": "Courses-Aircon Tech",
+      "assist_id": 8
+    },
+    {
+      "assistance": "Stationary",
+      "assist_id": 9
+    },
+    {
+      "assistance": "Learners Licence",
+      "assist_id": 10
+    },
+    {
+      "assistance": "PDP",
+      "assist_id": 11
+    },
+    {
+      "assistance": "Stock",
+      "assist_id": 12
+    },
+    {
+      "assistance": "Gas",
+      "assist_id": 13
+    },
+    {
+      "assistance": "Rent",
+      "assist_id": 14
+    },
+    {
+      "assistance": "Job Seeking",
+      "assist_id": 15
+    },
+    {
+      "assistance": "Rates & Taxes",
+      "assist_id": 16
+    },
+    {
+      "assistance": "Vouchers",
+      "assist_id": 17
+    },
+    {
+      "assistance": "Debt",
+      "assist_id": 18
+    },
+    {
+      "assistance": "Care Giver",
+      "assist_id": 19
+    },
+    {
+      "assistance": "Medical Assistance",
+      "assist_id": 20
+    },
+    {
+      "assistance": "Driver Licence",
+      "assist_id": 21
+    },
+    {
+      "assistance": "Home Affairs ID",
+      "assist_id": 22
+    },
+    {
+      "assistance": "Appliances",
+      "assist_id": 23
+    },
+    {
+      "assistance": "Frail Care Centre",
+      "assist_id": 24
+    },
+    {
+      "assistance": "Food Hamper",
+      "assist_id": 25
+    },
+    {
+      "assistance": "Counseling",
+      "assist_id": 26
+    },
+    {
+      "assistance": "Utilities W/E/R/L",
+      "assist_id": 27
+    },
+    {
+      "assistance": "Development",
+      "assist_id": 28
+    },
+    {
+      "assistance": "Musafir Travel",
+      "assist_id": 29
+    },
+    {
+      "assistance": "Courses-Electricity",
+      "assist_id": 30
+    },
+    {
+      "assistance": "Courses-Building",
+      "assist_id": 31
+    },
+    {
+      "assistance": "Licence Renewals",
+      "assist_id": 32
+    },
+    {
+      "assistance": "Course-PSIRA (Security)",
+      "assist_id": 33
+    },
+    {
+      "assistance": "Tuition fees",
+      "assist_id": 34
+    },
+    {
+      "assistance": "Meat/Chicken",
+      "assist_id": 35
+    },
+    {
+      "assistance": "Bursary",
+      "assist_id": 36
+    },
+    {
+      "assistance": "Levy",
+      "assist_id": 37
+    },
+    {
+      "assistance": "Travel",
+      "assist_id": 38
+    },
+    {
+      "assistance": "Furniture",
+      "assist_id": 39
+    },
+    {
+      "assistance": "Clothing",
+      "assist_id": 40
+    },
+    {
+      "assistance": "School Fees",
+      "assist_id": 41
+    },
+    {
+      "assistance": "Bread/Milk",
+      "assist_id": 42
+    },
+    {
+      "assistance": "Diapers",
+      "assist_id": 43
+    },
+    {
+      "assistance": "Shelter Accommodation",
+      "assist_id": 44
+    },
+    {
+      "assistance": "Business Assistance",
+      "assist_id": 45
+    },
+    {
+      "assistance": "Home Repairs/Improvement",
+      "assist_id": 46
+    },
+    {
+      "assistance": "Training Course",
+      "assist_id": 47
+    },
+    {
+      "assistance": "Toiletries",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Development Travel",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Sewing Machine",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Follow Up Discussion",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Laptop",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Computer Travel",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Stamp",
+      "assist_id": 48
+    },
+    {
+      "assistance": "Special Dietary Needs",
+      "assist_id": 48
+    }
+  ],
+  "first": {
+    "$ref": "https://gd67d9561edf887-lunaxstudio.adb.af-johannesburg-1.oraclecloudapps.com/ords/sanzaf/apex_to_pg/ASSISTANCE_REQUIRED"
+  }
+}
