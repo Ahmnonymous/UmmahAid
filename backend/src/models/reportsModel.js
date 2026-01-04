@@ -115,6 +115,8 @@ class ReportsModel {
     // Total Financial Assistance Report
     static async getTotalFinancialAssistance(centerId = null, user = {}) {
         try {
+            // ✅ FIXED: Use subqueries to avoid Cartesian product when applicant has multiple records in both tables
+            // This ensures accurate aggregation without double-counting
             let query = `
                 SELECT 
                     ad.name,
@@ -125,9 +127,9 @@ class ReportsModel {
                     ad.employment_status,
                     ad.health,
                     ad.cell_number,
-                    COALESCE(SUM(fa.financial_cost), 0) AS financial_food_assistance,
-                    COALESCE(SUM(fin.financial_amount), 0) AS financial_transactions,
-                    COALESCE(SUM(fa.financial_cost), 0) + COALESCE(SUM(fin.financial_amount), 0) AS total_financial,
+                    COALESCE(fa_totals.food_total, 0) AS financial_food_assistance,
+                    COALESCE(fin_totals.financial_total, 0) AS financial_transactions,
+                    COALESCE(fa_totals.food_total, 0) + COALESCE(fin_totals.financial_total, 0) AS total_financial,
                     cd.organisation_name AS center_name,
                     -- Join with lookup tables for readable names
                     fc.name AS file_condition_name,
@@ -135,8 +137,20 @@ class ReportsModel {
                     es.name AS employment_status_name,
                     hc.name AS health_condition_name
                 FROM applicant_details ad
-                LEFT JOIN food_assistance fa ON fa.file_id = ad.id
-                LEFT JOIN financial_assistance fin ON fin.file_id = ad.id
+                LEFT JOIN (
+                    SELECT 
+                        file_id,
+                        SUM(financial_cost) AS food_total
+                    FROM food_assistance
+                    GROUP BY file_id
+                ) fa_totals ON fa_totals.file_id = ad.id
+                LEFT JOIN (
+                    SELECT 
+                        file_id,
+                        SUM(financial_amount) AS financial_total
+                    FROM financial_assistance
+                    GROUP BY file_id
+                ) fin_totals ON fin_totals.file_id = ad.id
                 LEFT JOIN file_condition fc ON ad.file_condition = fc.id
                 LEFT JOIN file_status fs ON ad.file_status = fs.id
                 LEFT JOIN employment_status es ON ad.employment_status = es.id
@@ -149,11 +163,6 @@ class ReportsModel {
             
             const finalQuery = `
                 ${text}
-                GROUP BY
-                    ad.name, ad.surname, ad.file_number, ad.cell_number,
-                    ad.file_condition, ad.file_status, ad.employment_status, ad.health,
-                    fc.name, fs.name, es.name, hc.name,
-                    cd.organisation_name
                 ORDER BY total_financial DESC
             `;
             

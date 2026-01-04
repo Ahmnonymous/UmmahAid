@@ -199,9 +199,27 @@ const TotalFinancialAssistanceReport = () => {
             <i className="bx bx-sort-down text-primary"></i>;
     };
 
+    // Calculate totals from processed data
     const totalFoodAssistance = processedData.reduce((sum, item) => sum + (parseFloat(item.financial_food_assistance) || 0), 0);
     const totalFinancialTransactions = processedData.reduce((sum, item) => sum + (parseFloat(item.financial_transactions) || 0), 0);
-    const grandTotal = totalFoodAssistance + totalFinancialTransactions;
+    
+    // Calculate grand total from sum of components (for cards and footer)
+    const grandTotalFromComponents = totalFoodAssistance + totalFinancialTransactions;
+    
+    // Also calculate grand total from sum of row totals (for verification)
+    const grandTotalFromRows = processedData.reduce((sum, item) => sum + (parseFloat(item.total_financial) || 0), 0);
+    
+    // Use the component-based calculation for display (should match row totals if backend is correct)
+    const grandTotal = grandTotalFromComponents;
+    
+    // Log warning if there's a discrepancy (for debugging)
+    if (Math.abs(grandTotalFromComponents - grandTotalFromRows) > 0.01) {
+        console.warn('Total Assistance Report: Discrepancy detected between component sum and row totals sum', {
+            fromComponents: grandTotalFromComponents,
+            fromRows: grandTotalFromRows,
+            difference: Math.abs(grandTotalFromComponents - grandTotalFromRows)
+        });
+    }
 
     if (loading) {
         return (
