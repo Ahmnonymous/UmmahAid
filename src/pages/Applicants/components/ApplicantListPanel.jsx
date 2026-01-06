@@ -24,10 +24,10 @@ const ApplicantListPanel = ({
   const navigate = useNavigate();
 
   return (
-    <Card className="border shadow-sm h-100">
-      <CardBody className="p-0 d-flex flex-column">
-        {/* Header */}
-        <div className="p-3 border-bottom">
+    <Card className="border shadow-sm" style={{ height: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
+      <CardBody className="p-0 d-flex flex-column" style={{ height: "100%", overflow: "hidden" }}>
+        {/* Header - Fixed at top */}
+        <div className="p-3 border-bottom flex-shrink-0">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>
               <h6 className="card-title mb-0 fw-semibold font-size-14">
@@ -61,9 +61,9 @@ const ApplicantListPanel = ({
           </div>
         </div>
 
-        {/* Applicant List - Fixed Height Scrollable */}
-        <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0 }}>
-          <div className="flex-grow-1 p-3" style={{ overflowY: "auto", maxHeight: "calc(100vh - 320px)" }}>
+        {/* Applicant List - Scrollable area that takes remaining space */}
+        <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, overflow: "hidden" }}>
+          <div className="flex-grow-1 p-3" style={{ overflowY: "auto", overflowX: "hidden" }}>
             {loading && (
               <div className="text-center py-4">
                 <Spinner color="primary" size="sm" />
@@ -137,9 +137,9 @@ const ApplicantListPanel = ({
             )}
           </div>
           
-          {/* ✅ Pagination Controls */}
+          {/* ✅ Pagination Controls - Fixed at bottom */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="border-top p-2 bg-light">
+            <div className="border-top p-2 bg-light flex-shrink-0">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <small className="text-muted font-size-11">
                   Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
