@@ -7,8 +7,19 @@ const attachmentsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const data = await attachmentsModel.getAll(centerId, isMultiCenter); 
-      res.json(data); 
+      
+      // ✅ Extract pagination and filter parameters
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      const file_id = req.query.file_id ? parseInt(req.query.file_id) : null;
+      
+      const result = await attachmentsModel.getAll(centerId, isMultiCenter, {
+        page,
+        limit,
+        file_id,
+      }); 
+      
+      res.json(result); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
     } 

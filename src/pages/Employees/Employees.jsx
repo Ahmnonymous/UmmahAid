@@ -9,14 +9,16 @@ import TableContainer from "../../components/Common/TableContainer";
 
 // Redux actions
 import { fetchEmployees } from "../../store/employees/actions";
+// ✅ Use normalized selectors for better performance
+import { selectAllEmployees, selectEmployeesLoading, selectEmployeesError } from "../../store/employees/selectors";
 
 const Employees = () => {
   const dispatch = useDispatch();
 
-  // ✅ Select fields separately (prevents memoization warning)
-  const employees = useSelector((state) => state.Employees.employees);
-  const loading = useSelector((state) => state.Employees.loading);
-  const error = useSelector((state) => state.Employees.error);
+  // ✅ Use memoized selectors (only recompute when data changes)
+  const employees = useSelector(selectAllEmployees);
+  const loading = useSelector(selectEmployeesLoading);
+  const error = useSelector(selectEmployeesError);
 
   // Fetch data on mount
   useEffect(() => {

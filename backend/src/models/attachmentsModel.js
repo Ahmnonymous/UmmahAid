@@ -21,17 +21,97 @@ const normalizeFiles = (records = []) =>
   });
 
 const attachmentsModel = {
-  getAll: async (centerId = null, isMultiCenter = false) => {
+  /**
+   * Get all attachments (LEAN - excludes BLOB data for performance)
+   * @param {number|null} centerId - Center ID for filtering
+   * @param {boolean} isMultiCenter - If true, bypass center filtering
+   * @param {object} pagination - { page: number, limit: number, file_id?: number }
+   * @returns {Promise<{data: Array, pagination: Object}>}
+   */
+  getAll: async (centerId = null, isMultiCenter = false, pagination = {}) => {
     try {
-      const scoped = scopeQuery(`SELECT * FROM ${tableName}`, {
-        centerId,
-        isSuperAdmin: isMultiCenter,
-        column: "center_id",
-        enforce: !!centerId && !isMultiCenter,
-      });
+      const { page = 1, limit = 50, file_id = null } = pagination;
+      const offset = (page - 1) * limit;
+      const maxLimit = Math.min(limit, 200); // Cap at 200 items per page
 
-      const res = await pool.query(scoped.text, scoped.values);
-      return normalizeFiles(res.rows);
+      // ✅ CRITICAL: Exclude 'file' (bytea) column from list queries
+      // Only fetch metadata - binary data fetched separately via getRawFile()
+      let baseQuery = `
+        SELECT 
+          id, 
+          file_id, 
+          attachment_name, 
+          attachment_details,
+          file_filename, 
+          file_mime, 
+          file_size,
+          created_by, 
+          created_at, 
+          updated_by, 
+          updated_at, 
+          center_id
+        FROM ${tableName}
+      `;
+
+      const conditions = [];
+      const values = [];
+      let paramIndex = 1;
+
+      // Filter by file_id if provided (for applicant detail views)
+      if (file_id !== null) {
+        conditions.push(`file_id = $${paramIndex}`);
+        values.push(file_id);
+        paramIndex++;
+      }
+
+      // Apply center filtering
+      const scoped = scopeQuery(
+        conditions.length > 0
+          ? { text: baseQuery + ' WHERE ' + conditions.join(' AND '), values }
+          : baseQuery,
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      // Get total count for pagination
+      const countQuery = scoped.text.replace(
+        /SELECT[\s\S]*?FROM/i,
+        'SELECT COUNT(*) as total FROM',
+      );
+      const countRes = await pool.query(countQuery, scoped.values);
+      const total = parseInt(countRes.rows[0]?.total || 0);
+
+      // Add pagination and ordering
+      const finalQuery = `
+        ${scoped.text}
+        ORDER BY created_at DESC
+        LIMIT $${scoped.values.length + 1} OFFSET $${scoped.values.length + 2}
+      `;
+      const finalValues = [...scoped.values, maxLimit, offset];
+
+      const res = await pool.query(finalQuery, finalValues);
+
+      // Return metadata only (no BLOB conversion needed)
+      const data = res.rows.map((row) => ({
+        ...row,
+        file: row.file_filename ? "exists" : null, // Indicate file exists without loading it
+      }));
+
+      return {
+        data,
+        pagination: {
+          page,
+          limit: maxLimit,
+          total,
+          totalPages: Math.ceil(total / maxLimit),
+          hasNext: page * maxLimit < total,
+          hasPrev: page > 1,
+        },
+      };
     } catch (err) {
       throw new Error(
         `Error fetching all records from ${tableName}: ${err.message}`,
@@ -39,11 +119,31 @@ const attachmentsModel = {
     }
   },
 
+  /**
+   * Get attachment by ID (LEAN - excludes BLOB data)
+   * Use getRawFile() if you need the actual file binary
+   */
   getById: async (id, centerId = null, isMultiCenter = false) => {
     try {
       const scoped = scopeQuery(
         {
-          text: `SELECT * FROM ${tableName} WHERE id = $1`,
+          text: `
+            SELECT 
+              id, 
+              file_id, 
+              attachment_name, 
+              attachment_details,
+              file_filename, 
+              file_mime, 
+              file_size,
+              created_by, 
+              created_at, 
+              updated_by, 
+              updated_at, 
+              center_id
+            FROM ${tableName} 
+            WHERE id = $1
+          `,
           values: [id],
         },
         {
@@ -56,7 +156,12 @@ const attachmentsModel = {
 
       const res = await pool.query(scoped.text, scoped.values);
       if (!res.rows[0]) return null;
-      return normalizeFiles(res.rows)[0];
+      
+      // Return metadata only (no BLOB)
+      return {
+        ...res.rows[0],
+        file: res.rows[0].file_filename ? "exists" : null,
+      };
     } catch (err) {
       throw new Error(
         `Error fetching record by ID from ${tableName}: ${err.message}`,

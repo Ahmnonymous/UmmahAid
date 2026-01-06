@@ -8,8 +8,23 @@ const applicantDetailsController = {
       const centerId = req.center_id || req.user?.center_id;
       // ✅ Only App Admin (role 1) bypasses filtering - HQ (role 2) should be filtered by center_id
       const isSuperAdmin = req.isAppAdmin || false; // Only App Admin, NOT HQ
-      const data = await applicantDetailsModel.getAll(centerId, isSuperAdmin); 
-      res.json(data); 
+      
+      // ✅ Extract pagination parameters
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      const sort = req.query.sort || 'created_at';
+      const order = req.query.order || 'desc';
+      const search = req.query.search || null;
+      
+      const result = await applicantDetailsModel.getAll(centerId, isSuperAdmin, {
+        page,
+        limit,
+        sort,
+        order,
+        search,
+      }); 
+      
+      res.json(result); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
     } 

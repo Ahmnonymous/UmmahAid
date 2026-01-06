@@ -1,4 +1,5 @@
 const lookupModel = require('../models/lookupModel');
+const { cacheLookup, invalidateLookup } = require('../services/cacheService');
 
 const lookupTables = {
   Supplier_Category: { orderByName: true },
@@ -60,7 +61,16 @@ const lookupController = {
       if (!tableConfig) {
         return res.status(400).json({ error: 'Invalid lookup table' });
       }
-      const data = await lookupModel.getAll(table, !!tableConfig.orderByName);
+
+      // ✅ Use cache for lookup tables (24 hour TTL - rarely change)
+      // Lookup tables are global (not center-specific), so centerId = null
+      const data = await cacheLookup(
+        table,
+        null, // centerId = null (global lookup)
+        () => lookupModel.getAll(table, !!tableConfig.orderByName),
+        86400 // 24 hours TTL
+      );
+
       res.json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -95,6 +105,10 @@ const lookupController = {
         });
       }
       const data = await lookupModel.create(table, req.body);
+      
+      // ✅ Invalidate cache after creating new lookup entry
+      await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
+      
       res.status(201).json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -115,6 +129,10 @@ const lookupController = {
       }
       const data = await lookupModel.update(table, id, req.body);
       if (!data) return res.status(404).json({ error: 'Not found' });
+      
+      // ✅ Invalidate cache after updating lookup entry
+      await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
+      
       res.json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -135,6 +153,10 @@ const lookupController = {
       }
       const deleted = await lookupModel.delete(table, id);
       if (!deleted) return res.status(404).json({ error: 'Not found' });
+      
+      // ✅ Invalidate cache after deleting lookup entry
+      await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
+      
       res.json({ message: 'Deleted successfully' });
     } catch (err) {
       res.status(500).json({ error: err.message });

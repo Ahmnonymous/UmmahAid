@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Container, Row, Col, Alert } from "reactstrap";
+import { Container, Row, Col, Alert, Spinner } from "reactstrap";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axiosApi from "../../helpers/api_helper";
 import { API_BASE_URL } from "../../helpers/url_helper";
@@ -18,6 +18,19 @@ const ApplicantManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [alert, setAlert] = useState(null);
+  
+  // ✅ Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+  
+  // ✅ Detail loading state (for lazy loading)
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Detail data states
   const [comments, setComments] = useState([]);
@@ -66,20 +79,65 @@ const ApplicantManagement = () => {
     fetchLookupData();
   }, []);
 
-  // Fetch detail data when an applicant is selected
+  // ✅ Lazy load detail data when applicant is selected (with slight delay for better UX)
   useEffect(() => {
     if (selectedApplicant) {
-      fetchApplicantDetails(selectedApplicant.id);
+      // ✅ Small delay to allow UI to update first (perceived performance)
+      const timer = setTimeout(() => {
+        fetchApplicantDetails(selectedApplicant.id);
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [selectedApplicant]);
 
-  const fetchApplicants = async () => {
+  // ✅ Debounced search to avoid too many API calls
+  const [searchTimeout, setSearchTimeout] = useState(null);
+  
+  const fetchApplicants = async (page = 1, search = null) => {
+    // Use provided search or current searchTerm
+    const searchValue = search !== null ? search : searchTerm;
     try {
       setLoading(true);
-      const response = await axiosApi.get(`${API_BASE_URL}/applicantDetails`);
-      setApplicants(response.data || []);
-      if (response.data && response.data.length > 0) {
-        setSelectedApplicant(response.data[0]);
+      
+      // ✅ Build query with pagination and server-side search
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '50',
+      });
+      
+      // ✅ Add search parameter if provided (server-side search)
+      if (searchValue && searchValue.trim()) {
+        params.append('search', searchValue.trim());
+      }
+      
+      const response = await axiosApi.get(`${API_BASE_URL}/applicantDetails?${params.toString()}`);
+      
+      // ✅ Handle new paginated response format: { data: [...], pagination: {...} }
+      const responseData = response.data;
+      const applicantsData = Array.isArray(responseData) 
+        ? responseData 
+        : (responseData?.data || []);
+      
+      // ✅ Update pagination state
+      if (responseData?.pagination) {
+        setPagination({
+          page: responseData.pagination.page || page,
+          limit: responseData.pagination.limit || 50,
+          total: responseData.pagination.total || 0,
+          totalPages: responseData.pagination.totalPages || 0,
+          hasNext: responseData.pagination.hasNext || false,
+          hasPrev: responseData.pagination.hasPrev || false,
+        });
+      }
+      
+      setApplicants(applicantsData);
+      
+      // ✅ Only auto-select first applicant if no applicant is currently selected
+      if (applicantsData && applicantsData.length > 0 && !selectedApplicant) {
+        setSelectedApplicant(applicantsData[0]);
+      } else if (applicantsData.length === 0) {
+        setSelectedApplicant(null);
       }
     } catch (error) {
       console.error("Error fetching applicants:", error);
@@ -88,6 +146,32 @@ const ApplicantManagement = () => {
       setLoading(false);
     }
   };
+  
+  // ✅ Debounced search handler
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // ✅ Debounce search: wait 500ms before fetching
+    const timeout = setTimeout(() => {
+      fetchApplicants(1, value); // Reset to page 1 on search
+    }, 500);
+    
+    setSearchTimeout(timeout);
+  };
+  
+  // ✅ Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   const fetchLookupData = async () => {
     try {
@@ -182,7 +266,12 @@ const ApplicantManagement = () => {
   };
 
   const fetchApplicantDetails = async (applicantId) => {
+    if (!applicantId) return;
+    
     try {
+      setDetailsLoading(true);
+      
+      // ✅ Fetch detail data in parallel (optimized)
       const [
         commentsRes,
         tasksRes,
@@ -194,33 +283,58 @@ const ApplicantManagement = () => {
         programsRes,
         financialAssessmentRes,
       ] = await Promise.all([
-        axiosApi.get(`${API_BASE_URL}/comments?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/tasks?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/relationships?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/homeVisit?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/financialAssistance?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/foodAssistance?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/attachments?file_id=${applicantId}`),
-        axiosApi.get(`${API_BASE_URL}/programs?person_trained_id=${applicantId}`),
+        axiosApi.get(`${API_BASE_URL}/comments?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/tasks?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/relationships?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/homeVisit?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/financialAssistance?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/foodAssistance?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/attachments?file_id=${applicantId}&page=1&limit=50`),
+        axiosApi.get(`${API_BASE_URL}/programs?person_trained_id=${applicantId}&page=1&limit=50`),
         axiosApi.get(`${API_BASE_URL}/financialAssessment?file_id=${applicantId}`),
       ]);
 
-      setComments(commentsRes.data || []);
-      setTasks(tasksRes.data || []);
-      setRelationships(relationshipsRes.data || []);
-      setHomeVisits(homeVisitsRes.data || []);
-      setFinancialAssistance(financialAssistanceRes.data || []);
-      setFoodAssistance(foodAssistanceRes.data || []);
-      setAttachments(attachmentsRes.data || []);
-      setPrograms(programsRes.data || []);
-      setFinancialAssessment(
-        financialAssessmentRes.data && financialAssessmentRes.data.length > 0
-          ? financialAssessmentRes.data[0]
-          : null
-      );
+      // ✅ Helper function to extract data from paginated or array response
+      const extractData = (responseData) => {
+        if (Array.isArray(responseData)) {
+          return responseData;
+        }
+        if (responseData?.data && Array.isArray(responseData.data)) {
+          return responseData.data;
+        }
+        return [];
+      };
+
+      setComments(extractData(commentsRes.data));
+      setTasks(extractData(tasksRes.data));
+      setRelationships(extractData(relationshipsRes.data));
+      setHomeVisits(extractData(homeVisitsRes.data));
+      setFinancialAssistance(extractData(financialAssistanceRes.data));
+      setFoodAssistance(extractData(foodAssistanceRes.data));
+      setAttachments(extractData(attachmentsRes.data));
+      setPrograms(extractData(programsRes.data));
+      
+      // Financial assessment might be an object or array
+      const assessmentData = financialAssessmentRes.data;
+      if (Array.isArray(assessmentData)) {
+        setFinancialAssessment(assessmentData.length > 0 ? assessmentData[0] : null);
+      } else if (assessmentData?.data && Array.isArray(assessmentData.data)) {
+        setFinancialAssessment(assessmentData.data.length > 0 ? assessmentData.data[0] : null);
+      } else {
+        setFinancialAssessment(assessmentData || null);
+      }
     } catch (error) {
       console.error("Error fetching applicant details:", error);
       showAlert("Failed to fetch applicant details", "warning");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+  
+  // ✅ Handle pagination
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchApplicants(newPage, searchTerm);
     }
   };
 
@@ -293,11 +407,11 @@ const ApplicantManagement = () => {
   };
 
   const handleApplicantUpdate = useCallback(() => {
-    fetchApplicants();
+    fetchApplicants(pagination.page, searchTerm);
     if (selectedApplicant) {
       fetchApplicantDetails(selectedApplicant.id);
     }
-  }, [selectedApplicant]);
+  }, [selectedApplicant, pagination.page, searchTerm]);
 
   const handleDetailUpdate = useCallback(() => {
     if (selectedApplicant) {
@@ -305,15 +419,12 @@ const ApplicantManagement = () => {
     }
   }, [selectedApplicant]);
 
-  const filteredApplicants = applicants.filter((applicant) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (applicant.name || "").toLowerCase().includes(searchLower) ||
-      (applicant.surname || "").toLowerCase().includes(searchLower) ||
-      (applicant.file_number || "").toLowerCase().includes(searchLower) ||
-      (applicant.id_number || "").toLowerCase().includes(searchLower)
-    );
-  });
+  // ✅ Server-side search is now handled in fetchApplicants
+  // No need for client-side filtering when using server-side search
+  // Keep filteredApplicants for backward compatibility (if search is empty, show all)
+  const filteredApplicants = searchTerm 
+    ? applicants // Server already filtered, just use as-is
+    : applicants;
 
   return (
     <div className="page-content">
@@ -353,9 +464,11 @@ const ApplicantManagement = () => {
               selectedApplicant={selectedApplicant}
               onSelectApplicant={handleApplicantSelect}
               searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
+              onSearchChange={handleSearchChange}
               loading={loading}
-              onRefresh={fetchApplicants}
+              onRefresh={() => fetchApplicants(pagination.page, searchTerm)}
+              pagination={pagination}
+              onPageChange={handlePageChange}
             />
           </Col>
 
@@ -363,6 +476,13 @@ const ApplicantManagement = () => {
           <Col lg={9}>
             {selectedApplicant ? (
               <>
+                {detailsLoading && (
+                  <div className="text-center py-3 mb-3">
+                    <Spinner color="primary" size="sm" />
+                    <span className="ms-2 text-muted">Loading details...</span>
+                  </div>
+                )}
+                
                 {/* Summary Metrics */}
                 <SummaryMetrics
                   applicantId={selectedApplicant.id}

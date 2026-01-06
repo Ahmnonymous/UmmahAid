@@ -72,6 +72,7 @@
     "react-switch": "^7.0.0",
     "react-table": "^7.8.0",
     "react-toastify": "^10.0.5",
+    "react-window": "^2.2.4",
     "reactstrap": "^9.2.3",
     "recharts": "^2.12.7",
     "redux": "^5.0.1",
