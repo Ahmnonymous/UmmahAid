@@ -21,24 +21,42 @@ const commentsModel = {
         values.push(fileId);
       }
 
+      // When filtering by file_id (viewing specific applicant), be more lenient with center_id
+      // Include comments with center_id = null for backward compatibility with old comments
+      const shouldEnforceCenterFilter = !!centerId && !isMultiCenter;
+      const isFileSpecificView = fileId !== null && fileId !== undefined;
+      
+      if (shouldEnforceCenterFilter && isFileSpecificView) {
+        // For file-specific views, include comments with center_id = null OR center_id = user's center_id
+        // This ensures old comments without center_id are still visible
+        conditions.push(`(center_id IS NULL OR center_id = $${values.length + 1})`);
+        values.push(centerId);
+      }
+
       // Build WHERE clause if we have conditions
       if (conditions.length > 0) {
         baseQuery += ` WHERE ${conditions.join(' AND ')}`;
       }
 
-      const scoped = scopeQuery(
-        conditions.length > 0
-          ? { text: baseQuery, values }
-          : baseQuery,
-        {
-          centerId,
-          isSuperAdmin: isMultiCenter,
-          column: "center_id",
-          enforce: !!centerId && !isMultiCenter,
-        },
-      );
+      // For general views (not file-specific), use standard center filtering
+      if (!isFileSpecificView) {
+        const scoped = scopeQuery(
+          conditions.length > 0
+            ? { text: baseQuery, values }
+            : baseQuery,
+          {
+            centerId,
+            isSuperAdmin: isMultiCenter,
+            column: "center_id",
+            enforce: shouldEnforceCenterFilter,
+          },
+        );
+        baseQuery = scoped.text;
+        values.length = 0;
+        values.push(...scoped.values);
+      }
 
-      const res = await pool.query(scoped.text, scoped.values);
+      const res = await pool.query(baseQuery, values);
       return res.rows;
     } catch (err) {
       throw new Error(
