@@ -71,8 +71,10 @@ const lookupController = {
         86400 // 24 hours TTL
       );
 
+      console.log(`[lookupController.getAll] Table: ${table}, Returning ${data.length} rows`);
       res.json(data);
     } catch (err) {
+      console.error(`[lookupController.getAll] Error for table ${req.params.table}:`, err.message);
       res.status(500).json({ error: err.message });
     }
   },
@@ -107,8 +109,10 @@ const lookupController = {
       const data = await lookupModel.create(table, req.body);
       
       // ✅ Invalidate cache after creating new lookup entry
+      console.log(`[lookupController.create] Invalidating cache for table: ${table}`);
       await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
       
+      console.log(`[lookupController.create] Created record for table ${table}:`, data);
       res.status(201).json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });

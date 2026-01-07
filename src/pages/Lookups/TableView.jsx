@@ -205,11 +205,15 @@ useEffect(() => {
         payload.updated_by = auditUser;
         if (isHadithTable) {
           payload.updated_on = timestamp;
+        } else {
+          payload.updated_at = timestamp;
         }
       } else {
         payload.created_by = auditUser;
         if (isHadithTable) {
           payload.created_on = timestamp;
+        } else {
+          payload.created_at = timestamp;
         }
       }
 

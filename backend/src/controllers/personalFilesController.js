@@ -4,9 +4,10 @@ const fs = require('fs').promises;
 const personalFilesController = {
   getAll: async (req, res) => { 
     try { 
-      // ✅ Each user sees only their own files - filter by created_by (username)
+      // ✅ Each user sees only their own files - filter by created_by (username or full_name)
       const username = req.user?.username || null;
-      const data = await personalFilesModel.getAll(username); 
+      const fullName = req.user?.full_name || null;
+      const data = await personalFilesModel.getAll(username, fullName); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -15,9 +16,10 @@ const personalFilesController = {
   
   getById: async (req, res) => { 
     try { 
-      // ✅ Each user sees only their own files - filter by created_by (username)
+      // ✅ Each user sees only their own files - filter by created_by (username or full_name)
       const username = req.user?.username || null;
-      const data = await personalFilesModel.getById(req.params.id, username); 
+      const fullName = req.user?.full_name || null;
+      const data = await personalFilesModel.getById(req.params.id, username, fullName); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -29,9 +31,10 @@ const personalFilesController = {
     try { 
       const fields = { ...req.body };
       // ✅ Enforce audit fields and tenant context
+      // Always use username for created_by to match filtering logic
       const username = req.user?.username || 'system';
-      fields.created_by = fields.created_by || username;
-      fields.updated_by = fields.updated_by || username;
+      fields.created_by = username; // Always use username, not the frontend value
+      fields.updated_by = username;
       fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Clean up empty strings for numeric fields
@@ -73,8 +76,11 @@ const personalFilesController = {
     try { 
       const fields = { ...req.body };
       // ✅ Enforce audit fields and prevent created_by override
-      delete fields.created_by;
-      fields.updated_by = req.user?.username || 'system';
+      // Always use username for updated_by to match filtering logic
+      delete fields.created_by; // Prevent override of created_by
+      const username = req.user?.username || null;
+      const fullName = req.user?.full_name || null;
+      fields.updated_by = username || 'system';
       fields.center_id = req.center_id || req.user?.center_id || fields.center_id;
       
       // Clean up empty strings for numeric fields
@@ -105,9 +111,8 @@ const personalFilesController = {
         await fs.unlink(file.path);
       }
       
-      // ✅ Each user can only update their own files - filter by created_by (username)
-      const username = req.user?.username || null;
-      const data = await personalFilesModel.update(req.params.id, fields, username); 
+      // ✅ Each user can only update their own files - filter by created_by (username or full_name)
+      const data = await personalFilesModel.update(req.params.id, fields, username, fullName); 
       if (!data) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -119,9 +124,10 @@ const personalFilesController = {
   
   delete: async (req, res) => { 
     try { 
-      // ✅ Each user can only delete their own files - filter by created_by (username)
+      // ✅ Each user can only delete their own files - filter by created_by (username or full_name)
       const username = req.user?.username || null;
-      const deleted = await personalFilesModel.delete(req.params.id, username); 
+      const fullName = req.user?.full_name || null;
+      const deleted = await personalFilesModel.delete(req.params.id, username, fullName); 
       if (!deleted) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -133,9 +139,10 @@ const personalFilesController = {
 
   viewFile: async (req, res) => {
     try {
-      // ✅ Each user can only view their own files - filter by created_by (username)
+      // ✅ Each user can only view their own files - filter by created_by (username or full_name)
       const username = req.user?.username || null;
-      const record = await personalFilesModel.getByIdWithFile(req.params.id, username);
+      const fullName = req.user?.full_name || null;
+      const record = await personalFilesModel.getByIdWithFile(req.params.id, username, fullName);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   
@@ -170,9 +177,10 @@ const personalFilesController = {
 
   downloadFile: async (req, res) => {
     try {
-      // ✅ Each user can only download their own files - filter by created_by (username)
+      // ✅ Each user can only download their own files - filter by created_by (username or full_name)
       const username = req.user?.username || null;
-      const record = await personalFilesModel.getByIdWithFile(req.params.id, username);
+      const fullName = req.user?.full_name || null;
+      const record = await personalFilesModel.getByIdWithFile(req.params.id, username, fullName);
       if (!record) return res.status(404).send("Record not found");
       if (!record.file) return res.status(404).send("No file found");
   

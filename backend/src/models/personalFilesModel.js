@@ -19,15 +19,21 @@ const normalizeFiles = (records = []) =>
   });
 
 const personalFilesModel = {
-  getAll: async (username = null) => {
+  getAll: async (username = null, fullName = null) => {
     try {
       let text = `SELECT * FROM ${tableName}`;
       const values = [];
       
-      // ✅ Filter by created_by (username) - each user sees only their own files
+      // ✅ Filter by created_by - match either username or full_name
+      // This handles both old records (saved with full names) and new records (saved with username)
       if (username) {
-        text += ` WHERE created_by = $1`;
-        values.push(username);
+        if (fullName) {
+          text += ` WHERE (created_by = $1 OR created_by = $2)`;
+          values.push(username, fullName);
+        } else {
+          text += ` WHERE created_by = $1`;
+          values.push(username);
+        }
       }
 
       text += ` ORDER BY created_at DESC`;
@@ -41,15 +47,20 @@ const personalFilesModel = {
     }
   },
 
-  getById: async (id, username = null) => {
+  getById: async (id, username = null, fullName = null) => {
     try {
       let text = `SELECT * FROM ${tableName} WHERE id = $1`;
       const values = [id];
       
-      // ✅ Filter by created_by (username) - each user sees only their own files
+      // ✅ Filter by created_by - match either username or full_name
       if (username) {
-        text += ` AND created_by = $2`;
-        values.push(username);
+        if (fullName) {
+          text += ` AND (created_by = $2 OR created_by = $3)`;
+          values.push(username, fullName);
+        } else {
+          text += ` AND created_by = $2`;
+          values.push(username);
+        }
       }
 
       const res = await pool.query(text, values);
@@ -62,15 +73,20 @@ const personalFilesModel = {
     }
   },
 
-  getByIdWithFile: async (id, username = null) => {
+  getByIdWithFile: async (id, username = null, fullName = null) => {
     try {
       let text = `SELECT * FROM ${tableName} WHERE id = $1`;
       const values = [id];
       
-      // ✅ Filter by created_by (username) - each user sees only their own files
+      // ✅ Filter by created_by - match either username or full_name
       if (username) {
-        text += ` AND created_by = $2`;
-        values.push(username);
+        if (fullName) {
+          text += ` AND (created_by = $2 OR created_by = $3)`;
+          values.push(username, fullName);
+        } else {
+          text += ` AND created_by = $2`;
+          values.push(username);
+        }
       }
 
       const res = await pool.query(text, values);
@@ -94,8 +110,8 @@ const personalFilesModel = {
     }
   },
 
-  update: async (id, fields, username = null) => {
-    const existing = await personalFilesModel.getById(id, username);
+  update: async (id, fields, username = null, fullName = null) => {
+    const existing = await personalFilesModel.getById(id, username, fullName);
     if (!existing) {
       return null;
     }
@@ -105,10 +121,15 @@ const personalFilesModel = {
       let query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${values.length + 1}`;
       const queryValues = [...values, id];
       
-      // ✅ Filter by created_by (username) - each user can only update their own files
+      // ✅ Filter by created_by - match either username or full_name
       if (username) {
-        query += ` AND created_by = $${queryValues.length + 1}`;
-        queryValues.push(username);
+        if (fullName) {
+          query += ` AND (created_by = $${queryValues.length + 1} OR created_by = $${queryValues.length + 2})`;
+          queryValues.push(username, fullName);
+        } else {
+          query += ` AND created_by = $${queryValues.length + 1}`;
+          queryValues.push(username);
+        }
       }
       
       query += ` RETURNING *`;
@@ -120,8 +141,8 @@ const personalFilesModel = {
     }
   },
 
-  delete: async (id, username = null) => {
-    const existing = await personalFilesModel.getById(id, username);
+  delete: async (id, username = null, fullName = null) => {
+    const existing = await personalFilesModel.getById(id, username, fullName);
     if (!existing) {
       return null;
     }
@@ -130,10 +151,15 @@ const personalFilesModel = {
       let query = `DELETE FROM ${tableName} WHERE id = $1`;
       const values = [id];
       
-      // ✅ Filter by created_by (username) - each user can only delete their own files
+      // ✅ Filter by created_by - match either username or full_name
       if (username) {
-        query += ` AND created_by = $2`;
-        values.push(username);
+        if (fullName) {
+          query += ` AND (created_by = $2 OR created_by = $3)`;
+          values.push(username, fullName);
+        } else {
+          query += ` AND created_by = $2`;
+          values.push(username);
+        }
       }
       
       query += ` RETURNING *`;

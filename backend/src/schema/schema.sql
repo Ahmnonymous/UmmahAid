@@ -44246,3 +44246,8 @@ SELECT setval('financial_assistance_id_seq', GREATEST(COALESCE((SELECT MAX(ID) F
 
 
 
+-- ============================================================
+-- INSERT COMMENTS FROM COMMENTS_20260103_192202.json
+-- Total records: 5281
+-- ============================================================
+
