@@ -33,7 +33,8 @@ const conversationsModel = {
       }
       // If both are null (App Admin), show all conversations
       
-      query += ` ORDER BY c."Updated_At" DESC`;
+      // PostgreSQL stores unquoted identifiers as lowercase, so Updated_At becomes updated_at
+      query += ` ORDER BY c.updated_at DESC`;
 
       const res = await pool.query(query, values);
       return res.rows;
