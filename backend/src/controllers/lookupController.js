@@ -110,7 +110,8 @@ const lookupController = {
       
       // ✅ Invalidate cache after creating new lookup entry
       console.log(`[lookupController.create] Invalidating cache for table: ${table}`);
-      await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
+      const invalidated = await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
+      console.log(`[lookupController.create] Cache invalidation result: ${invalidated}`);
       
       console.log(`[lookupController.create] Created record for table ${table}:`, data);
       res.status(201).json(data);
@@ -131,14 +132,27 @@ const lookupController = {
           error: "Forbidden: only App Admin and HQ can modify Hadith lookups",
         });
       }
-      const data = await lookupModel.update(table, id, req.body);
-      if (!data) return res.status(404).json({ error: 'Not found' });
+      console.log(`[lookupController.update] Table: ${table}, ID: ${id}, Body:`, req.body);
       
-      // ✅ Invalidate cache after updating lookup entry
+      // ✅ Invalidate cache BEFORE update to ensure fresh data on next fetch
+      console.log(`[lookupController.update] Invalidating cache for table: ${table} (before update)`);
       await invalidateLookup(table, null); // null = invalidate for all centers (global lookup)
       
+      const data = await lookupModel.update(table, id, req.body);
+      if (!data) {
+        console.warn(`[lookupController.update] Record not found for table ${table}, ID: ${id}`);
+        return res.status(404).json({ error: 'Not found' });
+      }
+      
+      // ✅ Invalidate cache again AFTER update to be safe
+      console.log(`[lookupController.update] Invalidating cache for table: ${table} (after update)`);
+      await invalidateLookup(table, null);
+      
+      console.log(`[lookupController.update] Successfully updated record for table ${table}, ID: ${id}`);
+      console.log(`[lookupController.update] Returning data:`, data);
       res.json(data);
     } catch (err) {
+      console.error(`[lookupController.update] Error for table ${req.params.table}, ID ${req.params.id}:`, err.message);
       res.status(500).json({ error: err.message });
     }
   },

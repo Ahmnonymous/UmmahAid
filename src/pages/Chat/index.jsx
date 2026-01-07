@@ -86,19 +86,16 @@ const Chat = () => {
   const fetchMessages = async (conversationId) => {
     try {
       setMessagesLoading(true);
-      const response = await axiosApi.get(`${API_BASE_URL}/messages`);
+      // ✅ Pass conversation_id as query parameter - backend will filter by participant
+      const response = await axiosApi.get(`${API_BASE_URL}/messages${conversationId ? `?conversation_id=${conversationId}` : ''}`);
       
-      // Filter messages for this conversation (handle both string and number IDs)
-      const conversationMessages = response.data.filter(
-        m => m.conversation_id == conversationId
-      );
-
+      // Backend now handles filtering by participant, so we can use the response directly
       // Sort by created_at
-      conversationMessages.sort((a, b) => 
+      const sortedMessages = response.data.sort((a, b) => 
         new Date(a.created_at) - new Date(b.created_at)
       );
 
-      setMessages(conversationMessages);
+      setMessages(sortedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
       showAlert("Failed to load messages", "danger");

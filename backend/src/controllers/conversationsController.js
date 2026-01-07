@@ -3,8 +3,9 @@
 const conversationsController = {
   getAll: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) sees all, others see only their center
+      // ✅ Filter by participant - users only see conversations they're part of
       let centerId = req.center_id || req.user?.center_id || null;
+      const userId = req.user?.id || null; // Get user ID from JWT
       
       // ✅ Normalize centerId: convert to integer or null
       if (centerId !== null && centerId !== undefined) {
@@ -16,7 +17,16 @@ const conversationsController = {
         centerId = null; // Explicitly set to null
       }
       
-      const data = await conversationsModel.getAll(centerId); 
+      // ✅ Normalize userId: convert to integer or null
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const data = await conversationsModel.getAll(centerId, normalizedUserId); 
       res.json(data); 
     } catch(err){ 
       console.error(`[ERROR] Conversations.getAll - ${err.message}`, err);
@@ -26,9 +36,20 @@ const conversationsController = {
   
   getById: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) sees all, others see only their center
+      // ✅ Filter by participant - users can only view conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const data = await conversationsModel.getById(req.params.id, centerId); 
+      const userId = req.user?.id || null;
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const data = await conversationsModel.getById(req.params.id, centerId, normalizedUserId); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 

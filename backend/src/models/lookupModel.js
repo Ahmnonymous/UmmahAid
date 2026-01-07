@@ -68,16 +68,27 @@ const lookupModel = {
   },
 
   getById: async (tableName, id) => {
-    const query = `SELECT * FROM ${tableName} WHERE ID = $1`;
-    const res = await pool.query(query, [id]);
-    if (!res.rows[0]) return null;
-    // Map column names back to frontend field names
-    const row = res.rows[0];
-    const mapped = {};
-    for (const [key, value] of Object.entries(row)) {
-      mapped[mapColumnToField(key)] = value;
+    try {
+      // Ensure ID is a number
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(numericId)) {
+        throw new Error(`Invalid ID: ${id}`);
+      }
+      // Use lowercase 'id' - PostgreSQL stores unquoted identifiers as lowercase
+      const query = `SELECT * FROM ${tableName} WHERE id = $1`;
+      const res = await pool.query(query, [numericId]);
+      if (!res.rows[0]) return null;
+      // Map column names back to frontend field names
+      const row = res.rows[0];
+      const mapped = {};
+      for (const [key, value] of Object.entries(row)) {
+        mapped[mapColumnToField(key)] = value;
+      }
+      return mapped;
+    } catch (err) {
+      console.error(`[lookupModel.getById] Error for table ${tableName}, ID ${id}:`, err.message);
+      throw err;
     }
-    return mapped;
   },
 
   create: async (tableName, fields) => {
@@ -113,35 +124,85 @@ const lookupModel = {
   },
 
   update: async (tableName, id, fields) => {
-    // Map frontend field names to database column names
-    const mappedFields = {};
-    for (const [key, value] of Object.entries(fields)) {
-      mappedFields[mapFieldToColumn(key)] = value;
+    try {
+      // Ensure ID is a number
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(numericId)) {
+        throw new Error(`Invalid ID: ${id}`);
+      }
+      
+      // Map frontend field names to database column names
+      const mappedFields = {};
+      for (const [key, value] of Object.entries(fields)) {
+        // Skip null/undefined values to avoid overwriting with null
+        if (value !== null && value !== undefined) {
+          mappedFields[mapFieldToColumn(key)] = value;
+        }
+      }
+      
+      if (Object.keys(mappedFields).length === 0) {
+        throw new Error('No fields to update');
+      }
+      
+      // Don't quote column names - PostgreSQL will handle case conversion for unquoted identifiers
+      const setString = Object.keys(mappedFields)
+        .map((key, i) => `${key} = $${i + 1}`)
+        .join(', ');
+      const values = Object.values(mappedFields);
+      // Use lowercase 'id' - PostgreSQL stores unquoted identifiers as lowercase
+      const query = `UPDATE ${tableName} SET ${setString} WHERE id = $${values.length + 1} RETURNING *`;
+      
+      console.log(`[lookupModel.update] Table: ${tableName}, ID: ${numericId} (type: ${typeof numericId}), Query: ${query}`);
+      console.log(`[lookupModel.update] Mapped fields:`, mappedFields);
+      console.log(`[lookupModel.update] Values:`, values);
+      
+      const res = await pool.query(query, [...values, numericId]);
+      
+      console.log(`[lookupModel.update] Query result - rowCount: ${res.rowCount}, hasRows: ${!!res.rows[0]}`);
+      
+      if (!res.rows[0]) {
+        console.warn(`[lookupModel.update] No rows updated for table ${tableName}, ID: ${numericId}`);
+        // Try to find the record to see if it exists
+        const checkQuery = `SELECT * FROM ${tableName} WHERE id = $1`;
+        const checkRes = await pool.query(checkQuery, [numericId]);
+        console.log(`[lookupModel.update] Record exists check: ${checkRes.rows.length > 0 ? 'YES' : 'NO'}`);
+        return null;
+      }
+      
+      // Map column names back to frontend field names
+      const row = res.rows[0];
+      const mapped = {};
+      for (const [key, value] of Object.entries(row)) {
+        mapped[mapColumnToField(key)] = value;
+      }
+      
+      console.log(`[lookupModel.update] Successfully updated record for table ${tableName}, ID: ${numericId}`);
+      console.log(`[lookupModel.update] Mapped result:`, mapped);
+      return mapped;
+    } catch (err) {
+      console.error(`[lookupModel.update] Error for table ${tableName}, ID ${id}:`, err.message);
+      console.error('Stack:', err.stack);
+      console.error('Fields received:', fields);
+      throw err;
     }
-    
-    // Don't quote column names - PostgreSQL will handle case conversion for unquoted identifiers
-    const setString = Object.keys(mappedFields)
-      .map((key, i) => `${key} = $${i + 1}`)
-      .join(', ');
-    const values = Object.values(mappedFields);
-    const query = `UPDATE ${tableName} SET ${setString} WHERE ID = $${values.length + 1} RETURNING *`;
-    const res = await pool.query(query, [...values, id]);
-    
-    if (!res.rows[0]) return null;
-    
-    // Map column names back to frontend field names
-    const row = res.rows[0];
-    const mapped = {};
-    for (const [key, value] of Object.entries(row)) {
-      mapped[mapColumnToField(key)] = value;
-    }
-    return mapped;
   },
 
   delete: async (tableName, id) => {
-    const query = `DELETE FROM ${tableName} WHERE ID = $1`;
-    const res = await pool.query(query, [id]);
-    return res.rowCount > 0;
+    try {
+      // Ensure ID is a number
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(numericId)) {
+        throw new Error(`Invalid ID: ${id}`);
+      }
+      // Use lowercase 'id' - PostgreSQL stores unquoted identifiers as lowercase
+      const query = `DELETE FROM ${tableName} WHERE id = $1`;
+      const res = await pool.query(query, [numericId]);
+      console.log(`[lookupModel.delete] Table: ${tableName}, ID: ${numericId}, Deleted: ${res.rowCount > 0}`);
+      return res.rowCount > 0;
+    } catch (err) {
+      console.error(`[lookupModel.delete] Error for table ${tableName}, ID ${id}:`, err.message);
+      throw err;
+    }
   }
 };
 

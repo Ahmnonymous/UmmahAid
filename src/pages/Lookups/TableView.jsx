@@ -218,11 +218,18 @@ useEffect(() => {
       }
 
       if (editItem) {
+        // Wait for update to complete before refetching
         await dispatch(updateLookup(table, editItem.id, payload));
+        // Small delay to ensure backend cache is cleared
+        await new Promise(resolve => setTimeout(resolve, 100));
       } else {
+        // Wait for create to complete before refetching
         await dispatch(createLookup(table, payload));
+        // Small delay to ensure backend cache is cleared
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
+      // Refetch data - saga also does this, but we do it here too to be safe
       await dispatch(fetchLookup(table));
       showAlert(
         `${formatTableName(table)} has been ${

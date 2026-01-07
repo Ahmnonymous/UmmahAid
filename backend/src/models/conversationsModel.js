@@ -8,16 +8,34 @@ const {
 const tableName = "Conversations";
 
 const conversationsModel = {
-  getAll: async (centerId = null) => {
+  getAll: async (centerId = null, userId = null) => {
     try {
-      const scoped = scopeQuery(`SELECT * FROM ${tableName}`, {
-        centerId,
-        isSuperAdmin: centerId === null,
-        column: "center_id",
-        enforce: centerId !== null,
-      });
+      // ✅ Filter by participant - users only see conversations they're part of
+      // App Admin (centerId=null) can see all conversations, but still filter by participant for privacy
+      let query = `SELECT DISTINCT c.* FROM ${tableName} c`;
+      const values = [];
+      
+      if (userId) {
+        // Join with Conversation_Participants to filter by user participation
+        // PostgreSQL stores unquoted identifiers as lowercase
+        query += ` INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id WHERE cp.employee_id = $1`;
+        values.push(userId);
+        
+        // Also apply center filter if not App Admin
+        if (centerId !== null) {
+          query += ` AND c.center_id = $2`;
+          values.push(centerId);
+        }
+      } else if (centerId !== null) {
+        // If no userId but centerId exists, filter by center only (fallback)
+        query += ` WHERE c.center_id = $1`;
+        values.push(centerId);
+      }
+      // If both are null (App Admin), show all conversations
+      
+      query += ` ORDER BY c."Updated_At" DESC`;
 
-      const res = await pool.query(scoped.text, scoped.values);
+      const res = await pool.query(query, values);
       return res.rows;
     } catch (err) {
       throw new Error(
@@ -26,22 +44,28 @@ const conversationsModel = {
     }
   },
 
-  getById: async (id, centerId = null) => {
+  getById: async (id, centerId = null, userId = null) => {
     try {
-      const scoped = scopeQuery(
-        {
-          text: `SELECT * FROM ${tableName} WHERE "id" = $1`,
-          values: [id],
-        },
-        {
-          centerId,
-          isSuperAdmin: centerId === null,
-          column: "center_id",
-          enforce: centerId !== null,
-        },
-      );
-
-      const res = await pool.query(scoped.text, scoped.values);
+      // ✅ Filter by participant - users can only view conversations they're part of
+      let query = `SELECT DISTINCT c.* FROM ${tableName} c`;
+      const values = [id];
+      let whereConditions = [`c.id = $1`];
+      
+      if (userId) {
+        // Join with Conversation_Participants to filter by user participation
+        // PostgreSQL stores unquoted identifiers as lowercase
+        query += ` INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id`;
+        whereConditions.push(`cp.employee_id = $${values.length + 1}`);
+        values.push(userId);
+      } else if (centerId !== null) {
+        // Fallback to center filter if no userId
+        whereConditions.push(`c.center_id = $${values.length + 1}`);
+        values.push(centerId);
+      }
+      
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
+      
+      const res = await pool.query(query, values);
       if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {

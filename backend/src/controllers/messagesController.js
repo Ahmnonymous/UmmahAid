@@ -4,9 +4,30 @@ const fs = require('fs').promises;
 const messagesController = {
   getAll: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) sees all, others see only their center
+      // ✅ Filter by participant - users only see messages from conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const data = await messagesModel.getAll(centerId); 
+      const userId = req.user?.id || null; // Get user ID from JWT
+      const conversationId = req.query?.conversation_id || null; // Optional conversation filter
+      
+      // ✅ Normalize userId: convert to integer or null
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      // ✅ Normalize conversationId: convert to integer or null
+      let normalizedConversationId = null;
+      if (conversationId !== null && conversationId !== undefined) {
+        normalizedConversationId = parseInt(conversationId);
+        if (isNaN(normalizedConversationId)) {
+          normalizedConversationId = null;
+        }
+      }
+      
+      const data = await messagesModel.getAll(centerId, normalizedUserId, normalizedConversationId); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
@@ -15,9 +36,20 @@ const messagesController = {
   
   getById: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) sees all, others see only their center
+      // ✅ Filter by participant - users can only view messages from conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const data = await messagesModel.getById(req.params.id, centerId); 
+      const userId = req.user?.id || null;
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const data = await messagesModel.getById(req.params.id, centerId, normalizedUserId); 
       if(!data) return res.status(404).json({error: 'Not found'}); 
       res.json(data); 
     } catch(err){ 
@@ -71,9 +103,20 @@ const messagesController = {
         await fs.unlink(file.path);
       }
       
-      // ✅ App Admin (center_id=null) can update all, others only their center
+      // ✅ Filter by participant - users can only update messages from conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const data = await messagesModel.update(req.params.id, fields, centerId); 
+      const userId = req.user?.id || null;
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const data = await messagesModel.update(req.params.id, fields, centerId, normalizedUserId); 
       if (!data) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -85,9 +128,20 @@ const messagesController = {
   
   delete: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) can delete all, others only their center
+      // ✅ Filter by participant - users can only delete messages from conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const deleted = await messagesModel.delete(req.params.id, centerId); 
+      const userId = req.user?.id || null;
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const deleted = await messagesModel.delete(req.params.id, centerId, normalizedUserId); 
       if (!deleted) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -99,9 +153,20 @@ const messagesController = {
 
   viewAttachment: async (req, res) => {
     try {
-      // ✅ App Admin (center_id=null) can view all, others only their center
+      // ✅ Filter by participant - users can only view attachments from conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const record = await messagesModel.getRawAttachment(req.params.id, centerId);
+      const userId = req.user?.id || null;
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const record = await messagesModel.getRawAttachment(req.params.id, centerId, normalizedUserId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   
@@ -143,9 +208,20 @@ const messagesController = {
 
   downloadAttachment: async (req, res) => {
     try {
-      // ✅ App Admin (center_id=null) can view all, others only their center
+      // ✅ Filter by participant - users can only download attachments from conversations they're part of
       const centerId = req.center_id || req.user?.center_id || null;
-      const record = await messagesModel.getRawAttachment(req.params.id, centerId);
+      const userId = req.user?.id || null;
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          normalizedUserId = null;
+        }
+      }
+      
+      const record = await messagesModel.getRawAttachment(req.params.id, centerId, normalizedUserId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
   

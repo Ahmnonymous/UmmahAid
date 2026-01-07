@@ -173,13 +173,25 @@ const cacheLookup = async (tableName, centerId, fetchFn, ttlSeconds = 86400) => 
  * @returns {Promise<boolean>}
  */
 const invalidateLookup = async (tableName, centerId = null) => {
-  if (centerId !== null) {
-    const key = getCacheKey('lookup', centerId, tableName);
-    return await del(key);
-  } else {
-    // Invalidate for all centers
-    const pattern = getCacheKey('lookup', '*', tableName);
-    return await del(pattern);
+  try {
+    if (centerId !== null) {
+      const key = getCacheKey('lookup', centerId, tableName);
+      console.log(`[cacheService.invalidateLookup] Invalidating key: ${key}`);
+      return await del(key);
+    } else {
+      // Invalidate for all centers - use pattern matching
+      const pattern = getCacheKey('lookup', '*', tableName);
+      console.log(`[cacheService.invalidateLookup] Invalidating pattern: ${pattern}`);
+      const result = await del(pattern);
+      // Also try the exact global key just in case
+      const globalKey = getCacheKey('lookup', null, tableName);
+      console.log(`[cacheService.invalidateLookup] Also invalidating global key: ${globalKey}`);
+      await del(globalKey);
+      return result;
+    }
+  } catch (err) {
+    console.error(`[cacheService.invalidateLookup] Error invalidating cache for ${tableName}:`, err.message);
+    return false;
   }
 };
 

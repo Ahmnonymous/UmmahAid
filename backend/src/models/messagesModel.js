@@ -19,16 +19,41 @@ const normalizeAttachments = (records = []) =>
   });
 
 const messagesModel = {
-  getAll: async (centerId = null) => {
+  getAll: async (centerId = null, userId = null, conversationId = null) => {
     try {
-      const scoped = scopeQuery(`SELECT * FROM ${tableName}`, {
-        centerId,
-        isSuperAdmin: centerId === null,
-        column: "center_id",
-        enforce: centerId !== null,
-      });
+      // ✅ Filter by participant - users only see messages from conversations they're part of
+      let query = `SELECT DISTINCT m.* FROM ${tableName} m`;
+      const values = [];
+      let whereConditions = [];
+      
+      if (userId) {
+        // Join with Conversation_Participants to filter by user participation
+        // PostgreSQL stores unquoted identifiers as lowercase, so Conversation_ID becomes conversation_id
+        query += ` INNER JOIN Conversations c ON m.conversation_id = c.id 
+                   INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id`;
+        whereConditions.push(`cp.employee_id = $${values.length + 1}`);
+        values.push(userId);
+      }
+      
+      // Filter by specific conversation if provided
+      if (conversationId) {
+        whereConditions.push(`m.conversation_id = $${values.length + 1}`);
+        values.push(conversationId);
+      }
+      
+      // Apply center filter if not App Admin and no userId (fallback)
+      if (centerId !== null && !userId) {
+        whereConditions.push(`m.center_id = $${values.length + 1}`);
+        values.push(centerId);
+      }
+      
+      if (whereConditions.length > 0) {
+        query += ` WHERE ${whereConditions.join(' AND ')}`;
+      }
+      
+      query += ` ORDER BY m.created_at ASC`;
 
-      const res = await pool.query(scoped.text, scoped.values);
+      const res = await pool.query(query, values);
       return normalizeAttachments(res.rows);
     } catch (err) {
       throw new Error(
@@ -37,22 +62,29 @@ const messagesModel = {
     }
   },
 
-  getById: async (id, centerId = null) => {
+  getById: async (id, centerId = null, userId = null) => {
     try {
-      const scoped = scopeQuery(
-        {
-          text: `SELECT * FROM ${tableName} WHERE id = $1`,
-          values: [id],
-        },
-        {
-          centerId,
-          isSuperAdmin: centerId === null,
-          column: "center_id",
-          enforce: centerId !== null,
-        },
-      );
-
-      const res = await pool.query(scoped.text, scoped.values);
+      // ✅ Filter by participant - users can only view messages from conversations they're part of
+      let query = `SELECT m.* FROM ${tableName} m`;
+      const values = [id];
+      let whereConditions = [`m.id = $1`];
+      
+      if (userId) {
+        // Join with Conversation_Participants to filter by user participation
+        // PostgreSQL stores unquoted identifiers as lowercase
+        query += ` INNER JOIN Conversations c ON m.conversation_id = c.id 
+                   INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id`;
+        whereConditions.push(`cp.employee_id = $${values.length + 1}`);
+        values.push(userId);
+      } else if (centerId !== null) {
+        // Fallback to center filter if no userId
+        whereConditions.push(`m.center_id = $${values.length + 1}`);
+        values.push(centerId);
+      }
+      
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
+      
+      const res = await pool.query(query, values);
       if (!res.rows[0]) return null;
       return normalizeAttachments(res.rows)[0];
     } catch (err) {
@@ -73,8 +105,8 @@ const messagesModel = {
     }
   },
 
-  update: async (id, fields, centerId = null) => {
-    const existing = await messagesModel.getById(id, centerId);
+  update: async (id, fields, centerId = null, userId = null) => {
+    const existing = await messagesModel.getById(id, centerId, userId);
     if (!existing) {
       return null;
     }
@@ -92,8 +124,8 @@ const messagesModel = {
     }
   },
 
-  delete: async (id, centerId = null) => {
-    const existing = await messagesModel.getById(id, centerId);
+  delete: async (id, centerId = null, userId = null) => {
+    const existing = await messagesModel.getById(id, centerId, userId);
     if (!existing) {
       return null;
     }
@@ -111,22 +143,29 @@ const messagesModel = {
   },
 
   // Get raw attachment data without normalization (for viewing/downloading)
-  getRawAttachment: async (id, centerId = null) => {
+  getRawAttachment: async (id, centerId = null, userId = null) => {
     try {
-      const scoped = scopeQuery(
-        {
-          text: `SELECT attachment, attachment_filename, attachment_mime, attachment_size FROM ${tableName} WHERE id = $1`,
-          values: [id],
-        },
-        {
-          centerId,
-          isSuperAdmin: centerId === null,
-          column: "center_id",
-          enforce: centerId !== null,
-        },
-      );
-
-      const res = await pool.query(scoped.text, scoped.values);
+      // ✅ Filter by participant - users can only view attachments from conversations they're part of
+      let query = `SELECT m.attachment, m.attachment_filename, m.attachment_mime, m.attachment_size FROM ${tableName} m`;
+      const values = [id];
+      let whereConditions = [`m.id = $1`];
+      
+      if (userId) {
+        // Join with Conversation_Participants to filter by user participation
+        // PostgreSQL stores unquoted identifiers as lowercase
+        query += ` INNER JOIN Conversations c ON m.conversation_id = c.id 
+                   INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id`;
+        whereConditions.push(`cp.employee_id = $${values.length + 1}`);
+        values.push(userId);
+      } else if (centerId !== null) {
+        // Fallback to center filter if no userId
+        whereConditions.push(`m.center_id = $${values.length + 1}`);
+        values.push(centerId);
+      }
+      
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
+      
+      const res = await pool.query(query, values);
       if (!res.rows[0]) return null;
       return res.rows[0];
     } catch (err) {
