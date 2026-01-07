@@ -8,14 +8,35 @@ const {
 const tableName = "Comments";
 
 const commentsModel = {
-  getAll: async (centerId = null, isMultiCenter = false) => {
+  getAll: async (centerId = null, isMultiCenter = false, fileId = null) => {
     try {
-      const scoped = scopeQuery(`SELECT * FROM ${tableName}`, {
-        centerId,
-        isSuperAdmin: isMultiCenter,
-        column: "center_id",
-        enforce: !!centerId && !isMultiCenter,
-      });
+      let baseQuery = `SELECT * FROM ${tableName}`;
+      const conditions = [];
+      const values = [];
+
+      // Filter by file_id if provided (for applicant detail views)
+      if (fileId !== null && fileId !== undefined) {
+        // PostgreSQL stores unquoted identifiers as lowercase, so File_ID becomes file_id
+        conditions.push(`file_id = $${values.length + 1}`);
+        values.push(fileId);
+      }
+
+      // Build WHERE clause if we have conditions
+      if (conditions.length > 0) {
+        baseQuery += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      const scoped = scopeQuery(
+        conditions.length > 0
+          ? { text: baseQuery, values }
+          : baseQuery,
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
 
       const res = await pool.query(scoped.text, scoped.values);
       return res.rows;

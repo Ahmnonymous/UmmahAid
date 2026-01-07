@@ -6,7 +6,12 @@ const commentsController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const data = await commentsModel.getAll(centerId, isMultiCenter);
+      
+      // ✅ Extract file_id from query parameters (for applicant detail views)
+      const fileIdParam = req.query.file_id;
+      const fileId = fileIdParam ? (isNaN(parseInt(fileIdParam)) ? null : parseInt(fileIdParam)) : null;
+      
+      const data = await commentsModel.getAll(centerId, isMultiCenter, fileId);
       res.json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
