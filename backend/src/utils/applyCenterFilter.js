@@ -57,8 +57,8 @@ const ensureInteger = (value) => {
 };
 
 const appendCenterClause = (sql, columnRef, placeholder) => {
-  // Normalize the SQL string - trim and ensure single spaces
-  sql = sql.trim().replace(/\s+/g, ' ');
+  // Trim the SQL string but preserve structure
+  sql = sql.trim();
   
   const hasWhere = /\bwhere\b/i.test(sql);
   
@@ -89,13 +89,21 @@ const appendCenterClause = (sql, columnRef, placeholder) => {
     const afterClause = sql.substring(insertPosition).trim();
     // Remove any trailing AND/OR operators from beforeClause
     const cleanedBefore = beforeClause.replace(/\s+(AND|OR)\s*$/i, '').trim();
-    return `${cleanedBefore} AND ${columnRef} = ${placeholder}${afterClause ? ' ' + afterClause : ''}`;
+    // Ensure proper spacing
+    if (afterClause) {
+      return `${cleanedBefore} AND ${columnRef} = ${placeholder} ${afterClause}`;
+    }
+    return `${cleanedBefore} AND ${columnRef} = ${placeholder}`;
   }
   
   // Insert WHERE clause before ORDER BY/GROUP BY/LIMIT/RETURNING
   const beforeClause = sql.substring(0, insertPosition).trim();
   const afterClause = sql.substring(insertPosition).trim();
-  return `${beforeClause} WHERE ${columnRef} = ${placeholder}${afterClause ? ' ' + afterClause : ''}`;
+  // Ensure proper spacing - add WHERE clause with space
+  if (afterClause) {
+    return `${beforeClause} WHERE ${columnRef} = ${placeholder} ${afterClause}`;
+  }
+  return `${beforeClause} WHERE ${columnRef} = ${placeholder}`;
 };
 
 /**

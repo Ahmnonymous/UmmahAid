@@ -338,9 +338,13 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         formData.append("popia_agreement", data.POPIA_Agreement ? "Y" : "N");
         formData.append("updated_by", getAuditName());
 
-        await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, formData, {
+        const response = await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        const updatedApplicant = response.data;
+        showAlert("Applicant has been updated successfully", "success");
+        onUpdate(updatedApplicant);
+        toggleModal();
       } else {
         // Use regular JSON payload
         const payload = {
@@ -379,12 +383,12 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
           payload.center_id = centerIdValue;
         }
 
-        await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, payload);
+        const response = await axiosApi.put(`${API_BASE_URL}/applicantDetails/${applicant.id}`, payload);
+        const updatedApplicant = response.data;
+        showAlert("Applicant has been updated successfully", "success");
+        onUpdate(updatedApplicant);
+        toggleModal();
       }
-      
-      showAlert("Applicant has been updated successfully", "success");
-      onUpdate();
-      toggleModal();
     } catch (error) {
       console.error("Error updating applicant:", error);
       showAlert(error?.response?.data?.message || "Failed to update applicant", "danger");

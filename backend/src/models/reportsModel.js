@@ -164,11 +164,16 @@ class ReportsModel {
             const params = [];
             const { text, values } = withCenterFilter(query.trim(), params, user, centerId, 'ad');
             
-            const finalQuery = `${text} ORDER BY total_financial DESC`;
+            // Ensure proper spacing when adding ORDER BY - check if ORDER BY already exists
+            let finalQuery = text.trim();
+            if (!/\bORDER\s+BY\b/i.test(finalQuery)) {
+                finalQuery = `${finalQuery} ORDER BY total_financial DESC`;
+            }
             
             const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {
+            console.error('Total Financial Assistance Query Error:', error);
             throw new Error(`Error fetching total financial assistance: ${error.message}`);
         }
     }

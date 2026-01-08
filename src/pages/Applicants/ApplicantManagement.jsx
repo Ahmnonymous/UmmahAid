@@ -406,10 +406,37 @@ const ApplicantManagement = () => {
     }
   };
 
-  const handleApplicantUpdate = useCallback(() => {
-    fetchApplicants(pagination.page, searchTerm);
-    if (selectedApplicant) {
+  const handleApplicantUpdate = useCallback(async (updatedApplicant = null) => {
+    // Refresh the applicants list to update the list panel
+    await fetchApplicants(pagination.page, searchTerm);
+    
+    // If we have the updated applicant data, use it to update the selected applicant
+    if (updatedApplicant && selectedApplicant && updatedApplicant.id === selectedApplicant.id) {
+      setSelectedApplicant(updatedApplicant);
+      // Update the applicant in the list as well
+      setApplicants(prevApplicants => 
+        prevApplicants.map(app => app.id === updatedApplicant.id ? updatedApplicant : app)
+      );
+      // Also refresh the detail data
       fetchApplicantDetails(selectedApplicant.id);
+    } else if (selectedApplicant) {
+      // If no updated data provided, fetch the selected applicant again
+      try {
+        const response = await axiosApi.get(`${API_BASE_URL}/applicantDetails/${selectedApplicant.id}`);
+        if (response.data) {
+          const refreshedApplicant = response.data;
+          setSelectedApplicant(refreshedApplicant);
+          // Update the applicant in the list as well
+          setApplicants(prevApplicants => 
+            prevApplicants.map(app => app.id === refreshedApplicant.id ? refreshedApplicant : app)
+          );
+        }
+        fetchApplicantDetails(selectedApplicant.id);
+      } catch (error) {
+        console.error("Error fetching updated applicant:", error);
+        // Fallback: just refresh details
+        fetchApplicantDetails(selectedApplicant.id);
+      }
     }
   }, [selectedApplicant, pagination.page, searchTerm]);
 
