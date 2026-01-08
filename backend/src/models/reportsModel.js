@@ -2,10 +2,13 @@ const db = require('../config/db');
 const { applyCenterFilter } = require('../utils/applyCenterFilter');
 
 const withCenterFilter = (sql, params, user, centerId, alias) => {
+    // If centerId is provided, enforce the filter even if user role doesn't require it
+    // This ensures proper filtering for reports
+    const enforce = centerId !== null && centerId !== undefined;
     const { text, values } = applyCenterFilter(
         { text: sql, values: params },
         user,
-        { centerId, alias }
+        { centerId, alias, enforce }
     );
     return { text, values };
 };
@@ -159,12 +162,9 @@ class ReportsModel {
             `;
             
             const params = [];
-            const { text, values } = withCenterFilter(query, params, user, centerId, 'ad');
+            const { text, values } = withCenterFilter(query.trim(), params, user, centerId, 'ad');
             
-            const finalQuery = `
-                ${text}
-                ORDER BY total_financial DESC
-            `;
+            const finalQuery = `${text} ORDER BY total_financial DESC`;
             
             const result = await db.query(finalQuery, values);
             return result.rows;
