@@ -170,6 +170,12 @@ class ReportsModel {
                 finalQuery = `${finalQuery} ORDER BY total_financial DESC`;
             }
             
+            // Debug logging (remove in production if not needed)
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Total Financial Assistance Query:', finalQuery.substring(0, 500));
+                console.log('Query values:', values);
+            }
+            
             const result = await db.query(finalQuery, values);
             return result.rows;
         } catch (error) {

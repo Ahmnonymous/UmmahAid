@@ -62,28 +62,64 @@ const appendCenterClause = (sql, columnRef, placeholder) => {
   
   const hasWhere = /\bwhere\b/i.test(sql);
   
-  // Check if there's an ORDER BY, GROUP BY, LIMIT, or RETURNING clause
-  const orderByMatch = sql.match(/\bORDER\s+BY\b/i);
-  const groupByMatch = sql.match(/\bGROUP\s+BY\b/i);
-  const limitMatch = sql.match(/\bLIMIT\b/i);
-  const returningMatch = sql.match(/\bRETURNING\b/i);
+  // Simple approach: find WHERE, ORDER BY, GROUP BY, LIMIT, RETURNING at top level
+  // by checking they're not inside parentheses (subqueries)
+  const findTopLevelKeyword = (pattern, sql) => {
+    let depth = 0;
+    let inString = false;
+    let stringChar = null;
+    const regex = new RegExp(pattern, 'i');
+    
+    for (let i = 0; i < sql.length; i++) {
+      const char = sql[i];
+      const prevChar = i > 0 ? sql[i - 1] : '';
+      
+      // Track string literals
+      if ((char === '"' || char === "'") && prevChar !== '\\') {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+          stringChar = null;
+        }
+        continue;
+      }
+      
+      if (inString) continue;
+      
+      // Track parentheses depth
+      if (char === '(') depth++;
+      if (char === ')') depth--;
+      
+      // Only match at top level (depth === 0)
+      if (depth === 0) {
+        const remaining = sql.substring(i);
+        const match = remaining.match(regex);
+        if (match && match.index === 0) {
+          return i;
+        }
+      }
+    }
+    return -1;
+  };
   
-  // Find the position where we should insert the new condition
+  // Find top-level clauses
+  const wherePos = findTopLevelKeyword('\\bWHERE\\b', sql);
+  const orderByPos = findTopLevelKeyword('\\bORDER\\s+BY\\b', sql);
+  const groupByPos = findTopLevelKeyword('\\bGROUP\\s+BY\\b', sql);
+  const limitPos = findTopLevelKeyword('\\bLIMIT\\b', sql);
+  const returningPos = findTopLevelKeyword('\\bRETURNING\\b', sql);
+  
+  // Determine insert position - after WHERE (if exists) but before ORDER BY/GROUP BY/etc.
   let insertPosition = sql.length;
-  if (orderByMatch) {
-    insertPosition = Math.min(insertPosition, orderByMatch.index);
-  }
-  if (groupByMatch) {
-    insertPosition = Math.min(insertPosition, groupByMatch.index);
-  }
-  if (limitMatch) {
-    insertPosition = Math.min(insertPosition, limitMatch.index);
-  }
-  if (returningMatch) {
-    insertPosition = Math.min(insertPosition, returningMatch.index);
-  }
   
-  if (hasWhere) {
+  if (orderByPos >= 0) insertPosition = Math.min(insertPosition, orderByPos);
+  if (groupByPos >= 0) insertPosition = Math.min(insertPosition, groupByPos);
+  if (limitPos >= 0) insertPosition = Math.min(insertPosition, limitPos);
+  if (returningPos >= 0) insertPosition = Math.min(insertPosition, returningPos);
+  
+  if (hasWhere && wherePos >= 0) {
     // Insert AND clause before ORDER BY/GROUP BY/LIMIT/RETURNING
     const beforeClause = sql.substring(0, insertPosition).trim();
     const afterClause = sql.substring(insertPosition).trim();
@@ -96,10 +132,11 @@ const appendCenterClause = (sql, columnRef, placeholder) => {
     return `${cleanedBefore} AND ${columnRef} = ${placeholder}`;
   }
   
-  // Insert WHERE clause before ORDER BY/GROUP BY/LIMIT/RETURNING
+  // For queries without WHERE, insert it right before ORDER BY/GROUP BY/etc.
   const beforeClause = sql.substring(0, insertPosition).trim();
   const afterClause = sql.substring(insertPosition).trim();
-  // Ensure proper spacing - add WHERE clause with space
+  
+  // Ensure proper spacing - add WHERE clause
   if (afterClause) {
     return `${beforeClause} WHERE ${columnRef} = ${placeholder} ${afterClause}`;
   }
