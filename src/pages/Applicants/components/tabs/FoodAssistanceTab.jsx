@@ -21,6 +21,7 @@ import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getAuditName } from "../../../../helpers/userStorage";
+import { formatDateForInput } from "../../../../helpers/dateHelper";
 
 const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -47,7 +48,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
   useEffect(() => {
     if (modalOpen) {
       reset({
-        Distributed_Date: editItem?.distributed_date || "",
+        Distributed_Date: formatDateForInput(editItem?.distributed_date) || "",
         Hamper_Type: editItem?.hamper_type || "",
         Financial_Cost: editItem?.financial_cost || "",
         Assisted_By: editItem?.assisted_by || "",

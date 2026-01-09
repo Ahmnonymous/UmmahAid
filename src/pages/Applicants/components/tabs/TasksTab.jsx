@@ -21,6 +21,7 @@ import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getAuditName } from "../../../../helpers/userStorage";
+import { formatDateForInput } from "../../../../helpers/dateHelper";
 
 const TasksTab = ({ applicantId, tasks, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -54,7 +55,7 @@ const TasksTab = ({ applicantId, tasks, onUpdate, showAlert }) => {
     if (modalOpen) {
       reset({
         Task_Description: editItem?.task_description || "",
-        Date_Required: editItem?.date_required || "",
+        Date_Required: formatDateForInput(editItem?.date_required) || "",
         Status: editItem?.status || "",
       });
     }

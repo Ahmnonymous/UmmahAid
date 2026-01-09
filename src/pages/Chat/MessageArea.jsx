@@ -3,13 +3,16 @@ import { Card, Input, Button, Row, Col, Spinner, UncontrolledTooltip } from "rea
 import SimpleBar from "simplebar-react";
 import { useRole } from "../../helpers/useRole";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../helpers/url_helper";
+import DeleteModal from "../../components/Common/DeleteModal";
 
-const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUser }) => {
+const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUser, onDeleteConversation }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
   const [messageText, setMessageText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ show: false });
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  const messageInputRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -18,6 +21,16 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
       scrollElement.scrollTop = scrollElement.scrollHeight;
     }
   }, [messages]);
+
+  // Auto-focus message input when conversation changes
+  useEffect(() => {
+    if (conversation && messageInputRef.current) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        messageInputRef.current?.focus();
+      }, 100);
+    }
+  }, [conversation]);
 
   const handleSend = () => {
     if (messageText.trim() || selectedFile) {
@@ -117,14 +130,42 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
     <div className="w-100 user-chat">
       <Card>
         {/* Header */}
-        <div className="p-4 border-bottom" style={{ flexShrink: 0 }}>
-          <Row>
-            <Col md={8} xs={9}>
-              <h5 className="font-size-15 mb-1">{conversation.title || "Conversation"}</h5>
-              <p className="text-muted mb-0">
-                <i className={`bx ${conversation.type === "Group" ? "bx-group" : "bx-chat"} me-1`}></i>
-                {conversation.type || "Chat"}
-              </p>
+        <div className="p-4 border-bottom" style={{ flexShrink: 0, position: 'relative', paddingRight: '16px' }}>
+          <Row className="align-items-center">
+            <Col md={10} xs={10}>
+              <h5 className="font-size-18 mb-1">
+                {conversation.type === "Direct" 
+                  ? (conversation.participant_names || "Unknown User")
+                  : (conversation.title || "Conversation")
+                }
+              </h5>
+            </Col>
+            <Col md={2} xs={2} className="text-end" style={{ paddingRight: 0 }}>
+              {/* Delete button - positioned at the end */}
+              <button
+                className="btn d-flex align-items-center gap-1"
+                style={{ 
+                  borderRadius: '20px',
+                  backgroundColor: '#ffebee',
+                  color: '#c62828',
+                  border: 'none',
+                  padding: '6px 12px',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  marginRight: 0
+                }}
+                onClick={() => setDeleteModal({ show: true })}
+                title="Delete conversation"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffcdd2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffebee';
+                }}
+              >
+                <i className="bx bx-trash"></i>
+                <span>Delete</span>
+              </button>
             </Col>
           </Row>
         </div>
@@ -300,6 +341,7 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
               </Col>
               <Col>
                 <Input
+                  innerRef={messageInputRef}
                   type="textarea"
                   rows="1"
                   value={messageText}
@@ -364,6 +406,18 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
           color: var(--bs-secondary-color) !important;
         }
       `}</style>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteModal
+        show={deleteModal.show}
+        onDeleteClick={() => {
+          if (onDeleteConversation && conversation?.id) {
+            onDeleteConversation(conversation.id);
+            setDeleteModal({ show: false });
+          }
+        }}
+        onCloseClick={() => setDeleteModal({ show: false })}
+      />
     </div>
   );
 };

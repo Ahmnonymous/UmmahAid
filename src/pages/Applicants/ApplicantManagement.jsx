@@ -32,6 +32,9 @@ const ApplicantManagement = () => {
   // ✅ Detail loading state (for lazy loading)
   const [detailsLoading, setDetailsLoading] = useState(false);
 
+  // ✅ Tab state (persists across applicant changes)
+  const [activeTab, setActiveTab] = useState("all");
+
   // Detail data states
   const [comments, setComments] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -268,6 +271,9 @@ const ApplicantManagement = () => {
   const fetchApplicantDetails = async (applicantId) => {
     if (!applicantId) return;
     
+    // Helper to safely convert to number
+    const safeNum = (v) => (v === null || v === undefined || v === "" ? NaN : Number(v));
+    
     try {
       setDetailsLoading(true);
       
@@ -314,15 +320,65 @@ const ApplicantManagement = () => {
       setAttachments(extractData(attachmentsRes.data));
       setPrograms(extractData(programsRes.data));
       
-      // Financial assessment might be an object or array
+      // Financial assessment - backend returns array when file_id is provided
       const assessmentData = financialAssessmentRes.data;
-      if (Array.isArray(assessmentData)) {
-        setFinancialAssessment(assessmentData.length > 0 ? assessmentData[0] : null);
-      } else if (assessmentData?.data && Array.isArray(assessmentData.data)) {
-        setFinancialAssessment(assessmentData.data.length > 0 ? assessmentData.data[0] : null);
-      } else {
-        setFinancialAssessment(assessmentData || null);
+      let assessment = null;
+      
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Financial Assessment Response for applicant', applicantId, ':', assessmentData);
       }
+      
+      if (Array.isArray(assessmentData)) {
+        // Backend returns array [assessment] when file_id is provided
+        if (assessmentData.length > 0) {
+          assessment = assessmentData[0];
+          // Verify it belongs to this applicant
+          const assessmentFileId = assessment.file_id || assessment.File_ID;
+          if (safeNum(assessmentFileId) !== applicantId) {
+            console.error('Financial assessment file_id mismatch (array):', {
+              assessmentFileId,
+              requestedApplicantId: applicantId,
+              assessment
+            });
+            assessment = null;
+          }
+        }
+      } else if (assessmentData?.data && Array.isArray(assessmentData.data)) {
+        if (assessmentData.data.length > 0) {
+          assessment = assessmentData.data[0];
+          const assessmentFileId = assessment.file_id || assessment.File_ID;
+          if (safeNum(assessmentFileId) !== applicantId) {
+            console.error('Financial assessment file_id mismatch (nested array):', {
+              assessmentFileId,
+              requestedApplicantId: applicantId
+            });
+            assessment = null;
+          }
+        }
+      } else if (assessmentData && typeof assessmentData === 'object' && !assessmentData.error) {
+        // Single object response (but not an error)
+        assessment = assessmentData;
+        const assessmentFileId = assessment.file_id || assessment.File_ID;
+        if (safeNum(assessmentFileId) !== applicantId) {
+          console.error('Financial assessment file_id mismatch (object):', {
+            assessmentFileId,
+            requestedApplicantId: applicantId
+          });
+          assessment = null;
+        }
+      }
+      
+      // Final verification
+      if (assessment) {
+        const assessmentFileId = assessment.file_id || assessment.File_ID;
+        if (safeNum(assessmentFileId) !== applicantId) {
+          console.error('Final verification failed - setting assessment to null');
+          assessment = null;
+        }
+      }
+      
+      setFinancialAssessment(assessment);
     } catch (error) {
       console.error("Error fetching applicant details:", error);
       showAlert("Failed to fetch applicant details", "warning");
@@ -542,6 +598,8 @@ const ApplicantManagement = () => {
                   programs={programs}
                   financialAssessment={financialAssessment}
                   lookupData={lookupData}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
                   onUpdate={handleDetailUpdate}
                   showAlert={showAlert}
                 />

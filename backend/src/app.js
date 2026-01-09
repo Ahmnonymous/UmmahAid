@@ -5,7 +5,14 @@ require("dotenv").config();
 const app = express();
 
 // ✅ Middlewares
-app.use(cors());
+// Configure CORS to allow all origins (for development)
+// In production, specify exact origins
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json());
 
 // ===========================

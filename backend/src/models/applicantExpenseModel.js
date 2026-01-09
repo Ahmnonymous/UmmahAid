@@ -5,14 +5,27 @@ const {
   scopeQuery,
 } = require("../utils/modelHelpers");
 
-const tableName = "Applicant_Expense";
+// PostgreSQL stores unquoted identifiers as lowercase
+const tableName = "applicant_expense";
 
 const applicantExpenseModel = {
-  getAll: async (centerId = null, isMultiCenter = false) => {
+  getAll: async (centerId = null, isMultiCenter = false, financialAssessmentId = null) => {
     try {
+      let baseQuery = `SELECT ae.* FROM ${tableName} ae 
+                   INNER JOIN financial_assessment fa ON ae.financial_assessment_id = fa.id`;
+      const values = [];
+      
+      // Add filter for financial_assessment_id if provided
+      if (financialAssessmentId) {
+        baseQuery += ` WHERE ae.financial_assessment_id = $${values.length + 1}`;
+        values.push(financialAssessmentId);
+      }
+      
       const scoped = scopeQuery(
-        `SELECT ae.* FROM ${tableName} ae 
-                   INNER JOIN Financial_Assessment fa ON ae.Financial_Assessment_ID = fa.id`,
+        {
+          text: baseQuery,
+          values: values,
+        },
         {
           centerId,
           isSuperAdmin: isMultiCenter,
@@ -34,7 +47,7 @@ const applicantExpenseModel = {
       const scoped = scopeQuery(
         {
           text: `SELECT ae.* FROM ${tableName} ae 
-                   INNER JOIN Financial_Assessment fa ON ae.Financial_Assessment_ID = fa.id
+                   INNER JOIN financial_assessment fa ON ae.financial_assessment_id = fa.id
                    WHERE ae."id" = $1`,
           values: [id],
         },

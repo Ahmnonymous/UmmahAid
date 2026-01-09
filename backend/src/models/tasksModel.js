@@ -8,16 +8,43 @@ const {
 const tableName = "Tasks";
 
 const tasksModel = {
-  getAll: async (centerId = null, isMultiCenter = false) => {
+  getAll: async (centerId = null, isMultiCenter = false, fileId = null) => {
     try {
-      const scoped = scopeQuery(`SELECT * FROM ${tableName}`, {
-        centerId,
-        isSuperAdmin: isMultiCenter,
-        column: "center_id",
-        enforce: !!centerId && !isMultiCenter,
-      });
+      let baseQuery = `SELECT * FROM ${tableName}`;
+      const conditions = [];
+      const values = [];
 
-      const res = await pool.query(scoped.text, scoped.values);
+      // Filter by file_id if provided (for applicant detail views)
+      if (fileId !== null && fileId !== undefined) {
+        // PostgreSQL stores unquoted identifiers as lowercase, so File_ID becomes file_id
+        conditions.push(`file_id = $${values.length + 1}`);
+        values.push(fileId);
+      }
+
+      // When filtering by file_id (viewing specific applicant), be more lenient with center_id
+      // Include tasks with center_id = null for backward compatibility with old tasks
+      const shouldEnforceCenterFilter = !!centerId && !isMultiCenter;
+      const isFileSpecificView = fileId !== null && fileId !== undefined;
+      
+      if (shouldEnforceCenterFilter && isFileSpecificView) {
+        // For file-specific views, include tasks with center_id = null OR center_id = user's center_id
+        conditions.push(`(center_id IS NULL OR center_id = $${values.length + 1})`);
+        values.push(centerId);
+      } else if (shouldEnforceCenterFilter) {
+        // For general views, enforce strict center_id filtering
+        conditions.push(`center_id = $${values.length + 1}`);
+        values.push(centerId);
+      }
+
+      // Build the WHERE clause
+      if (conditions.length > 0) {
+        baseQuery += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      // Apply ordering
+      baseQuery += ` ORDER BY created_at DESC`;
+
+      const res = await pool.query(baseQuery, values);
       return res.rows;
     } catch (err) {
       throw new Error(

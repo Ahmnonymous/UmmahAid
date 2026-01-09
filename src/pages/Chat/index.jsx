@@ -37,10 +37,11 @@ const Chat = () => {
     fetchEmployees();
   }, []);
 
-  // Fetch messages when conversation changes
+  // Fetch messages when conversation changes and mark as read
   useEffect(() => {
-    if (currentConversation) {
+    if (currentConversation && currentUser?.id) {
       fetchMessages(currentConversation.id);
+      markConversationAsRead(currentConversation.id);
     }
   }, [currentConversation]);
 
@@ -53,10 +54,7 @@ const Chat = () => {
       // No frontend filtering needed (backend enforces it)
       setConversations(response.data);
       
-      // Set first conversation as active if none selected
-      if (!currentConversation && response.data.length > 0) {
-        setCurrentConversation(response.data[0]);
-      }
+      // ✅ User must manually select a conversation - no auto-selection
     } catch (error) {
       console.error("Error fetching conversations:", error);
       showAlert("Failed to load conversations", "danger");
@@ -101,6 +99,20 @@ const Chat = () => {
       showAlert("Failed to load messages", "danger");
     } finally {
       setMessagesLoading(false);
+    }
+  };
+
+  const markConversationAsRead = async (conversationId) => {
+    try {
+      if (!conversationId || !currentUser?.id) return;
+      
+      await axiosApi.post(`${API_BASE_URL}/messages/conversation/${conversationId}/mark-read`);
+      
+      // Refresh conversations to update unread counts
+      fetchConversations();
+    } catch (error) {
+      console.error("Error marking conversation as read:", error);
+      // Don't show alert for this - it's a background operation
     }
   };
 
@@ -201,6 +213,11 @@ const Chat = () => {
 
       // Refresh messages from server to get the actual ID and any server-side updates
       await fetchMessages(currentConversation.id);
+      
+      // ✅ Refresh conversation list to show restored conversations
+      // When a message is sent, the backend restores deleted conversations,
+      // so we need to refresh the list to see them appear
+      await fetchConversations();
     } catch (error) {
       console.error("Error sending message:", error);
       showAlert("Failed to send message", "danger");
@@ -221,9 +238,24 @@ const Chat = () => {
       const response = await axiosApi.post(`${API_BASE_URL}/conversations`, payload);
       const newConversation = response.data;
 
-      // Add participants
+      // ✅ Always add the creator as a participant so they can see the conversation
+      const creatorId = currentUser?.id;
+      if (creatorId) {
+        await axiosApi.post(`${API_BASE_URL}/conversationParticipants`, {
+          conversation_id: newConversation.id,
+          employee_id: creatorId,
+          joined_date: new Date().toISOString().split('T')[0],
+          center_id: centerId ?? null,
+          created_by: getAuditName(),
+        });
+      }
+
+      // Add other participants
       if (conversationData.participants && conversationData.participants.length > 0) {
         for (const employeeId of conversationData.participants) {
+          // Skip if the participant is the same as the creator (already added above)
+          if (employeeId == creatorId) continue;
+          
           await axiosApi.post(`${API_BASE_URL}/conversationParticipants`, {
             conversation_id: newConversation.id,
             employee_id: employeeId,
@@ -310,6 +342,7 @@ const Chat = () => {
                   conversation={currentConversation}
                   messages={messages}
                   onSendMessage={handleSendMessage}
+                  onDeleteConversation={handleDeleteConversation}
                   loading={messagesLoading}
                   currentUser={currentUser}
                 />

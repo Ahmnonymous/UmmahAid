@@ -21,6 +21,7 @@ import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getAuditName } from "../../../../helpers/userStorage";
+import { formatDateForInput } from "../../../../helpers/dateHelper";
 
 const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -58,7 +59,7 @@ const HomeVisitsTab = ({ applicantId, homeVisits, onUpdate, showAlert }) => {
   useEffect(() => {
     if (modalOpen) {
       reset({
-        Visit_Date: editItem?.visit_date || "",
+        Visit_Date: formatDateForInput(editItem?.visit_date) || "",
         Representative: editItem?.representative || "",
         Comments: editItem?.comments || "",
         Attachment_1: null,

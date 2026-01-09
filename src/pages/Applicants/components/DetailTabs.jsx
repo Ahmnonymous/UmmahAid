@@ -25,15 +25,16 @@ const DetailTabs = ({
   programs,
   financialAssessment,
   lookupData,
+  activeTab = "all",
+  onTabChange,
   onUpdate,
   showAlert,
 }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
-  const [activeTab, setActiveTab] = useState("all");
 
   const toggleTab = (tab) => {
-    if (activeTab !== tab) {
-      setActiveTab(tab);
+    if (activeTab !== tab && onTabChange) {
+      onTabChange(tab);
     }
   };
 
@@ -48,9 +49,10 @@ const DetailTabs = ({
   const foodAssistanceForApplicant = (foodAssistance || []).filter((x) => safeNum(x.file_id) === currentId);
   const attachmentsForApplicant = (attachments || []).filter((x) => safeNum(x.file_id) === currentId);
   const programsForApplicant = (programs || []).filter((x) => safeNum(x.person_trained_id) === currentId);
+  // Financial assessment should already be filtered by backend, but verify it belongs to current applicant
   const financialAssessmentForApplicant = Array.isArray(financialAssessment)
     ? (financialAssessment || []).find((x) => safeNum(x.file_id) === currentId) || null
-    : financialAssessment || null;
+    : (financialAssessment && safeNum(financialAssessment.file_id) === currentId) ? financialAssessment : null;
 
   const tabs = [
     { id: "all", label: "Show All" },

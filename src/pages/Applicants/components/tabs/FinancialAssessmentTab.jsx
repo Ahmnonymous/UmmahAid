@@ -59,24 +59,123 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
   } = useForm();
 
   useEffect(() => {
-    if (financialAssessment) {
-      fetchIncomeExpense();
+    // Clear income/expense when assessment changes or applicant changes
+    setIncomes([]);
+    setExpenses([]);
+    
+    // Only fetch if we have a valid assessment that belongs to this applicant
+    if (financialAssessment && financialAssessment.id) {
+      // Verify the assessment belongs to this applicant
+      const assessmentFileId = financialAssessment.file_id || financialAssessment.File_ID;
+      if (assessmentFileId && Number(assessmentFileId) === Number(applicantId)) {
+        fetchIncomeExpense();
+      } else {
+        console.warn('Financial assessment does not belong to current applicant:', {
+          assessmentFileId,
+          applicantId,
+          assessmentId: financialAssessment.id
+        });
+      }
     }
-  }, [financialAssessment]);
+  }, [financialAssessment?.id, applicantId]); // Refetch when assessment ID or applicant changes
 
   const fetchIncomeExpense = async () => {
-    if (!financialAssessment) return;
+    if (!financialAssessment || !financialAssessment.id) return;
+
+    // Double-check the assessment belongs to this applicant
+    const assessmentFileId = financialAssessment.file_id || financialAssessment.File_ID;
+    if (assessmentFileId && Number(assessmentFileId) !== Number(applicantId)) {
+      console.error('Cannot fetch income/expense: assessment does not belong to applicant', {
+        assessmentFileId,
+        applicantId
+      });
+      return;
+    }
 
     try {
+      console.log('Fetching income/expense for assessment:', financialAssessment.id);
+      
       const [incomeRes, expenseRes] = await Promise.all([
         axiosApi.get(`${API_BASE_URL}/applicantIncome?financial_assessment_id=${financialAssessment.id}`),
         axiosApi.get(`${API_BASE_URL}/applicantExpense?financial_assessment_id=${financialAssessment.id}`),
       ]);
 
-      setIncomes(incomeRes.data || []);
-      setExpenses(expenseRes.data || []);
+      console.log('Income response:', incomeRes);
+      console.log('Expense response:', expenseRes);
+
+      // Handle different response structures
+      let incomes = [];
+      let expenses = [];
+      
+      // Income data extraction
+      if (Array.isArray(incomeRes.data)) {
+        incomes = incomeRes.data;
+      } else if (incomeRes.data?.data && Array.isArray(incomeRes.data.data)) {
+        incomes = incomeRes.data.data;
+      } else if (incomeRes.data && typeof incomeRes.data === 'object') {
+        // Single object or wrapped response
+        incomes = [];
+      }
+      
+      // Expense data extraction
+      if (Array.isArray(expenseRes.data)) {
+        expenses = expenseRes.data;
+      } else if (expenseRes.data?.data && Array.isArray(expenseRes.data.data)) {
+        expenses = expenseRes.data.data;
+      } else if (expenseRes.data && typeof expenseRes.data === 'object') {
+        // Single object or wrapped response
+        expenses = [];
+      }
+      
+      console.log('Extracted incomes:', incomes);
+      console.log('Extracted expenses:', expenses);
+      
+      // Additional safety check - filter to ensure all items belong to this assessment
+      // Convert to numbers for comparison to handle string/number type mismatches
+      const assessmentIdNum = Number(financialAssessment.id);
+      
+      const validIncomes = incomes.filter(item => {
+        const itemAssessmentId = item.financial_assessment_id || item.Financial_Assessment_ID || item.financial_assessment_ID;
+        const itemAssessmentIdNum = Number(itemAssessmentId);
+        const matches = !itemAssessmentId || itemAssessmentIdNum === assessmentIdNum;
+        if (!matches && itemAssessmentId) {
+          console.warn('Income item does not match assessment:', {
+            itemAssessmentId,
+            itemAssessmentIdNum,
+            expectedAssessmentId: financialAssessment.id,
+            expectedAssessmentIdNum: assessmentIdNum,
+            item
+          });
+        }
+        return matches;
+      });
+      
+      const validExpenses = expenses.filter(item => {
+        const itemAssessmentId = item.financial_assessment_id || item.Financial_Assessment_ID || item.financial_assessment_ID;
+        const itemAssessmentIdNum = Number(itemAssessmentId);
+        const matches = !itemAssessmentId || itemAssessmentIdNum === assessmentIdNum;
+        if (!matches && itemAssessmentId) {
+          console.warn('Expense item does not match assessment:', {
+            itemAssessmentId,
+            itemAssessmentIdNum,
+            expectedAssessmentId: financialAssessment.id,
+            expectedAssessmentIdNum: assessmentIdNum,
+            item
+          });
+        }
+        return matches;
+      });
+
+      console.log('Valid incomes:', validIncomes);
+      console.log('Valid expenses:', validExpenses);
+
+      setIncomes(validIncomes);
+      setExpenses(validExpenses);
     } catch (error) {
       console.error("Error fetching income/expense:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      setIncomes([]);
+      setExpenses([]);
     }
   };
 
@@ -388,7 +487,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
                               onMouseOver={(e) => e.currentTarget.classList.add("text-primary", "text-decoration-underline")}
                               onMouseOut={(e) => e.currentTarget.classList.remove("text-primary", "text-decoration-underline")}
                             >
-                              {getLookupName(lookupData.incomeTypes, item.income_type_id)}
+                              {getLookupName(lookupData.incomeTypes, item.income_type_id || item.Income_Type_ID || item.income_Type_ID)}
                             </span>
                           </td>
                           <td>R {parseFloat(item.amount || 0).toFixed(2)}</td>
@@ -442,7 +541,7 @@ const FinancialAssessmentTab = ({ applicantId, financialAssessment, lookupData, 
                               onMouseOver={(e) => e.currentTarget.classList.add("text-primary", "text-decoration-underline")}
                               onMouseOut={(e) => e.currentTarget.classList.remove("text-primary", "text-decoration-underline")}
                             >
-                              {getLookupName(lookupData.expenseTypes, item.expense_type_id)}
+                              {getLookupName(lookupData.expenseTypes, item.expense_type_id || item.Expense_Type_ID || item.expense_Type_ID)}
                             </span>
                           </td>
                           <td>R {parseFloat(item.amount || 0).toFixed(2)}</td>

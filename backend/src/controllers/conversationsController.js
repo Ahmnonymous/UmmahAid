@@ -7,6 +7,10 @@ const conversationsController = {
       let centerId = req.center_id || req.user?.center_id || null;
       const userId = req.user?.id || null; // Get user ID from JWT
       
+      console.log('[DEBUG] ConversationsController.getAll - req.user:', req.user);
+      console.log('[DEBUG] ConversationsController.getAll - raw userId:', userId);
+      console.log('[DEBUG] ConversationsController.getAll - raw centerId:', centerId);
+      
       // ✅ Normalize centerId: convert to integer or null
       if (centerId !== null && centerId !== undefined) {
         centerId = parseInt(centerId);
@@ -26,7 +30,11 @@ const conversationsController = {
         }
       }
       
+      console.log('[DEBUG] ConversationsController.getAll - normalized userId:', normalizedUserId);
+      console.log('[DEBUG] ConversationsController.getAll - normalized centerId:', centerId);
+      
       const data = await conversationsModel.getAll(centerId, normalizedUserId); 
+      console.log('[DEBUG] ConversationsController.getAll - returning', data.length, 'conversations');
       res.json(data); 
     } catch(err){ 
       console.error(`[ERROR] Conversations.getAll - ${err.message}`, err);
@@ -94,13 +102,40 @@ const conversationsController = {
   
   delete: async (req, res) => { 
     try { 
-      // ✅ App Admin (center_id=null) can delete all, others only their center
+      // ✅ Soft delete: Mark conversation as deleted for this user only
+      // Other participants will still see the conversation
+      const conversationId = req.params.id;
+      const userId = req.user?.id || null;
       const centerId = req.center_id || req.user?.center_id || null;
-      const deleted = await conversationsModel.delete(req.params.id, centerId); 
-      if (!deleted) {
-        return res.status(404).json({ error: "Not found" });
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
       }
-      res.json({message: 'Deleted successfully'}); 
+      
+      // Normalize userId
+      const normalizedUserId = parseInt(userId);
+      if (isNaN(normalizedUserId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Normalize conversationId
+      const normalizedConversationId = parseInt(conversationId);
+      if (isNaN(normalizedConversationId)) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+      
+      const conversationParticipantsModel = require('../models/conversationParticipantsModel');
+      const deleted = await conversationParticipantsModel.markConversationDeletedForUser(
+        normalizedConversationId,
+        normalizedUserId,
+        centerId
+      );
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Conversation not found or you are not a participant" });
+      }
+      
+      res.json({message: 'Conversation deleted successfully'}); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 
     } 

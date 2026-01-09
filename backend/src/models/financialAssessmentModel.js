@@ -5,7 +5,9 @@ const {
   scopeQuery,
 } = require("../utils/modelHelpers");
 
-const tableName = "Financial_Assessment";
+// PostgreSQL stores unquoted identifiers as lowercase
+// Use lowercase to match how the table is actually stored
+const tableName = "financial_assessment";
 
 const financialAssessmentModel = {
   getAll: async (centerId = null, isMultiCenter = false) => {
@@ -48,6 +50,63 @@ const financialAssessmentModel = {
     } catch (err) {
       throw new Error(
         `Error fetching record by ID from ${tableName}: ${err.message}`,
+      );
+    }
+  },
+
+  getByFileId: async (fileId, centerId = null, isMultiCenter = false) => {
+    try {
+      // PostgreSQL stores unquoted identifiers as lowercase, so File_ID becomes file_id
+      const baseQuery = {
+        text: `SELECT * FROM ${tableName} WHERE file_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        values: [fileId],
+      };
+      
+      const scoped = scopeQuery(
+        baseQuery,
+        {
+          centerId,
+          isSuperAdmin: isMultiCenter,
+          column: "center_id",
+          enforce: !!centerId && !isMultiCenter,
+        },
+      );
+
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('getByFileId query:', scoped.text);
+        console.log('getByFileId values:', scoped.values);
+      }
+
+      const res = await pool.query(scoped.text, scoped.values);
+      
+      if (!res.rows[0]) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('No financial assessment found for file_id:', fileId);
+        }
+        return null;
+      }
+
+      const result = res.rows[0];
+      
+      // Verify the result matches the requested file_id
+      if (result.file_id && parseInt(result.file_id, 10) !== parseInt(fileId, 10)) {
+        console.error('Query returned wrong file_id:', {
+          requested: fileId,
+          returned: result.file_id
+        });
+        return null;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('getByFileId result:', { id: result.id, file_id: result.file_id });
+      }
+
+      return result;
+    } catch (err) {
+      console.error('getByFileId error:', err);
+      throw new Error(
+        `Error fetching record by file_id from ${tableName}: ${err.message}`,
       );
     }
   },

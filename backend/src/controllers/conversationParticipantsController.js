@@ -26,7 +26,20 @@ const conversationParticipantsController = {
   
   create: async (req, res) => {
     try {
-      const data = await conversationParticipantsModel.create(req.body);
+      // ✅ Map frontend field names to match database column names
+      // PostgreSQL stores unquoted identifiers as lowercase, so use lowercase column names
+      const mappedFields = {
+        ...req.body,
+        conversation_id: req.body.conversation_id || req.body.Conversation_ID,
+        employee_id: req.body.employee_id || req.body.Employee_ID,
+        joined_date: req.body.joined_date || req.body.Joined_Date,
+      };
+      // Remove capitalized versions if they exist
+      delete mappedFields.Conversation_ID;
+      delete mappedFields.Employee_ID;
+      delete mappedFields.Joined_Date;
+      
+      const data = await conversationParticipantsModel.create(mappedFields);
       res.status(201).json(data);
     } catch(err) {
       res.status(500).json({error: err.message});

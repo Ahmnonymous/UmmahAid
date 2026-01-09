@@ -23,6 +23,8 @@ router.use(roleMiddleware());
 router.use(filterMiddleware);
 
 router.get('/', messagesController.getAll);
+// ✅ Specific routes must come before parameterized routes to avoid conflicts
+router.post('/conversation/:conversationId/mark-read', messagesController.markConversationAsRead);
 router.get('/:id/download-attachment', messagesController.downloadAttachment);
 router.get('/:id', messagesController.getById);
 router.post('/', upload.fields([{ name: 'attachment' }]), messagesController.create);

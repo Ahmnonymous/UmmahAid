@@ -21,6 +21,7 @@ import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL } from "../../../../helpers/url_helper";
 import { getAuditName } from "../../../../helpers/userStorage";
+import { formatDateForInput } from "../../../../helpers/dateHelper";
 
 const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -40,9 +41,15 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
   const {
     control,
     handleSubmit,
+    watch,
+    getValues,
+    trigger,
+    setValue,
     formState: { errors, isSubmitting },
     reset,
   } = useForm();
+
+  const selectedNationalityId = watch("Nationality");
 
   useEffect(() => {
     if (modalOpen) {
@@ -51,7 +58,10 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
         Name: editItem?.name || "",
         Surname: editItem?.surname || "",
         ID_Number: editItem?.id_number || "",
-        Date_of_Birth: editItem?.date_of_birth || "",
+        Date_of_Birth: formatDateForInput(editItem?.date_of_birth) || "",
+        Nationality: editItem?.nationality || "",
+        Passport_Expiry_Date: formatDateForInput(editItem?.passport_expiry_date) || "",
+        Passport_Number: editItem?.passport_number || "",
         Employment_Status: editItem?.employment_status || "",
         Gender: editItem?.gender || "",
         Highest_Education: editItem?.highest_education || "",
@@ -59,6 +69,23 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
       });
     }
   }, [editItem, modalOpen, reset]);
+
+  // Re-validate passport fields when nationality changes and clear them if South African
+  useEffect(() => {
+    if (modalOpen && selectedNationalityId !== undefined) {
+      const selected = (lookupData.nationality || []).find((n) => String(n.id) === String(selectedNationalityId));
+      const isSouthAfrican = (selected?.name || "").toLowerCase() === "south african";
+      
+      if (isSouthAfrican) {
+        // Clear passport fields when nationality is South African
+        setValue("Passport_Expiry_Date", "");
+        setValue("Passport_Number", "");
+      }
+      
+      // Re-validate passport fields
+      trigger(["Passport_Expiry_Date", "Passport_Number"]);
+    }
+  }, [selectedNationalityId, modalOpen, trigger, setValue, lookupData.nationality]);
 
   const toggleModal = () => {
     setModalOpen(!modalOpen);
@@ -79,6 +106,11 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
 
   const onSubmit = async (data) => {
     try {
+      // Check if nationality is South African
+      const selectedNationalityId = data.Nationality ? parseInt(data.Nationality) : null;
+      const selected = (lookupData.nationality || []).find((n) => String(n.id) === String(selectedNationalityId));
+      const isSouthAfrican = (selected?.name || "").toLowerCase() === "south african";
+
       const payload = {
         file_id: applicantId,
         relationship_type: data.Relationship_Type ? parseInt(data.Relationship_Type) : null,
@@ -86,6 +118,10 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
         surname: data.Surname,
         id_number: data.ID_Number,
         date_of_birth: data.Date_of_Birth || null,
+        nationality: selectedNationalityId,
+        // Clear passport fields if nationality is South African
+        passport_expiry_date: isSouthAfrican ? null : (data.Passport_Expiry_Date || null),
+        passport_number: isSouthAfrican ? null : (data.Passport_Number || null),
         employment_status: data.Employment_Status ? parseInt(data.Employment_Status) : null,
         gender: data.Gender ? parseInt(data.Gender) : null,
         highest_education: data.Highest_Education ? parseInt(data.Highest_Education) : null,
@@ -395,6 +431,104 @@ const RelationshipsTab = ({ applicantId, relationships, lookupData, onUpdate, sh
                   />
                 </FormGroup>
               </Col>
+
+              <Col md={6}>
+                <FormGroup>
+                  <Label for="Nationality">Nationality</Label>
+                  <Controller
+                    name="Nationality"
+                    control={control}
+                    render={({ field }) => (
+                      <Input id="Nationality" type="select" disabled={isOrgExecutive} {...field}>
+                        <option value="">Select Nationality</option>
+                        {(lookupData.nationality || []).map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </Input>
+                    )}
+                  />
+                </FormGroup>
+              </Col>
+
+              {(() => {
+                const selectedNationalityId = watch("Nationality");
+                const selected = (lookupData.nationality || []).find((n) => String(n.id) === String(selectedNationalityId));
+                const isSouthAfrican = (selected?.name || "").toLowerCase() === "south african";
+                return !isSouthAfrican ? (
+                  <>
+                    <Col md={6}>
+                      <FormGroup>
+                        <Label for="Passport_Expiry_Date">
+                          Passport Expiry Date <span className="text-danger">*</span>
+                        </Label>
+                        <Controller
+                          name="Passport_Expiry_Date"
+                          control={control}
+                          rules={{
+                            validate: (value) => {
+                              const currentNationality = getValues("Nationality");
+                              const selected = (lookupData.nationality || []).find((n) => String(n.id) === String(currentNationality));
+                              const isSouthAfrican = (selected?.name || "").toLowerCase() === "south african";
+                              if (!isSouthAfrican && !value) {
+                                return "Passport expiry date is required";
+                              }
+                              return true;
+                            }
+                          }}
+                          render={({ field }) => (
+                            <Input 
+                              id="Passport_Expiry_Date" 
+                              type="date" 
+                              invalid={!!errors.Passport_Expiry_Date}
+                              disabled={isOrgExecutive} 
+                              {...field} 
+                            />
+                          )}
+                        />
+                        {errors.Passport_Expiry_Date && (
+                          <FormFeedback>{errors.Passport_Expiry_Date.message}</FormFeedback>
+                        )}
+                      </FormGroup>
+                    </Col>
+                    <Col md={6}>
+                      <FormGroup>
+                        <Label for="Passport_Number">
+                          Passport Number <span className="text-danger">*</span>
+                        </Label>
+                        <Controller
+                          name="Passport_Number"
+                          control={control}
+                          rules={{
+                            validate: (value) => {
+                              const currentNationality = getValues("Nationality");
+                              const selected = (lookupData.nationality || []).find((n) => String(n.id) === String(currentNationality));
+                              const isSouthAfrican = (selected?.name || "").toLowerCase() === "south african";
+                              if (!isSouthAfrican && !value) {
+                                return "Passport number is required";
+                              }
+                              return true;
+                            }
+                          }}
+                          render={({ field }) => (
+                            <Input 
+                              id="Passport_Number" 
+                              type="text" 
+                              invalid={!!errors.Passport_Number}
+                              disabled={isOrgExecutive} 
+                              {...field} 
+                            />
+                          )}
+                        />
+                        {errors.Passport_Number && (
+                          <FormFeedback>{errors.Passport_Number.message}</FormFeedback>
+                        )}
+                      </FormGroup>
+                    </Col>
+                  </>
+                ) : null;
+              })()}
 
               <Col md={6}>
                 <FormGroup>

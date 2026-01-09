@@ -6,7 +6,17 @@ const applicantExpenseController = {
       // ✅ Apply tenant filtering
       const centerId = req.center_id || req.user?.center_id;
       const isMultiCenter = req.isMultiCenter;
-      const data = await applicantExpenseModel.getAll(centerId, isMultiCenter); 
+      
+      // ✅ Support financial_assessment_id query parameter to filter by assessment
+      const financialAssessmentId = req.query.financial_assessment_id 
+        ? parseInt(req.query.financial_assessment_id, 10) 
+        : null;
+      
+      const data = await applicantExpenseModel.getAll(
+        centerId, 
+        isMultiCenter, 
+        financialAssessmentId
+      ); 
       res.json(data); 
     } catch(err){ 
       res.status(500).json({error: err.message}); 

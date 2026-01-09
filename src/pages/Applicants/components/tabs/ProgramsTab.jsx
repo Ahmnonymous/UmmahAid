@@ -21,6 +21,7 @@ import { useRole } from "../../../../helpers/useRole";
 import axiosApi from "../../../../helpers/api_helper";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../../../helpers/url_helper";
 import { getAuditName } from "../../../../helpers/userStorage";
+import { formatDateForInput } from "../../../../helpers/dateHelper";
 
 const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -58,7 +59,7 @@ const ProgramsTab = ({ applicantId, programs, lookupData, onUpdate, showAlert })
       reset({
         Program_Name: editItem?.program_name || "",
         Means_of_communication: editItem?.means_of_communication || "",
-        Date_of_program: editItem?.date_of_program || "",
+        Date_of_program: formatDateForInput(editItem?.date_of_program) || "",
         Communicated_by: editItem?.communicated_by || "",
         Training_Level: editItem?.training_level || "",
         Training_Provider: editItem?.training_provider || "",

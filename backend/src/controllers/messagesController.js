@@ -77,7 +77,71 @@ const messagesController = {
         await fs.unlink(file.path);
       }
       
-      const data = await messagesModel.create(fields); 
+      const data = await messagesModel.create(fields);
+      
+      // ✅ Restore conversation for all participants if it was deleted
+      // When a new message arrives, restore the conversation for all participants (including sender)
+      // This ensures deleted conversations reappear when new messages arrive
+      // IMPORTANT: Set last_restored_at to the message's created_at (or slightly before) so the new message is always shown
+      if (data && data.conversation_id && data.created_at) {
+        try {
+          const conversationParticipantsModel = require('../models/conversationParticipantsModel');
+          // Get all participants for this conversation
+          const pool = require('../config/db');
+          const participantsRes = await pool.query(
+            'SELECT employee_id FROM Conversation_Participants WHERE conversation_id = $1',
+            [data.conversation_id]
+          );
+          
+          // Restore conversation for ALL participants (including sender)
+          // Pass the message's created_at timestamp so last_restored_at is set to that time (or slightly before)
+          // This ensures the new message is always included in the filtered results
+          console.log(`[DEBUG] Restoring conversation ${data.conversation_id} for ${participantsRes.rows.length} participants`);
+          console.log(`[DEBUG] Message created_at:`, data.created_at, typeof data.created_at);
+          
+          // Use the message's created_at timestamp - set last_restored_at to 1 second before
+          // This ensures the new message is always included since we use >= comparison
+          // Using 1 second buffer accounts for any timestamp precision or timezone issues
+          const messageCreatedAt = data.created_at ? new Date(data.created_at) : new Date();
+          // Set to 1 second before to ensure message is definitely included
+          const restoreTimestamp = new Date(messageCreatedAt.getTime() - 1000);
+          console.log(`[DEBUG] Message created_at (Date):`, messageCreatedAt.toISOString());
+          console.log(`[DEBUG] Setting last_restored_at to:`, restoreTimestamp.toISOString());
+          console.log(`[DEBUG] Time difference (ms):`, messageCreatedAt.getTime() - restoreTimestamp.getTime());
+          
+          // Verify the timestamp is definitely before the message
+          if (restoreTimestamp >= messageCreatedAt) {
+            console.error(`[ERROR] restoreTimestamp is NOT before messageCreatedAt!`);
+            // Force it to be 1 second before
+            const forcedTimestamp = new Date(messageCreatedAt.getTime() - 1000);
+            console.log(`[DEBUG] Using forced timestamp:`, forcedTimestamp.toISOString());
+          }
+          
+          for (const participant of participantsRes.rows) {
+            const participantId = parseInt(participant.employee_id);
+            const restored = await conversationParticipantsModel.restoreConversationForUser(
+              data.conversation_id,
+              participantId,
+              restoreTimestamp
+            );
+            console.log(`[DEBUG] Restored conversation for participant ${participantId}:`, restored ? 'Success' : 'No update needed');
+            if (restored && restored.last_restored_at) {
+              console.log(`[DEBUG] Participant ${participantId} last_restored_at:`, restored.last_restored_at);
+            }
+          }
+          
+          // Also update the conversation's updated_at timestamp so it appears at the top of the list
+          const updateRes = await pool.query(
+            'UPDATE Conversations SET updated_at = NOW() WHERE id = $1 RETURNING id, updated_at',
+            [data.conversation_id]
+          );
+          console.log(`[DEBUG] Updated conversation ${data.conversation_id} updated_at:`, updateRes.rows[0]?.updated_at);
+        } catch (restoreErr) {
+          // Log but don't fail the message creation
+          console.error('Error restoring conversation for participants:', restoreErr);
+        }
+      }
+      
       res.status(201).json(data); 
     } catch(err){ 
       res.status(500).json({error: "Error creating record in Messages: " + err.message}); 
@@ -224,10 +288,10 @@ const messagesController = {
       const record = await messagesModel.getRawAttachment(req.params.id, centerId, normalizedUserId);
       if (!record) return res.status(404).send("Record not found");
       if (!record.attachment) return res.status(404).send("No attachment found");
-  
+
       const mimeType = record.attachment_mime || "application/octet-stream";
       const filename = record.attachment_filename || "attachment";
-  
+
       // Get the raw buffer (PostgreSQL returns bytea as Buffer)
       let buffer = record.attachment;
       
@@ -245,19 +309,63 @@ const messagesController = {
           throw new Error("Invalid attachment data type");
         }
       }
-  
+
       if (!buffer || !buffer.length) {
         return res.status(500).send("Attachment buffer is empty or corrupted");
       }
-  
+
       res.setHeader("Content-Type", mimeType);
       res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`);
       res.setHeader("Content-Length", buffer.length);
-  
+
       res.end(buffer);
     } catch (err) {
       console.error("Error downloading attachment:", err);
       res.status(500).json({ error: "Error downloading attachment: " + err.message });
+    }
+  },
+
+  markConversationAsRead: async (req, res) => {
+    try {
+      const conversationId = req.params.conversationId || req.params.id;
+      const centerId = req.center_id || req.user?.center_id || null;
+      const userId = req.user?.id || null;
+      
+      if (!conversationId) {
+        return res.status(400).json({ error: "Conversation ID is required" });
+      }
+      
+      // Normalize userId
+      let normalizedUserId = null;
+      if (userId !== null && userId !== undefined) {
+        normalizedUserId = parseInt(userId);
+        if (isNaN(normalizedUserId)) {
+          return res.status(400).json({ error: "Invalid user ID" });
+        }
+      } else {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Normalize conversationId
+      const normalizedConversationId = parseInt(conversationId);
+      if (isNaN(normalizedConversationId)) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+      
+      const count = await messagesModel.markConversationAsRead(
+        normalizedConversationId,
+        normalizedUserId,
+        centerId
+      );
+      
+      res.json({ 
+        success: true, 
+        message: `Marked ${count} messages as read`,
+        count 
+      });
+    } catch (err) {
+      console.error("Error marking conversation as read:", err);
+      res.status(500).json({ error: "Error marking conversation as read: " + err.message });
     }
   }
 };

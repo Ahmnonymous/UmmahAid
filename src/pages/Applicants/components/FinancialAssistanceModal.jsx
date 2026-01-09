@@ -14,6 +14,7 @@ import {
   Button,
 } from "reactstrap";
 import { useForm, Controller } from "react-hook-form";
+import { formatDateForInput } from "../../../helpers/dateHelper";
 
 const defaultValues = {
   Assistance_Type: "",
@@ -51,7 +52,7 @@ const FinancialAssistanceModal = ({
       reset({
         Assistance_Type: editItem?.assistance_type || "",
         Financial_Amount: editItem?.financial_amount || "",
-        Date_of_Assistance: editItem?.date_of_assistance || "",
+        Date_of_Assistance: formatDateForInput(editItem?.date_of_assistance) || "",
         Assisted_By: editItem?.assisted_by || "",
         Sector: editItem?.sector || "",
         Program: editItem?.program || "",

@@ -45,10 +45,15 @@ const NewConversationModal = ({
         return;
       }
 
+      if (data.type === "Direct" && (!data.participants || data.participants.length !== 1)) {
+        showAlert("Please select exactly one participant for a direct conversation", "warning");
+        return;
+      }
+
       const participantIds = data.participants ? data.participants.map(p => p.value) : [];
       
       await onSubmit({
-        title: data.title,
+        title: data.type === "Direct" ? "" : data.title, // Empty title for Direct conversations
         type: data.type,
         participants: participantIds,
       });
@@ -77,27 +82,7 @@ const NewConversationModal = ({
 
       <Form onSubmit={handleSubmit(handleFormSubmit)}>
         <ModalBody>
-          <FormGroup>
-            <Label for="title">
-              Conversation Title <span className="text-danger">*</span>
-            </Label>
-            <Controller
-              name="title"
-              control={control}
-              rules={{ required: "Title is required" }}
-              render={({ field }) => (
-                <Input
-                  id="title"
-                  type="text"
-                  placeholder="Enter conversation title"
-                  invalid={!!errors.title}
-                  {...field}
-                />
-              )}
-            />
-            {errors.title && <FormFeedback>{errors.title.message}</FormFeedback>}
-          </FormGroup>
-
+          {/* Type field first */}
           <FormGroup>
             <Label for="type">
               Conversation Type <span className="text-danger">*</span>
@@ -121,6 +106,30 @@ const NewConversationModal = ({
               {conversationType === "Announcement" && "Broadcast messages to all"}
             </small>
           </FormGroup>
+
+          {/* Title field - only show for Group and Announcement, not Direct */}
+          {conversationType !== "Direct" && (
+            <FormGroup>
+              <Label for="title">
+                Conversation Title <span className="text-danger">*</span>
+              </Label>
+              <Controller
+                name="title"
+                control={control}
+                rules={{ required: conversationType !== "Direct" ? "Title is required" : false }}
+                render={({ field }) => (
+                  <Input
+                    id="title"
+                    type="text"
+                    placeholder="Enter conversation title"
+                    invalid={!!errors.title}
+                    {...field}
+                  />
+                )}
+              />
+              {errors.title && <FormFeedback>{errors.title.message}</FormFeedback>}
+            </FormGroup>
+          )}
 
           {conversationType === "Group" && (
             <FormGroup>
@@ -155,17 +164,34 @@ const NewConversationModal = ({
               <Controller
                 name="participants"
                 control={control}
+                rules={{ 
+                  validate: (value) => {
+                    if (!value || value.length === 0) {
+                      return "Please select one participant";
+                    }
+                    if (value.length > 1) {
+                      return "Please select only one participant for direct conversation";
+                    }
+                    return true;
+                  }
+                }}
                 render={({ field }) => (
                   <Select
                     {...field}
-                    isMulti
+                    isMulti={false}
                     options={employeeOptions}
                     className="react-select-container"
                     classNamePrefix="react-select"
                     placeholder="Select one person..."
+                    onChange={(selected) => {
+                      // Convert single selection to array format for consistency
+                      field.onChange(selected ? [selected] : []);
+                    }}
+                    value={field.value && field.value.length > 0 ? field.value[0] : null}
                   />
                 )}
               />
+              {errors.participants && <FormFeedback>{errors.participants.message}</FormFeedback>}
               <small className="text-muted">
                 Select one person for direct messaging
               </small>
