@@ -12,40 +12,45 @@ const NationalityChart = ({ data }) => {
     chart: {
       type: "pie",
       height: 260,
+      toolbar: {
+        show: false,
+      },
     },
     labels: labels,
     colors: chartColors,
     legend: {
-      show: true,
-      position: "bottom",
-      horizontalAlign: "center",
-      fontSize: "12px",
-      fontFamily: "inherit",
-      offsetY: 8,
+      show: false,
     },
     dataLabels: {
       enabled: true,
       formatter: function (val, opts) {
         return opts.w.config.series[opts.seriesIndex];
       },
+      style: {
+        fontSize: "11px",
+        fontWeight: 600,
+        colors: ["#fff"],
+      },
+      dropShadow: {
+        enabled: true,
+        color: "#000",
+        top: 1,
+        left: 1,
+        blur: 1,
+        opacity: 0.7,
+      },
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "0%",
+        },
+        expandOnClick: false,
+      },
     },
     tooltip: {
-      y: {
-        formatter: function (val) {
-          return val + " applicants";
-        },
-      },
+      enabled: false,
     },
-    responsive: [
-      {
-        breakpoint: 1200,
-        options: {
-          chart: {
-            height: 260,
-          },
-        },
-      },
-    ],
   };
 
   return series.length > 0 && series.some(v => v > 0) ? (
