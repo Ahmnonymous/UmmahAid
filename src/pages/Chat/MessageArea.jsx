@@ -4,6 +4,7 @@ import SimpleBar from "simplebar-react";
 import { useRole } from "../../helpers/useRole";
 import { API_BASE_URL, API_STREAM_BASE_URL } from "../../helpers/url_helper";
 import DeleteModal from "../../components/Common/DeleteModal";
+import { getAuditName } from "../../helpers/userStorage";
 
 const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUser, onDeleteConversation }) => {
   const { isOrgExecutive } = useRole(); // Read-only check
@@ -13,6 +14,11 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
   const messageInputRef = useRef(null);
+
+  // Check if this is an Announcement conversation and if current user is the initiator
+  const isAnnouncement = conversation?.type === "Announcement";
+  const isInitiator = isAnnouncement && conversation?.created_by === getAuditName();
+  const canSendMessage = !isAnnouncement || isInitiator; // Can send if not announcement OR if initiator
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -47,7 +53,7 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && canSendMessage) {
       e.preventDefault();
       handleSend();
     }
@@ -271,7 +277,13 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
                                   </small>
                                   {isMine && (
                                     <i 
-                                      className={`bx bx-check-double ${message.read_status === "Read" ? "text-primary" : "text-secondary"}`} 
+                                      className={`bx bx-check-double ${
+                                        // For Group/Announcement: show blue tick only when all participants have read
+                                        // For Direct: show blue tick when the other person has read (using all_read_by_participants or read_status)
+                                        (conversation.type === "Group" || conversation.type === "Announcement")
+                                          ? (message.all_read_by_participants === true ? "text-primary" : "text-secondary")
+                                          : (message.all_read_by_participants === true || message.read_status === "Read" ? "text-primary" : "text-secondary")
+                                      }`} 
                                       style={{ fontSize: "14px", marginLeft: "2px" }}
                                     ></i>
                                   )}
@@ -313,17 +325,24 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
             </div>
           )}
 
-          {/* Input Area - WhatsApp Style - Org Executive can send messages */}
+          {/* Input Area - WhatsApp Style */}
           <div className="p-2 chat-input-section border-top bg-body" style={{ flexShrink: 0 }}>
+            {isAnnouncement && !isInitiator && (
+              <div className="alert alert-info mb-2 py-2" style={{ fontSize: "0.875rem" }}>
+                <i className="bx bx-info-circle me-1"></i>
+                This is an announcement conversation. Only the initiator can send messages.
+              </div>
+            )}
             <Row className="g-2 align-items-end">
               <Col className="col-auto">
-                <label htmlFor="fileInput" style={{ cursor: "pointer", marginBottom: 0 }}>
+                <label htmlFor="fileInput" style={{ cursor: canSendMessage ? "pointer" : "not-allowed", marginBottom: 0 }}>
                   <Button
                     color="light"
                     className="btn-icon rounded-circle d-flex align-items-center justify-content-center"
                     style={{ width: "38px", height: "38px", padding: 0 }}
                     type="button"
-                    onClick={() => document.getElementById('fileInput').click()}
+                    onClick={() => canSendMessage && document.getElementById('fileInput').click()}
+                    disabled={!canSendMessage}
                   >
                     <i className="bx bx-paperclip font-size-18 text-muted" id="AttachTooltip"></i>
                   </Button>
@@ -337,6 +356,7 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
                   id="fileInput"
                   className="d-none"
                   onChange={handleFileChange}
+                  disabled={!canSendMessage}
                 />
               </Col>
               <Col>
@@ -345,16 +365,18 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
                   type="textarea"
                   rows="1"
                   value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
+                  onChange={(e) => canSendMessage && setMessageText(e.target.value)}
                   onKeyPress={handleKeyPress}
                   className="chat-input"
-                  placeholder="Type a message..."
+                  placeholder={isAnnouncement && !isInitiator ? "Read-only: Only the initiator can send messages" : "Type a message..."}
+                  disabled={!canSendMessage}
                   style={{ 
                     resize: "none", 
                     borderRadius: "20px",
                     fontSize: "0.875rem",
                     padding: "8px 16px",
-                    minHeight: "38px"
+                    minHeight: "38px",
+                    opacity: canSendMessage ? 1 : 0.6
                   }}
                 />
               </Col>
@@ -363,7 +385,7 @@ const MessageArea = ({ conversation, messages, onSendMessage, loading, currentUs
                   type="button"
                   color="primary"
                   onClick={handleSend}
-                  disabled={!messageText.trim() && !selectedFile}
+                  disabled={(!messageText.trim() && !selectedFile) || !canSendMessage}
                   className="rounded-circle d-flex align-items-center justify-content-center"
                   style={{ width: "38px", height: "38px", padding: 0 }}
                 >

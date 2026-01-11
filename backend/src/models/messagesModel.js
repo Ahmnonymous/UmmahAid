@@ -46,8 +46,71 @@ const checkLastRestoredAtColumnExists = async () => {
 const messagesModel = {
   getAll: async (centerId = null, userId = null, conversationId = null) => {
     try {
+      // Check if Message_Read_Status table exists (for per-participant read tracking)
+      const tableExists = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'message_read_status'
+        )
+      `);
+      const usePerParticipantTracking = tableExists.rows[0].exists;
+      
       // ✅ Filter by participant - users only see messages from conversations they're part of
-      let query = `SELECT DISTINCT m.* FROM ${tableName} m`;
+      // For Group/Announcement conversations, also check if all participants have read the message
+      let query = `SELECT DISTINCT m.*`;
+      
+      // Add field to check if all participants have read (for Group/Announcement conversations)
+      if (usePerParticipantTracking) {
+        query += `, 
+          CASE 
+            WHEN c.type IN ('Group', 'Announcement') THEN
+              (
+                SELECT COUNT(*) = 0
+                FROM Conversation_Participants cp_all
+                WHERE cp_all.conversation_id = c.id
+                  AND cp_all.employee_id != m.sender_id
+                  -- Only check participants who were in the conversation when the message was sent
+                  -- They must have joined before or on the day the message was sent
+                  AND (cp_all.joined_date <= m.created_at::DATE)
+                  -- They must not have left before the message was sent
+                  -- (deleted_at IS NULL means still in conversation, OR deleted_at > created_at means left after message was sent)
+                  AND (cp_all.deleted_at IS NULL OR cp_all.deleted_at > m.created_at)
+                  -- Check if they haven't read the message yet
+                  AND NOT EXISTS (
+                    SELECT 1 FROM Message_Read_Status mrs
+                    WHERE mrs.Message_ID = m.id 
+                      AND mrs.Employee_ID = cp_all.employee_id
+                  )
+              )
+            ELSE
+              -- For Direct conversations: check if the other participant has read
+              -- Only check if they were in the conversation when the message was sent
+              (
+                SELECT COUNT(*) > 0
+                FROM Conversation_Participants cp_direct
+                WHERE cp_direct.conversation_id = c.id
+                  AND cp_direct.employee_id != m.sender_id
+                  -- Only check participants who were in the conversation when the message was sent
+                  AND (cp_direct.joined_date <= m.created_at::DATE)
+                  AND (cp_direct.deleted_at IS NULL OR cp_direct.deleted_at > m.created_at)
+                  -- Check if they have read the message
+                  AND EXISTS (
+                    SELECT 1 FROM Message_Read_Status mrs
+                    WHERE mrs.Message_ID = m.id 
+                      AND mrs.Employee_ID = cp_direct.employee_id
+                  )
+              )
+          END as all_read_by_participants`;
+      } else {
+        // Fallback to legacy read_status for Direct conversations
+        query += `, 
+          CASE 
+            WHEN c.type IN ('Group', 'Announcement') THEN false
+            ELSE (m.read_status = 'Read')
+          END as all_read_by_participants`;
+      }
+      
+      query += ` FROM ${tableName} m`;
       const values = [];
       let whereConditions = [];
       
@@ -55,8 +118,7 @@ const messagesModel = {
       const hasLastRestoredAtColumn = await checkLastRestoredAtColumnExists();
       
       if (userId) {
-        // Join with Conversation_Participants to filter by user participation
-        // PostgreSQL stores unquoted identifiers as lowercase, so Conversation_ID becomes conversation_id
+        // Join with Conversations to get conversation type
         query += ` INNER JOIN Conversations c ON m.conversation_id = c.id 
                    INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id`;
         whereConditions.push(`cp.employee_id = $${values.length + 1}`);
@@ -73,6 +135,9 @@ const messagesModel = {
           // Note: last_restored_at is set to slightly before message creation to ensure new messages are shown
           whereConditions.push(`(cp.last_restored_at IS NULL OR m.created_at >= cp.last_restored_at)`);
         }
+      } else {
+        // Still need Conversations table for conversation type
+        query += ` INNER JOIN Conversations c ON m.conversation_id = c.id`;
       }
       
       // Filter by specific conversation if provided
@@ -281,7 +346,86 @@ const messagesModel = {
   },
 
   // Mark all messages in a conversation as read for a specific user
+  // Uses per-participant read tracking via Message_Read_Status table
   markConversationAsRead: async (conversationId, userId, centerId = null) => {
+    try {
+      // Check if Message_Read_Status table exists (graceful handling if migration not run)
+      const tableExists = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'message_read_status'
+        )
+      `);
+      
+      if (!tableExists.rows[0].exists) {
+        // Fallback to old method if table doesn't exist yet
+        return await messagesModel._markConversationAsReadLegacy(conversationId, userId, centerId);
+      }
+      
+      // ✅ Use per-participant read tracking
+      // Get all unread messages in the conversation that the user hasn't read yet
+      // Only mark messages that are not sent by the user (don't mark own messages)
+      let query = `
+        INSERT INTO Message_Read_Status (Message_ID, Employee_ID, Created_By, Updated_By)
+        SELECT m.id, $1, 'system', 'system'
+        FROM ${tableName} m
+        INNER JOIN Conversations c ON m.conversation_id = c.id
+        INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id
+        WHERE m.conversation_id = $2
+          AND cp.employee_id = $1
+          AND m.sender_id != $1
+          AND NOT EXISTS (
+            SELECT 1 FROM Message_Read_Status mrs
+            WHERE mrs.Message_ID = m.id AND mrs.Employee_ID = $1
+          )
+      `;
+      const values = [userId, conversationId];
+      
+      // Add center filter if not App Admin
+      // IMPORTANT: Include conversations where center_id IS NULL (created by App Admin/HQ)
+      // so that Org Admin/Caseworker can mark messages as read in conversations initiated by App Admin/HQ
+      if (centerId !== null) {
+        query += ` AND (c.center_id = $3 OR c.center_id IS NULL)`;
+        values.push(centerId);
+      }
+      
+      query += ` ON CONFLICT (Message_ID, Employee_ID) DO NOTHING`;
+      
+      const res = await pool.query(query, values);
+      
+      // Also update the legacy read_status field for backward compatibility
+      // This ensures existing code that checks read_status still works
+      await messagesModel._markConversationAsReadLegacy(conversationId, userId, centerId);
+      
+      // Return the number of messages marked as read
+      // We get the count by querying how many messages now have read status for this user
+      let countQuery = `
+        SELECT COUNT(*) as count
+        FROM ${tableName} m
+        INNER JOIN Conversations c ON m.conversation_id = c.id
+        INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id
+        INNER JOIN Message_Read_Status mrs ON m.id = mrs.Message_ID AND mrs.Employee_ID = $1
+        WHERE m.conversation_id = $2
+          AND cp.employee_id = $1
+          AND m.sender_id != $1
+      `;
+      const countValues = [userId, conversationId];
+      if (centerId !== null) {
+        countQuery += ` AND (c.center_id = $3 OR c.center_id IS NULL)`;
+        countValues.push(centerId);
+      }
+      const countRes = await pool.query(countQuery, countValues);
+      
+      return parseInt(countRes.rows[0].count) || 0;
+    } catch (err) {
+      throw new Error(
+        `Error marking conversation as read in ${tableName}: ${err.message}`,
+      );
+    }
+  },
+
+  // Legacy method: Update global read_status field (for backward compatibility)
+  _markConversationAsReadLegacy: async (conversationId, userId, centerId = null) => {
     try {
       // ✅ Only mark messages as read if user is a participant
       // Only mark messages that are not sent by the user (don't mark own messages)
@@ -300,8 +444,10 @@ const messagesModel = {
       const values = [conversationId, userId];
       
       // Add center filter if not App Admin
+      // IMPORTANT: Include conversations where center_id IS NULL (created by App Admin/HQ)
+      // so that Org Admin/Caseworker can mark messages as read in conversations initiated by App Admin/HQ
       if (centerId !== null) {
-        query += ` AND c.center_id = $3`;
+        query += ` AND (c.center_id = $3 OR c.center_id IS NULL)`;
         values.push(centerId);
       }
       
@@ -309,7 +455,7 @@ const messagesModel = {
       return res.rowCount; // Return number of messages marked as read
     } catch (err) {
       throw new Error(
-        `Error marking conversation as read in ${tableName}: ${err.message}`,
+        `Error marking conversation as read (legacy) in ${tableName}: ${err.message}`,
       );
     }
   },

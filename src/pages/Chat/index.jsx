@@ -26,7 +26,7 @@ const Chat = () => {
   // Alert state
   const [alert, setAlert] = useState(null);
 
-  const { user: currentUser, centerId, isGlobalAdmin } = useRole();
+  const { user: currentUser, centerId, isGlobalAdmin, isAppAdmin, isHQ, isOrgAdmin, isCaseworker, userType } = useRole();
 
   // Meta title
   document.title = "Chat | UmmahAid";
@@ -41,7 +41,12 @@ const Chat = () => {
   useEffect(() => {
     if (currentConversation && currentUser?.id) {
       fetchMessages(currentConversation.id);
-      markConversationAsRead(currentConversation.id);
+      // Mark as read after a short delay to ensure messages are loaded
+      // Per-participant tracking now handles announcements correctly
+      const timer = setTimeout(() => {
+        markConversationAsRead(currentConversation.id);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [currentConversation]);
 
@@ -50,8 +55,11 @@ const Chat = () => {
       setLoading(true);
       const response = await axiosApi.get(`${API_BASE_URL}/conversations`);
       
-      // ✅ Backend now handles filtering - App Admin sees all, others see only their center
-      // No frontend filtering needed (backend enforces it)
+      // ✅ Backend now handles filtering correctly:
+      // - Filters by participant (user must be in Conversation_Participants)
+      // - For users with center_id: Shows conversations where center_id matches OR center_id IS NULL
+      //   This allows Org Admin/Caseworker to see conversations created by App Admin/HQ
+      // - App Admin (center_id = null) sees all conversations they're a participant in
       setConversations(response.data);
       
       // ✅ User must manually select a conversation - no auto-selection
@@ -67,13 +75,20 @@ const Chat = () => {
     try {
       const response = await axiosApi.get(`${API_BASE_URL}/employee`);
 
-      const centerEmployees =
-        isGlobalAdmin || centerId === null || centerId === undefined
-          ? response.data
-          : response.data.filter(
-              (employee) =>
-                String(employee.center_id ?? "") === String(centerId ?? "")
-            );
+      // App Admin and HQ (center_id = null) need to see all employees (across all centers) 
+      // to initiate conversations with Org Admin and Caseworker from any center
+      // Org Admin and Caseworker only see employees from their own center
+      let centerEmployees;
+      if (isGlobalAdmin || centerId === null || centerId === undefined) {
+        // App Admin and HQ (who have center_id = null) see all employees
+        centerEmployees = response.data;
+      } else {
+        // Org Admin and Caseworker only see employees from their own center
+        centerEmployees = response.data.filter(
+          (employee) =>
+            String(employee.center_id ?? "") === String(centerId ?? "")
+        );
+      }
 
       setEmployees(centerEmployees);
     } catch (error) {
@@ -108,8 +123,11 @@ const Chat = () => {
       
       await axiosApi.post(`${API_BASE_URL}/messages/conversation/${conversationId}/mark-read`);
       
-      // Refresh conversations to update unread counts
-      fetchConversations();
+      // Refresh conversations to update unread counts after marking as read
+      // Use a small delay to ensure the database update is complete
+      setTimeout(() => {
+        fetchConversations();
+      }, 300);
     } catch (error) {
       console.error("Error marking conversation as read:", error);
       // Don't show alert for this - it's a background operation
@@ -238,31 +256,63 @@ const Chat = () => {
       const response = await axiosApi.post(`${API_BASE_URL}/conversations`, payload);
       const newConversation = response.data;
 
-      // ✅ Always add the creator as a participant so they can see the conversation
       const creatorId = currentUser?.id;
-      if (creatorId) {
-        await axiosApi.post(`${API_BASE_URL}/conversationParticipants`, {
-          conversation_id: newConversation.id,
-          employee_id: creatorId,
-          joined_date: new Date().toISOString().split('T')[0],
-          center_id: centerId ?? null,
-          created_by: getAuditName(),
+      
+      // For Announcement conversations: Auto-add all eligible users (App Admin, HQ, Org Admin, Caseworker)
+      // Exclude Org Executives (user_type 4) as they don't have Chat access
+      if (conversationData.type === "Announcement") {
+        // Get all eligible employees (excluding Org Executives)
+        const eligibleEmployees = employees.filter(employee => {
+          const empUserType = employee.user_type || employee.User_Type || employee.userType;
+          // Include App Admin (1), HQ (2), Org Admin (3), Caseworker (5)
+          // Exclude Org Executive (4)
+          return empUserType == 1 || empUserType == 2 || empUserType == 3 || empUserType == 5 ||
+                 empUserType === "1" || empUserType === "2" || empUserType === "3" || empUserType === "5";
         });
-      }
 
-      // Add other participants
-      if (conversationData.participants && conversationData.participants.length > 0) {
-        for (const employeeId of conversationData.participants) {
-          // Skip if the participant is the same as the creator (already added above)
-          if (employeeId == creatorId) continue;
-          
+        // Add all eligible employees as participants
+        // Use each participant's center_id (not the creator's center_id)
+        for (const employee of eligibleEmployees) {
+          const participantCenterId = employee.center_id ?? null;
           await axiosApi.post(`${API_BASE_URL}/conversationParticipants`, {
             conversation_id: newConversation.id,
-            employee_id: employeeId,
+            employee_id: employee.id,
+            joined_date: new Date().toISOString().split('T')[0],
+            center_id: participantCenterId, // Use participant's center_id, not creator's
+            created_by: getAuditName(),
+          });
+        }
+      } else {
+        // For Direct and Group conversations: Add creator and selected participants
+        // ✅ Always add the creator as a participant so they can see the conversation
+        if (creatorId) {
+          await axiosApi.post(`${API_BASE_URL}/conversationParticipants`, {
+            conversation_id: newConversation.id,
+            employee_id: creatorId,
             joined_date: new Date().toISOString().split('T')[0],
             center_id: centerId ?? null,
             created_by: getAuditName(),
           });
+        }
+
+        // Add other participants
+        if (conversationData.participants && conversationData.participants.length > 0) {
+          for (const employeeId of conversationData.participants) {
+            // Skip if the participant is the same as the creator (already added above)
+            if (employeeId == creatorId) continue;
+            
+            // Find the participant employee to get their center_id
+            const participantEmployee = employees.find(emp => emp.id == employeeId);
+            const participantCenterId = participantEmployee?.center_id ?? null;
+            
+            await axiosApi.post(`${API_BASE_URL}/conversationParticipants`, {
+              conversation_id: newConversation.id,
+              employee_id: employeeId,
+              joined_date: new Date().toISOString().split('T')[0],
+              center_id: participantCenterId, // Use participant's center_id, not creator's
+              created_by: getAuditName(),
+            });
+          }
         }
       }
 
@@ -358,6 +408,11 @@ const Chat = () => {
             currentUser={currentUser}
             onSubmit={handleCreateConversation}
             showAlert={showAlert}
+            isAppAdmin={isAppAdmin}
+            isHQ={isHQ}
+            isOrgAdmin={isOrgAdmin}
+            isCaseworker={isCaseworker}
+            userType={userType}
           />
         </Container>
       </div>

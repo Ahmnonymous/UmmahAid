@@ -180,7 +180,7 @@ const ConversationList = ({
                                 : (conversation.title || "Untitled Conversation")
                               }
                             </h5>
-                            {conversation.unread_count > 0 && (
+                            {(conversation.unread_count && Number(conversation.unread_count) > 0) && (
                               <span 
                                 className="badge rounded-pill d-flex align-items-center justify-content-center flex-shrink-0" 
                                 style={{ 
@@ -194,7 +194,7 @@ const ConversationList = ({
                                   lineHeight: '1'
                                 }}
                               >
-                                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                                {Number(conversation.unread_count) > 99 ? '99+' : Number(conversation.unread_count)}
                               </span>
                             )}
                           </div>

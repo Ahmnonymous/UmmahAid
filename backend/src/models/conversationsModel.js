@@ -7,6 +7,54 @@ const {
 
 const tableName = "Conversations";
 
+// Cache for column existence check
+let lastRestoredAtColumnExists = null;
+let messageReadStatusTableExists = null;
+
+// Check if last_restored_at column exists in Conversation_Participants table
+const checkLastRestoredAtColumnExists = async () => {
+  if (lastRestoredAtColumnExists !== null) {
+    return lastRestoredAtColumnExists;
+  }
+  
+  try {
+    const result = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'conversation_participants' 
+        AND column_name = 'last_restored_at'
+    `);
+    lastRestoredAtColumnExists = result.rows.length > 0;
+    return lastRestoredAtColumnExists;
+  } catch (err) {
+    // If check fails, assume column doesn't exist (safe fallback)
+    lastRestoredAtColumnExists = false;
+    return false;
+  }
+};
+
+// Check if Message_Read_Status table exists
+const checkMessageReadStatusTableExists = async () => {
+  if (messageReadStatusTableExists !== null) {
+    return messageReadStatusTableExists;
+  }
+  
+  try {
+    const result = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'message_read_status'
+      )
+    `);
+    messageReadStatusTableExists = result.rows[0].exists;
+    return messageReadStatusTableExists;
+  } catch (err) {
+    // If check fails, assume table doesn't exist (safe fallback)
+    messageReadStatusTableExists = false;
+    return false;
+  }
+};
+
 const conversationsModel = {
   getAll: async (centerId = null, userId = null) => {
     try {
@@ -18,18 +66,57 @@ const conversationsModel = {
       
       console.log('[DEBUG] Conversations.getAll - centerId:', centerId, 'userId:', userId);
       
+      // Check if last_restored_at column exists (for WhatsApp-like behavior)
+      const hasLastRestoredAtColumn = await checkLastRestoredAtColumnExists();
+      
       let query = `SELECT DISTINCT c.*`;
       
       // Add unread count subquery if userId is provided
+      // Uses per-participant read tracking via Message_Read_Status table
+      // Count only messages that are unread for this specific participant
+      // Ensure we only count messages in conversations where user is a participant
+      // Also account for last_restored_at (like WhatsApp - only count messages after restoration)
       if (userId) {
-        query += `, COALESCE(
+        // Check if Message_Read_Status table exists (graceful handling if migration not run)
+        const usePerParticipantTracking = await checkMessageReadStatusTableExists();
+        
+        let unreadCountSubquery;
+        
+        if (usePerParticipantTracking) {
+          // ✅ Use per-participant read tracking
+          // Count messages that don't have a read status entry for this user
+          unreadCountSubquery = `
           (SELECT COUNT(*) 
            FROM Messages m 
+           INNER JOIN Conversation_Participants cp_count ON m.conversation_id = cp_count.conversation_id
            WHERE m.conversation_id = c.id 
+             AND cp_count.employee_id = $${paramIndex}
              AND m.sender_id != $${paramIndex}
-             AND (m.read_status IS NULL OR m.read_status = 'Unread')
-          ), 0
-        ) as unread_count`;
+             AND NOT EXISTS (
+               SELECT 1 FROM Message_Read_Status mrs
+               WHERE mrs.Message_ID = m.id AND mrs.Employee_ID = $${paramIndex}
+             )`;
+        } else {
+          // Fallback to legacy method using global read_status
+          unreadCountSubquery = `
+          (SELECT COUNT(*) 
+           FROM Messages m 
+           INNER JOIN Conversation_Participants cp_count ON m.conversation_id = cp_count.conversation_id
+           WHERE m.conversation_id = c.id 
+             AND cp_count.employee_id = $${paramIndex}
+             AND m.sender_id != $${paramIndex}
+             AND (m.read_status IS NULL OR m.read_status = 'Unread')`;
+        }
+        
+        // Only add last_restored_at filter if column exists
+        if (hasLastRestoredAtColumn) {
+          unreadCountSubquery += `
+             AND (cp_count.last_restored_at IS NULL OR m.created_at >= cp_count.last_restored_at)`;
+        }
+        
+        unreadCountSubquery += `)`;
+        
+        query += `, COALESCE(${unreadCountSubquery}, 0) as unread_count`;
         values.push(userId);
         paramIndex++;
       } else {
@@ -62,8 +149,10 @@ const conversationsModel = {
         query += ` INNER JOIN Conversation_Participants cp ON c.id = cp.conversation_id WHERE cp.employee_id = $1 AND (cp.deleted_at IS NULL)`;
         
         // Also apply center filter if not App Admin
+        // IMPORTANT: Include conversations where center_id IS NULL (created by App Admin/HQ)
+        // so that Org Admin/Caseworker can see conversations initiated by App Admin/HQ
         if (centerId !== null) {
-          query += ` AND c.center_id = $${paramIndex}`;
+          query += ` AND (c.center_id = $${paramIndex} OR c.center_id IS NULL)`;
           values.push(centerId);
         }
       } else if (centerId !== null) {
@@ -81,6 +170,16 @@ const conversationsModel = {
       
       const res = await pool.query(query, values);
       console.log('[DEBUG] Conversations.getAll result count:', res.rows.length);
+      
+      // Debug: Log unread counts for first few conversations
+      if (res.rows.length > 0) {
+        console.log('[DEBUG] Sample unread counts:', res.rows.slice(0, 3).map(c => ({
+          id: c.id,
+          title: c.title,
+          type: c.type,
+          unread_count: c.unread_count
+        })));
+      }
       
       return res.rows;
     } catch (err) {
@@ -107,6 +206,13 @@ const conversationsModel = {
         whereConditions.push(`cp.employee_id = $${values.length + 1}`);
         whereConditions.push(`(cp.deleted_at IS NULL)`);
         values.push(userId);
+        
+        // IMPORTANT: Include conversations where center_id IS NULL (created by App Admin/HQ)
+        // so that Org Admin/Caseworker can see conversations initiated by App Admin/HQ
+        if (centerId !== null) {
+          whereConditions.push(`(c.center_id = $${values.length + 1} OR c.center_id IS NULL)`);
+          values.push(centerId);
+        }
       } else if (centerId !== null) {
         // Fallback to center filter if no userId
         whereConditions.push(`c.center_id = $${values.length + 1}`);
