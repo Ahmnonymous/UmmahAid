@@ -25,12 +25,13 @@ const applicantDetailsModel = {
       // Only fetch metadata - signature fetched separately if needed
       let baseQuery = `
         SELECT 
-          id, file_number, name, surname, id_number,
+          id, file_number, name, surname, muslim_name, id_number,
           date_intake, cell_number, alternate_number, email_address,
           street_address, popia_agreement,
           race, nationality, gender, file_condition, file_status,
           highest_education_level, marital_status, employment_status,
           suburb, dwelling_type, dwelling_status, health, skills,
+          born_religion_id, period_as_muslim_id,
           created_by, created_at, updated_by, updated_at, center_id,
           signature_filename, signature_mime, signature_size
         FROM ${tableName}

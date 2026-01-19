@@ -182,6 +182,7 @@ const CreateApplicant = () => {
       Center_ID: isGlobalAdmin ? "" : (userCenterId ? String(userCenterId) : ""),
       Name: "",
       Surname: "",
+      Muslim_Name: "",
       ID_Number: "",
       Nationality: "",
       Nationality_Expiry_Date: "",
@@ -343,6 +344,7 @@ const CreateApplicant = () => {
         const formData = new FormData();
         formData.append("name", data.Name || "");
         formData.append("surname", data.Surname || "");
+        formData.append("muslim_name", data.Muslim_Name || "");
         formData.append("id_number", data.ID_Number || "");
         if (data.Nationality) formData.append("nationality", data.Nationality);
         if (data.Gender) formData.append("gender", data.Gender);
@@ -380,6 +382,7 @@ const CreateApplicant = () => {
         const payload = {
           name: data.Name,
           surname: data.Surname,
+          muslim_name: data.Muslim_Name || null,
           id_number: data.ID_Number,
           nationality: data.Nationality && data.Nationality !== "" ? parseInt(data.Nationality) : null,
           gender: data.Gender && data.Gender !== "" ? parseInt(data.Gender) : null,
@@ -569,6 +572,19 @@ const CreateApplicant = () => {
                               )}
                             />
                             {errors.Surname && <FormFeedback>{errors.Surname.message}</FormFeedback>}
+                          </FormGroup>
+                        </Col>
+
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label for="Muslim_Name">Muslim Name</Label>
+                            <Controller
+                              name="Muslim_Name"
+                              control={control}
+                              render={({ field }) => (
+                                <Input id="Muslim_Name" type="text" {...field} />
+                              )}
+                            />
                           </FormGroup>
                         </Col>
 

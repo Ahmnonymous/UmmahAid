@@ -99,8 +99,6 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
   };
 
   const handleEdit = (item) => {
-    // Only creator can edit
-    if (!isCreatedByCurrentUser(item?.created_by)) return;
     setEditItem(item);
     setModalOpen(true);
   };
@@ -164,7 +162,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
           const createdAt = row.created_at || row.comment_date;
           const updatedAt = row.updated_at;
           const isEdited = !!row.updated_by && !!row.updated_at && row.updated_at !== row.created_at;
-          const canEdit = !isOrgExecutive && isCreatedByCurrentUser(row.created_by);
+          const canEdit = !isOrgExecutive;
           const creatorName = row.created_by || currentFullName || currentUsername || "-";
           const initials = (() => {
             const n = (creatorName || "").trim();
@@ -203,7 +201,7 @@ const CommentsTab = ({ applicantId, comments, onUpdate, showAlert }) => {
                       </Button>
                     )}
                     {!canEdit && (
-                      <span className="ms-2 text-muted" title="Only the creator can edit">
+                      <span className="ms-2 text-muted" title="Read-only access">
                         <i className="bx bx-lock"></i>
                       </span>
                     )}

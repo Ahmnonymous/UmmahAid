@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Button,
   Modal,
@@ -105,7 +105,7 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
   const handleDelete = () => {
     if (!editItem) return;
 
-    const assistanceName = `${getLookupName(lookupData.hamperTypes, editItem.hamper_type)} - ${editItem.distributed_date || 'Unknown Date'}`;
+    const assistanceName = `${getLookupName(lookupData.hampers, editItem.hamper_type)} - ${editItem.distributed_date || 'Unknown Date'}`;
     
     showDeleteConfirmation({
       id: editItem.id,
@@ -122,8 +122,23 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
     });
   };
 
+  const handleDeleteFromTable = (item) => {
+    const assistanceName = `${getLookupName(lookupData.hampers, item.hamper_type)} - ${item.distributed_date || 'Unknown Date'}`;
+    
+    showDeleteConfirmation({
+      id: item.id,
+      name: assistanceName,
+      type: "food assistance",
+      message: "This food assistance record will be permanently removed from the system."
+    }, async () => {
+      await axiosApi.delete(`${API_BASE_URL}/foodAssistance/${item.id}`);
+      showAlert("Food assistance has been deleted successfully", "success");
+      onUpdate();
+    });
+  };
+
   const getLookupName = (lookupArray, id) => {
-    if (!id) return "-";
+    if (!id || !lookupArray) return "-";
     const item = lookupArray.find((l) => l.id == id);
     return item ? item.name : "-";
   };
@@ -217,8 +232,45 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
           return v ? new Date(v).toLocaleDateString() : "-";
         },
       },
+      {
+        header: "Actions",
+        accessorKey: "actions",
+        enableSorting: false,
+        enableColumnFilter: false,
+        cell: (cell) => {
+          const item = cell.row.original;
+          return (
+            <div className="d-flex gap-2">
+              <Button
+                color="primary"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(item);
+                }}
+                title="Edit"
+              >
+                <i className="bx bx-edit"></i>
+              </Button>
+              {!isOrgExecutive && (
+                <Button
+                  color="danger"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteFromTable(item);
+                  }}
+                  title="Delete"
+                >
+                  <i className="bx bx-trash"></i>
+                </Button>
+              )}
+            </div>
+          );
+        },
+      },
     ],
-    [lookupData]
+    [lookupData, isOrgExecutive, handleEdit, handleDeleteFromTable]
   );
 
   const totalCost = foodAssistance.reduce((sum, item) => sum + (parseFloat(item.financial_cost) || 0), 0);
@@ -339,7 +391,16 @@ const FoodAssistanceTab = ({ applicantId, foodAssistance, lookupData, onUpdate, 
           <ModalFooter className="d-flex justify-content-between">
             <div>
               {editItem && !isOrgExecutive && (
-                <Button color="danger" onClick={handleDelete} type="button" disabled={isSubmitting}>
+                <Button 
+                  color="danger" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete();
+                  }} 
+                  type="button" 
+                  disabled={isSubmitting}
+                >
                   <i className="bx bx-trash me-1"></i> Delete
                 </Button>
               )}

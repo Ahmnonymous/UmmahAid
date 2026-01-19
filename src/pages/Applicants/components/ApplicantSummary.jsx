@@ -184,6 +184,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
       reset({
         Name: applicant.name || "",
         Surname: applicant.surname || "",
+        Muslim_Name: applicant.muslim_name || "",
         ID_Number: applicant.id_number || "",
         Race: applicant.race || "",
         Nationality: applicant.nationality || "",
@@ -301,6 +302,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         const formData = new FormData();
         formData.append("name", data.Name || "");
         formData.append("surname", data.Surname || "");
+        formData.append("muslim_name", data.Muslim_Name || "");
         formData.append("id_number", data.ID_Number || "");
         
         if (data.Race && data.Race !== "") formData.append("race", data.Race);
@@ -350,6 +352,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         const payload = {
           name: data.Name,
           surname: data.Surname,
+          muslim_name: data.Muslim_Name || null,
           id_number: data.ID_Number,
           race: data.Race && data.Race !== "" ? parseInt(data.Race) : null,
           nationality: data.Nationality && data.Nationality !== "" ? parseInt(data.Nationality) : null,
@@ -458,6 +461,10 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
             <Col md={3}>
               <p className="text-muted mb-1 font-size-11 text-uppercase">Surname</p>
               <p className="mb-2 fw-medium font-size-12">{applicant.surname || "-"}</p>
+            </Col>
+            <Col md={3}>
+              <p className="text-muted mb-1 font-size-11 text-uppercase">Muslim Name</p>
+              <p className="mb-2 fw-medium font-size-12">{applicant.muslim_name || "-"}</p>
             </Col>
             <Col md={3}>
               <p className="text-muted mb-1 font-size-11 text-uppercase">File Number</p>
@@ -665,6 +672,16 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                         render={({ field }) => <Input type="text" invalid={!!errors.Surname} {...field} />}
                       />
                       {errors.Surname && <FormFeedback>{errors.Surname.message}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label>Muslim Name</Label>
+                      <Controller
+                        name="Muslim_Name"
+                        control={control}
+                        render={({ field }) => <Input type="text" {...field} />}
+                      />
                     </FormGroup>
                   </Col>
                   <Col md={4}>
