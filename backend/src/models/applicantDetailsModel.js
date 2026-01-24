@@ -1,4 +1,4 @@
-﻿const pool = require("../config/db");
+const pool = require("../config/db");
 const {
   buildInsertFragments,
   buildUpdateFragments,
@@ -42,16 +42,24 @@ const applicantDetailsModel = {
       const values = [];
       let paramIndex = 1;
 
-      // Add search filter if provided (searches name, surname, file_number, id_number)
+      // Add search filter if provided (searches name, surname, full name, file_number, id_number)
       if (search) {
+        const searchTrimmed = search.trim();
+        
+        // Search in individual fields AND concatenated full name (name + surname)
+        // This allows searching "Asif Muhammad" to match name="Asif" surname="Muhammad"
         conditions.push(`(
           name ILIKE $${paramIndex} OR 
           surname ILIKE $${paramIndex} OR 
+          CONCAT(name, ' ', surname) ILIKE $${paramIndex} OR
+          CONCAT(surname, ' ', name) ILIKE $${paramIndex} OR
           file_number ILIKE $${paramIndex} OR 
           id_number ILIKE $${paramIndex}
         )`);
-        values.push(`%${search}%`);
+        values.push(`%${searchTrimmed}%`);
         paramIndex++;
+        
+        console.log(`[applicantDetailsModel.getAll] Search term: "${searchTrimmed}"`);
       }
 
       // Apply center filtering
