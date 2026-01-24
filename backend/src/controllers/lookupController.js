@@ -36,6 +36,7 @@ const lookupTables = {
   Training_Courses: { orderByName: true },
   Means_of_communication: { orderByName: true },
   Departments: { orderByName: true },
+  Project: { orderByName: true },
 };
 
 const getLookupConfig = (table = "") => lookupTables[table] || null;

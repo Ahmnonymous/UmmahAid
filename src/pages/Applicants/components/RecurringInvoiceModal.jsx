@@ -259,11 +259,17 @@ const RecurringInvoiceModal = ({
                   render={({ field }) => (
                     <Input
                       id="Recurring_Project"
-                      type="text"
-                      placeholder="Enter project"
+                      type="select"
                       disabled={isOrgExecutive}
                       {...field}
-                    />
+                    >
+                      <option value="">Select Project</option>
+                      {(lookupData?.projects || []).map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </Input>
                   )}
                 />
               </FormGroup>

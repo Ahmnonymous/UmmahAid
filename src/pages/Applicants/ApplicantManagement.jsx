@@ -74,6 +74,7 @@ const ApplicantManagement = () => {
     trainingOutcomes: [],
     incomeTypes: [],
     expenseTypes: [],
+    projects: [],
   });
 
   // Fetch all applicants on mount
@@ -205,6 +206,7 @@ const ApplicantManagement = () => {
         trainingOutcomesRes,
         incomeTypesRes,
         expenseTypesRes,
+        projectsRes,
       ] = await Promise.all([
         axiosApi.get(`${API_BASE_URL}/lookup/Race`),
         axiosApi.get(`${API_BASE_URL}/lookup/Nationality`),
@@ -232,6 +234,7 @@ const ApplicantManagement = () => {
         axiosApi.get(`${API_BASE_URL}/lookup/Training_Outcome`),
         axiosApi.get(`${API_BASE_URL}/lookup/Income_Type`),
         axiosApi.get(`${API_BASE_URL}/lookup/Expense_Type`),
+        axiosApi.get(`${API_BASE_URL}/lookup/Project`),
       ]);
 
       setLookupData({
@@ -261,6 +264,7 @@ const ApplicantManagement = () => {
         trainingOutcomes: trainingOutcomesRes.data || [],
         incomeTypes: incomeTypesRes.data || [],
         expenseTypes: expenseTypesRes.data || [],
+        projects: projectsRes.data || [],
       });
     } catch (error) {
       console.error("Error fetching lookup data:", error);

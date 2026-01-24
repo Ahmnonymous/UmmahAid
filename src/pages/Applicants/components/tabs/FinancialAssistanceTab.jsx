@@ -73,7 +73,7 @@ const FinancialAssistanceTab = ({
           : null,
         sector: formValues.Sector || "",
         program: formValues.Program || "",
-        project: formValues.Project || "",
+        project: formValues.Project ? parseInt(formValues.Project, 10) : null,
         give_to: formValues.Give_To || "",
       };
 
@@ -193,7 +193,7 @@ const FinancialAssistanceTab = ({
           : null,
         sector: formValues.Sector || "",
         program: formValues.Program || "",
-        project: formValues.Project || "",
+        project: formValues.Project ? parseInt(formValues.Project, 10) : null,
         give_to: formValues.Give_To || "",
         starting_date: formValues.Starting_Date,
         end_date: formValues.End_Date,
@@ -288,7 +288,7 @@ const FinancialAssistanceTab = ({
         accessorKey: "project",
         enableSorting: true,
         enableColumnFilter: false,
-        cell: (cell) => cell.getValue() || "-",
+        cell: (cell) => getLookupName(lookupData?.projects || [], cell.getValue()),
       },
       {
         header: "Given To",
