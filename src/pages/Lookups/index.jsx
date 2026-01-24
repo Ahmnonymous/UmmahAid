@@ -36,6 +36,7 @@ const Lookups = () => {
         { name: "Assistance Types", table: "Assistance_Types", icon: "bxs-heart" },
         { name: "Programs", table: "Programs", icon: "bxs-folder-open" },
         { name: "Hampers", table: "Hampers", icon: "bxs-basket" },
+        { name: "Project", table: "Project", icon: "bxs-briefcase" },
       ],
     },
     {

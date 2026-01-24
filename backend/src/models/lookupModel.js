@@ -6,6 +6,7 @@ const pool = require('../config/db');
 const mapFieldToColumn = (fieldName) => {
   const fieldMap = {
     'name': 'Name',
+    'description': 'Description',
     'created_by': 'Created_By',
     'created_at': 'Created_At',
     'created_on': 'Created_On',
@@ -32,6 +33,7 @@ const mapColumnToField = (columnName) => {
   
   const columnMap = {
     'name': 'name',
+    'description': 'description',
     'created_by': 'created_by',
     'created_at': 'created_at',
     'created_on': 'created_on',

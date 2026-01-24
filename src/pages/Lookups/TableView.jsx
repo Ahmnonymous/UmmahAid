@@ -44,6 +44,7 @@ const TableView = () => {
   const { isOrgExecutive, isGlobalAdmin } = useRole(); // Read-only check
 
   const isHadithTable = table === "Hadith";
+  const isProjectTable = table === "Project";
   const isReadOnly = isOrgExecutive || (isHadithTable && !isGlobalAdmin);
 
   const { data, loading, error } = useSelector((state) => state.Lookup);
@@ -70,8 +71,10 @@ const TableView = () => {
     () =>
       isHadithTable
         ? { hadith_arabic: "", hadith_english: "" }
+        : isProjectTable
+        ? { name: "", description: "" }
         : { name: "" },
-    [isHadithTable]
+    [isHadithTable, isProjectTable]
   );
 
   const {
@@ -97,6 +100,11 @@ useEffect(() => {
         hadith_arabic: editItem?.hadith_arabic || "",
         hadith_english: editItem?.hadith_english || "",
       });
+    } else if (isProjectTable) {
+      reset({
+        name: editItem?.name || "",
+        description: editItem?.description || "",
+      });
     } else {
       reset({ name: editItem?.name || "" });
     }
@@ -104,7 +112,7 @@ useEffect(() => {
       if (primaryInputRef.current) primaryInputRef.current.focus();
     }, 100);
   }
-}, [showDialog, editItem, reset, isHadithTable]);
+}, [showDialog, editItem, reset, isHadithTable, isProjectTable]);
 
   // --- Dialog alert helpers ---
   const showAlert = (message, color = "success") => {
@@ -193,6 +201,11 @@ useEffect(() => {
         ? {
             hadith_arabic: formData.hadith_arabic?.trim(),
             hadith_english: formData.hadith_english?.trim(),
+          }
+        : isProjectTable
+        ? {
+            name: formData.name?.trim(),
+            description: formData.description?.trim() || null,
           }
         : {
             name: formData.name?.trim(),
@@ -360,6 +373,35 @@ useEffect(() => {
       ];
     }
 
+    if (isProjectTable) {
+      return [
+        {
+          header: "Name",
+          accessorKey: "name",
+          enableSorting: true,
+          enableColumnFilter: false,
+          cell: (cell) => (
+            <span
+              className={!isReadOnly ? "lookup-primary-cell interactive" : "lookup-primary-cell"}
+              onClick={() => !isReadOnly && handleEdit(cell.row.original)}
+            >
+              {cell.getValue()}
+            </span>
+          ),
+        },
+        {
+          header: "Description",
+          accessorKey: "description",
+          enableSorting: true,
+          enableColumnFilter: false,
+          cell: (cell) => (
+            <span style={{ whiteSpace: "normal" }}>{cell.getValue() || "-"}</span>
+          ),
+        },
+        ...commonAuditColumns,
+      ];
+    }
+
     return [
       {
         header: "Name",
@@ -377,7 +419,7 @@ useEffect(() => {
       },
       ...commonAuditColumns,
     ];
-  }, [tableData, isHadithTable, isReadOnly]);
+  }, [tableData, isHadithTable, isProjectTable, isReadOnly]);
 
   const formatTableName = (tableName) => tableName.replace(/_/g, " ");
   document.title = `${formatTableName(table)} | Lookup Setup`;
@@ -485,7 +527,7 @@ useEffect(() => {
           isOpen={showDialog}
           toggle={handleClose}
           centered
-          size={isHadithTable ? "lg" : "md"}
+          size={(isHadithTable || isProjectTable) ? "lg" : "md"}
           backdrop="static"
         >
           <ModalHeader toggle={handleClose}>
@@ -580,6 +622,70 @@ useEffect(() => {
                     {errors.hadith_english && (
                       <FormFeedback>{errors.hadith_english.message}</FormFeedback>
                     )}
+                  </FormGroup>
+                </>
+              ) : isProjectTable ? (
+                <>
+                  <FormGroup>
+                    <Label for="name">
+                      Name <span className="text-danger">*</span>
+                    </Label>
+                    <Controller
+                      name="name"
+                      control={control}
+                      rules={{
+                        required: "Name is required",
+                        minLength: {
+                          value: 2,
+                          message: "Name must be at least 2 characters",
+                        },
+                        maxLength: {
+                          value: 100,
+                          message: "Name must not exceed 100 characters",
+                        },
+                        pattern: {
+                          value: /^[a-zA-Z0-9\s\-_.,()]+$/,
+                          message: "Name contains invalid characters",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <Input
+                          id="name"
+                          placeholder="Enter project name"
+                          invalid={!!errors.name}
+                          disabled={isReadOnly}
+                          innerRef={primaryInputRef}
+                          {...field}
+                        />
+                      )}
+                    />
+                    {errors.name && <FormFeedback>{errors.name.message}</FormFeedback>}
+                  </FormGroup>
+
+                  <FormGroup>
+                    <Label for="description">Description</Label>
+                    <Controller
+                      name="description"
+                      control={control}
+                      rules={{
+                        maxLength: {
+                          value: 1000,
+                          message: "Description must not exceed 1000 characters",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <Input
+                          type="textarea"
+                          id="description"
+                          rows="3"
+                          placeholder="Enter project description (optional)"
+                          invalid={!!errors.description}
+                          disabled={isReadOnly}
+                          {...field}
+                        />
+                      )}
+                    />
+                    {errors.description && <FormFeedback>{errors.description.message}</FormFeedback>}
                   </FormGroup>
                 </>
               ) : (
