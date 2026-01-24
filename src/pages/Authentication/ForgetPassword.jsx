@@ -120,7 +120,7 @@ const ForgetPasswordPage = (props) => {
                   <div className="p-2">
                     {forgetError && forgetError ? (
                       <Alert color="danger" style={{ marginTop: "13px" }}>
-                        {forgetError}
+                        {typeof forgetError === 'string' ? forgetError : (forgetError?.message || "An error occurred. Please try again.")}
                       </Alert>
                     ) : null}
                     {forgetSuccessMsg ? (
@@ -176,7 +176,7 @@ const ForgetPasswordPage = (props) => {
               <div className="mt-5 text-center">
                 <p>
                   Go back to{" "}
-                  <Link to="login" className="font-weight-medium text-primary">
+                  <Link to="/login" className="font-weight-medium text-primary">
                     Login
                   </Link>{" "}
                 </p>

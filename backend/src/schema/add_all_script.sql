@@ -153,11 +153,7 @@ INSERT INTO Email_Templates (
         </p>
         
         <p style="color: #666; font-size: 14px; line-height: 1.6; margin-top: 20px; text-align: left;">
-            If the button above does not work, you can copy and paste the following link into your browser:
-        </p>
-        
-        <p style="color: #666; font-size: 12px; line-height: 1.6; margin-top: 10px; text-align: left; word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
-            {{reset_link}}
+            For security reasons, this link will expire in 15 minutes. If you need to reset your password again, please request a new reset link. 
         </p>
         
         <p style="color: #666; font-size: 14px; line-height: 1.6; margin-top: 30px; text-align: left;">

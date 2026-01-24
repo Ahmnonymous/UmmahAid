@@ -5,9 +5,10 @@
  * Usage: node src/scripts/upload_forgot_password_image.js
  */
 
-require('dotenv').config();
-const fs = require('fs');
 const path = require('path');
+// Load .env from the backend root directory (2 levels up from scripts folder)
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const fs = require('fs');
 const pool = require('../config/db');
 
 async function uploadForgotPasswordImage() {
@@ -43,8 +44,9 @@ async function uploadForgotPasswordImage() {
     console.log(`✅ Found email template with ID: ${templateId}`);
 
     // Determine API base URL for the show_link
+    // Production: https://ummahaidsanzaf.co.za | Development: http://localhost:5000
     const API_BASE_URL = process.env.NODE_ENV === 'production' 
-      ? (process.env.API_BASE_URL || process.env.PRODUCTION_API_URL || 'https://ummahaid.org')
+      ? (process.env.API_BASE_URL || process.env.PRODUCTION_API_URL || 'https://ummahaidsanzaf.co.za')
       : (process.env.API_BASE_URL || 'http://localhost:5000');
     
     const showLink = `${API_BASE_URL}/api/emailTemplates/${templateId}/view-image`;

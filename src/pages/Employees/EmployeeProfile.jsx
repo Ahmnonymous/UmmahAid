@@ -198,6 +198,7 @@ const EmployeeProfile = () => {
       Employment_Date: "",
       Contact_Number: "",
       Emergency_Contact: "",
+      Email: "",
       Home_Address: "",
       Suburb: "",
       Blood_Type: "",
@@ -753,6 +754,7 @@ const EmployeeProfile = () => {
           : "",
         Contact_Number: employee?.contact_number || "",
         Emergency_Contact: employee?.emergency_contact || "",
+        Email: employee?.email || "",
         Home_Address: employee?.home_address || "",
         Suburb: employee?.suburb ? String(employee.suburb) : "",
         Blood_Type: employee?.blood_type ? String(employee.blood_type) : "",
@@ -1294,6 +1296,7 @@ const EmployeeProfile = () => {
         employment_date: data.Employment_Date || null,
         contact_number: data.Contact_Number,
         emergency_contact: data.Emergency_Contact,
+        email: data.Email || null,
         home_address: data.Home_Address,
         suburb: data.Suburb ? parseInt(data.Suburb) : null,
         blood_type: data.Blood_Type ? parseInt(data.Blood_Type) : null,
@@ -1582,6 +1585,12 @@ const EmployeeProfile = () => {
                             Contact Number:
                           </th>
                           <td>{employee.contact_number || "-"}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row" style={{ fontWeight: "600" }}>
+                            Email:
+                          </th>
+                          <td>{employee.email || "-"}</td>
                         </tr>
                         <tr>
                           <th scope="row" style={{ fontWeight: "600" }}>
@@ -2858,6 +2867,35 @@ const EmployeeProfile = () => {
                     {employeeErrors.Emergency_Contact && (
                       <FormFeedback>
                         {employeeErrors.Emergency_Contact.message}
+                      </FormFeedback>
+                    )}
+                  </FormGroup>
+                </Col>
+                <Col md={6}>
+                  <FormGroup>
+                    <Label for="Email">Email Address</Label>
+                    <Controller
+                      name="Email"
+                      control={employeeControl}
+                      rules={{
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Invalid email address",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <Input
+                          id="Email"
+                          type="email"
+                          placeholder="Enter email address"
+                          invalid={!!employeeErrors.Email}
+                          {...field}
+                        />
+                      )}
+                    />
+                    {employeeErrors.Email && (
+                      <FormFeedback>
+                        {employeeErrors.Email.message}
                       </FormFeedback>
                     )}
                   </FormGroup>

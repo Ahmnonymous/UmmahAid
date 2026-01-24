@@ -23,8 +23,8 @@ try {
   
   redisClient = redis.createClient({ url: redisUrl });
   
-  redisClient.on('error', (err) => {
-    console.warn('⚠️ Redis connection error, falling back to in-memory cache:', err.message);
+  redisClient.on('error', () => {
+    // Silently fall back to in-memory cache
     redisClient = null;
   });
   
@@ -34,11 +34,11 @@ try {
   
   // Connect asynchronously (non-blocking)
   redisClient.connect().catch(() => {
-    console.warn('⚠️ Redis connection failed, using in-memory cache');
+    // Silently fall back to in-memory cache
     redisClient = null;
   });
 } catch (err) {
-  console.warn('⚠️ Redis not available, using in-memory cache:', err.message);
+  // Silently fall back to in-memory cache
   redisClient = null;
 }
 

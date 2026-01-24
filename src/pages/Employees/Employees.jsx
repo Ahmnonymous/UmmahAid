@@ -49,6 +49,12 @@ const Employees = () => {
         enableSorting: true,
       },
       {
+        header: "Email",
+        accessorKey: "email",
+        enableSorting: true,
+        cell: (cell) => cell.getValue() || "-",
+      },
+      {
         header: "User Type",
         accessorKey: "user_type",
         enableSorting: true,

@@ -107,14 +107,16 @@ class EmailService {
         if (template.background_image_show_link) {
           let imageUrl = template.background_image_show_link;
           // Use environment variable or detect production URL dynamically
+          // Production: https://ummahaidsanzaf.co.za | Development: http://localhost:5000
           const API_BASE_URL = process.env.API_BASE_URL 
             || process.env.PRODUCTION_API_URL 
-            || (process.env.NODE_ENV === 'production' ? 'https://ummahaid.org' : 'http://localhost:5000');
+            || (process.env.NODE_ENV === 'production' ? 'https://ummahaidsanzaf.co.za' : 'http://localhost:5000');
           
           // Always replace any non-production URLs with production URL for email delivery
           const isLocalhost = imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1');
           const isWrongDomain = imageUrl.includes('api.ummahaid.org') || 
-                               (imageUrl.includes('ummahaid.org') && !imageUrl.startsWith('https://ummahaid.org'));
+                               imageUrl.includes('ummahaid.org') ||
+                               (imageUrl.includes('ummahaidsanzaf.co.za') && !imageUrl.startsWith('https://ummahaidsanzaf.co.za'));
           
           if (isLocalhost || isWrongDomain) {
             // Extract the path from the URL
@@ -135,7 +137,8 @@ class EmailService {
           
           // Final check: if URL still contains localhost or wrong domain, force replace
           if (imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1') || 
-              (imageUrl.includes('ummahaid.org') && !imageUrl.startsWith('https://ummahaid.org'))) {
+              imageUrl.includes('ummahaid.org') ||
+              (imageUrl.includes('ummahaidsanzaf.co.za') && !imageUrl.startsWith('https://ummahaidsanzaf.co.za'))) {
             const urlMatch = imageUrl.match(/https?:\/\/[^\/]+(\/.*)/);
             const urlPath = urlMatch ? urlMatch[1] : '/api/emailTemplates/' + template.id + '/view-image';
             imageUrl = `${API_BASE_URL}${urlPath}`;
@@ -156,9 +159,10 @@ class EmailService {
           );
         } else if (template.background_image && template.id) {
           // Use environment variable or detect production URL dynamically
+          // Production: https://ummahaidsanzaf.co.za | Development: http://localhost:5000
           const API_BASE_URL = process.env.API_BASE_URL 
             || process.env.PRODUCTION_API_URL 
-            || (process.env.NODE_ENV === 'production' ? 'https://ummahaid.org' : 'http://localhost:5000');
+            || (process.env.NODE_ENV === 'production' ? 'https://ummahaidsanzaf.co.za' : 'http://localhost:5000');
           const imageUrl = `${API_BASE_URL}/api/emailTemplates/${template.id}/view-image`;
           htmlContent = htmlContent.replace(/\{\{background_image\}\}/g, imageUrl);
           htmlContent = htmlContent.replace(/\(\(background_image\)\)/g, imageUrl);

@@ -37,10 +37,11 @@ exports.requestPasswordReset = async (req, res) => {
     const tokenData = await PasswordReset.createToken(email, user.employee_id);
     
     // Generate reset link
-    // Use environment variables dynamically (similar to how API_BASE_URL is handled)
+    // Use environment variables dynamically
+    // Production: https://ummahaidsanzaf.co.za | Development: http://localhost:5173
     const frontendUrl = process.env.FRONTEND_URL 
       || process.env.PRODUCTION_FRONTEND_URL 
-      || (process.env.NODE_ENV === 'production' ? 'https://ummahaid.org' : 'http://localhost:5173');
+      || (process.env.NODE_ENV === 'production' ? 'https://ummahaidsanzaf.co.za' : 'http://localhost:5173');
     const resetLink = `${frontendUrl}/reset-password?token=${tokenData.token}`;
 
     // Send email using email service
