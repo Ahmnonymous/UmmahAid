@@ -262,12 +262,12 @@ const TotalFinancialAssistanceReport = () => {
                             <CardBody>
                                 <div className="d-flex">
                                     <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Combined Assistance Given</p>
-                                        <h4 className="mb-0">{formatCurrency(grandTotal)}</h4>
+                                        <p className="text-muted fw-medium mb-2">Ummah Aid Financial Assistance</p>
+                                        <h4 className="mb-0">{formatCurrency(totalFinancialTransactions)}</h4>
                                     </div>
-                                    <div className="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
-                                        <span className="avatar-title rounded-circle bg-primary">
-                                            <i className="bx bx-money font-size-24"></i>
+                                    <div className="avatar-sm rounded-circle bg-info align-self-center mini-stat-icon">
+                                        <span className="avatar-title rounded-circle bg-info">
+                                            <i className="bx bx-credit-card font-size-24"></i>
                                         </span>
                                     </div>
                                 </div>
@@ -279,7 +279,7 @@ const TotalFinancialAssistanceReport = () => {
                             <CardBody>
                                 <div className="d-flex">
                                     <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Total Food Assistance Given</p>
+                                        <p className="text-muted fw-medium mb-2">Food Assistance</p>
                                         <h4 className="mb-0">{formatCurrency(totalFoodAssistance)}</h4>
                                     </div>
                                     <div className="avatar-sm rounded-circle bg-success align-self-center mini-stat-icon">
@@ -296,12 +296,12 @@ const TotalFinancialAssistanceReport = () => {
                             <CardBody>
                                 <div className="d-flex">
                                     <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Total Financial Assistance Given</p>
-                                        <h4 className="mb-0">{formatCurrency(totalFinancialTransactions)}</h4>
+                                        <p className="text-muted fw-medium mb-2">Combined Financial Assistance</p>
+                                        <h4 className="mb-0">{formatCurrency(grandTotal)}</h4>
                                     </div>
-                                    <div className="avatar-sm rounded-circle bg-info align-self-center mini-stat-icon">
-                                        <span className="avatar-title rounded-circle bg-info">
-                                            <i className="bx bx-credit-card font-size-24"></i>
+                                    <div className="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
+                                        <span className="avatar-title rounded-circle bg-primary">
+                                            <i className="bx bx-money font-size-24"></i>
                                         </span>
                                     </div>
                                 </div>

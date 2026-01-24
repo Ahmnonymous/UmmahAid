@@ -98,6 +98,10 @@ const ApplicantDetailsReport = () => {
                     item.marital_status_name?.toLowerCase().includes(searchLower) ||
                     item.education_level_name?.toLowerCase().includes(searchLower) ||
                     item.suburb_name?.toLowerCase().includes(searchLower) ||
+                    item.next_of_kin_name?.toLowerCase().includes(searchLower) ||
+                    item.next_of_kin_surname?.toLowerCase().includes(searchLower) ||
+                    item.next_of_kin_contact_number?.toLowerCase().includes(searchLower) ||
+                    item.next_of_kin_gender_name?.toLowerCase().includes(searchLower) ||
                     item.dwelling_type_name?.toLowerCase().includes(searchLower) ||
                     item.dwelling_status_name?.toLowerCase().includes(searchLower) ||
                     item.health_condition_name?.toLowerCase().includes(searchLower) ||
@@ -198,7 +202,8 @@ const ApplicantDetailsReport = () => {
             'Employment Status', 'File Status', 'File Condition', 'Marital Status',
             'Education Level', 'Cell Number', 'Alternate Number', 'Email', 'Suburb', 'Address',
             'Dwelling Type', 'Dwelling Status', 'Health Condition', 'Skills', 'Date Intake',
-            'Nationality Expiry', 'POPIA Agreement', 'Created By', 'Created At'
+            'Nationality Expiry', 'POPIA Agreement', 'Next of Kin Name', 'Next of Kin Surname',
+            'Next of Kin Contact Number', 'Next of Kin Gender', 'Created By', 'Created At'
         ];
 
         const csvData = processedData.map(item => [
@@ -227,6 +232,10 @@ const ApplicantDetailsReport = () => {
             formatDate(item.date_intake),
             formatDate(item.nationality_expiry_date),
             item.popia_agreement || '',
+            item.next_of_kin_name || '',
+            item.next_of_kin_surname || '',
+            item.next_of_kin_contact_number || '',
+            item.next_of_kin_gender_name || '',
             item.created_by || '',
             formatDate(item.created_at)
         ]);
@@ -643,6 +652,10 @@ const ApplicantDetailsReport = () => {
                                                             <th style={{minWidth: '120px'}}>Skills</th>
                                                             <th style={{minWidth: '100px'}}>Date Intake</th>
                                                             <th style={{minWidth: '100px'}}>POPIA</th>
+                                                            <th style={{minWidth: '150px'}}>Next of Kin Name</th>
+                                                            <th style={{minWidth: '150px'}}>Next of Kin Surname</th>
+                                                            <th style={{minWidth: '150px'}}>Next of Kin Contact</th>
+                                                            <th style={{minWidth: '120px'}}>Next of Kin Gender</th>
                                                             <th style={{minWidth: '120px'}}>Created By</th>
                                                             <th style={{minWidth: '100px'}}>Created At</th>
                                             </tr>
@@ -738,6 +751,10 @@ const ApplicantDetailsReport = () => {
                                                             <th style={{minWidth: '120px'}}>Skills</th>
                                                             <th style={{minWidth: '100px'}}>Date Intake</th>
                                                             <th style={{minWidth: '100px'}}>POPIA Agreement</th>
+                                                            <th style={{minWidth: '150px'}}>Next of Kin Name</th>
+                                                            <th style={{minWidth: '150px'}}>Next of Kin Surname</th>
+                                                            <th style={{minWidth: '150px'}}>Next of Kin Contact</th>
+                                                            <th style={{minWidth: '120px'}}>Next of Kin Gender</th>
                                                             <th style={{minWidth: '120px'}}>Created By</th>
                                                             <th style={{minWidth: '100px'}}>Created At</th>
                                                         </tr>
@@ -783,6 +800,10 @@ const ApplicantDetailsReport = () => {
                                                                 <td>{item.skills_name || '-'}</td>
                                                                 <td>{formatDate(item.date_intake)}</td>
                                                                 <td>{item.popia_agreement || '-'}</td>
+                                                                <td>{item.next_of_kin_name || '-'}</td>
+                                                                <td>{item.next_of_kin_surname || '-'}</td>
+                                                                <td>{item.next_of_kin_contact_number || '-'}</td>
+                                                                <td>{item.next_of_kin_gender_name || '-'}</td>
                                                                 <td>{item.created_by || '-'}</td>
                                                                 <td>{formatDate(item.created_at)}</td>
                                                             </tr>

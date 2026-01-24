@@ -21,6 +21,7 @@
     "multer": "^2.0.2",
     "node-cron": "^3.0.3",
     "pg": "^8.16.3",
+    "postmark": "^4.0.5",
     "redis": "^5.10.0"
   },
   "devDependencies": {

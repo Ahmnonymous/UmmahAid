@@ -70,6 +70,10 @@ class ReportsModel {
                     ad.dwelling_status,
                     ad.health,
                     ad.skills,
+                    ad.next_of_kin_name,
+                    ad.next_of_kin_surname,
+                    ad.next_of_kin_contact_number,
+                    ad.next_of_kin_gender,
                     ad.created_by,
                     ad.created_at,
                     ad.center_id,
@@ -87,7 +91,8 @@ class ReportsModel {
                     dt.name AS dwelling_type_name,
                     ds.name AS dwelling_status_name,
                     hc.name AS health_condition_name,
-                    sk.name AS skills_name
+                    sk.name AS skills_name,
+                    g_nok.name AS next_of_kin_gender_name
                 FROM applicant_details ad
                 LEFT JOIN race r ON ad.race = r.id
                 LEFT JOIN nationality n ON ad.nationality = n.id
@@ -102,6 +107,7 @@ class ReportsModel {
                 LEFT JOIN dwelling_status ds ON ad.dwelling_status = ds.id
                 LEFT JOIN health_conditions hc ON ad.health = hc.id
                 LEFT JOIN skills sk ON ad.skills = sk.id
+                LEFT JOIN gender g_nok ON ad.next_of_kin_gender = g_nok.id
                 LEFT JOIN center_detail cd ON ad.center_id = cd.id
             `;
             

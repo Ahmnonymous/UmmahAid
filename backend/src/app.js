@@ -73,6 +73,9 @@ const reportsRoutes = require("./routes/reportsRoutes");
 // 🔹 Dashboard
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
+// 🔹 Email Templates
+const emailTemplateRoutes = require("./routes/emailTemplateRoutes");
+
 // ===========================
 // 📦 ROUTE REGISTRATION
 // ===========================
@@ -134,6 +137,9 @@ app.use("/api/reports", reportsRoutes);
 
 // 🔹 Dashboard
 app.use("/api/dashboard", dashboardRoutes);
+
+// 🔹 Email Templates
+app.use("/api/emailTemplates", emailTemplateRoutes);
 
 // ✅ Export app for testing
 module.exports = app;

@@ -81,17 +81,29 @@ const Programs = () => {
     fetchLookupData();
   }, []);
 
+  // Helper to format date for input[type="date"]
+  const formatDateForInput = (dateValue) => {
+    if (!dateValue) return "";
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
+    } catch {
+      return "";
+    }
+  };
+
   useEffect(() => {
     if (modalOpen) {
       reset({
-        Person_Trained_ID: editItem?.person_trained_id || "",
-        Program_Name: editItem?.program_name || "",
-        Means_of_communication: editItem?.means_of_communication || "",
-        Date_of_program: editItem?.date_of_program || "",
-        Communicated_by: editItem?.communicated_by || "",
-        Training_Level: editItem?.training_level || "",
-        Training_Provider: editItem?.training_provider || "",
-        Program_Outcome: editItem?.program_outcome || "",
+        Person_Trained_ID: editItem?.person_trained_id ? String(editItem.person_trained_id) : "",
+        Program_Name: editItem?.program_name ? String(editItem.program_name) : "",
+        Means_of_communication: editItem?.means_of_communication ? String(editItem.means_of_communication) : "",
+        Date_of_program: formatDateForInput(editItem?.date_of_program),
+        Communicated_by: editItem?.communicated_by ? String(editItem.communicated_by) : "",
+        Training_Level: editItem?.training_level ? String(editItem.training_level) : "",
+        Training_Provider: editItem?.training_provider ? String(editItem.training_provider) : "",
+        Program_Outcome: editItem?.program_outcome ? String(editItem.program_outcome) : "",
       });
       // Auto-focus on first input
       setTimeout(() => {
@@ -115,37 +127,38 @@ const Programs = () => {
     }
   };
 
-  const fetchLookupData = async () => {
-    try {
-      const [
-        applicantsRes,
-        coursesRes,
-        meansRes,
-        employeesRes,
-        levelsRes,
-        institutionsRes,
-        outcomesRes,
-      ] = await Promise.all([
-        axiosApi.get(`${API_BASE_URL}/applicantDetails`),
-        axiosApi.get(`${API_BASE_URL}/lookup/Training_Courses`),
-        axiosApi.get(`${API_BASE_URL}/lookup/Means_of_communication`),
-        axiosApi.get(`${API_BASE_URL}/employee`),
-        axiosApi.get(`${API_BASE_URL}/lookup/Training_Level`),
-        axiosApi.get(`${API_BASE_URL}/trainingInstitutions`),
-        axiosApi.get(`${API_BASE_URL}/lookup/Training_Outcome`),
-      ]);
+  // Helper to safely extract array from API response
+  const extractArray = (response) => {
+    if (!response) return [];
+    const data = response.data;
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.rows)) return data.rows;
+    if (data && Array.isArray(data.results)) return data.results;
+    return [];
+  };
 
-      setApplicants(applicantsRes.data || []);
-      setTrainingCourses(coursesRes.data || []);
-      setMeansOfCommunication(meansRes.data || []);
-      setEmployees(employeesRes.data || []);
-      setTrainingLevels(levelsRes.data || []);
-      setTrainingInstitutions(institutionsRes.data || []);
-      setTrainingOutcomes(outcomesRes.data || []);
-    } catch (error) {
-      console.error("Error fetching lookup data:", error);
-      showAlert("Failed to fetch lookup data", "warning");
-    }
+  const fetchLookupData = async () => {
+    // Fetch each lookup independently to prevent one failure from breaking all
+    const fetchSafe = async (url, setter, fallback = []) => {
+      try {
+        const response = await axiosApi.get(url);
+        setter(extractArray(response));
+      } catch (error) {
+        console.error(`Error fetching ${url}:`, error);
+        setter(fallback);
+      }
+    };
+
+    await Promise.all([
+      fetchSafe(`${API_BASE_URL}/applicantDetails`, setApplicants),
+      fetchSafe(`${API_BASE_URL}/lookup/Training_Courses`, setTrainingCourses),
+      fetchSafe(`${API_BASE_URL}/lookup/Means_of_communication`, setMeansOfCommunication),
+      fetchSafe(`${API_BASE_URL}/employee`, setEmployees),
+      fetchSafe(`${API_BASE_URL}/lookup/Training_Level`, setTrainingLevels),
+      fetchSafe(`${API_BASE_URL}/trainingInstitutions`, setTrainingInstitutions),
+      fetchSafe(`${API_BASE_URL}/lookup/Training_Outcome`, setTrainingOutcomes),
+    ]);
   };
 
   const showAlert = (message, color = "success") => {
@@ -276,46 +289,53 @@ const Programs = () => {
     });
   };
 
-  // Helper functions to get names from IDs
+  // Helper functions to get names from IDs (with array safety checks)
   const getApplicantName = (id) => {
     if (!id) return "-";
-    const applicant = applicants.find((a) => a.id == id || a.id === parseInt(id));
+    const arr = Array.isArray(applicants) ? applicants : [];
+    const applicant = arr.find((a) => a.id == id || a.id === parseInt(id));
     return applicant ? `${applicant.name || ''} ${applicant.surname || ''}`.trim() : `ID: ${id}`;
   };
 
   const getCourseName = (id) => {
     if (!id) return "-";
-    const course = trainingCourses.find((c) => c.id == id || c.id === parseInt(id));
+    const arr = Array.isArray(trainingCourses) ? trainingCourses : [];
+    const course = arr.find((c) => c.id == id || c.id === parseInt(id));
     return course ? course.name : `ID: ${id}`;
   };
 
   const getMeansName = (id) => {
     if (!id) return "-";
-    const means = meansOfCommunication.find((m) => m.id == id || m.id === parseInt(id));
+    const arr = Array.isArray(meansOfCommunication) ? meansOfCommunication : [];
+    const means = arr.find((m) => m.id == id || m.id === parseInt(id));
     return means ? means.name : `ID: ${id}`;
   };
 
   const getEmployeeName = (id) => {
     if (!id) return "-";
-    const employee = employees.find((e) => e.id == id || e.id === parseInt(id));
+    const arr = Array.isArray(employees) ? employees : [];
+    const employee = arr.find((e) => e.id == id || e.id === parseInt(id));
     return employee ? `${employee.name || ''} ${employee.surname || ''}`.trim() : `ID: ${id}`;
   };
 
   const getLevelName = (id) => {
     if (!id) return "-";
-    const level = trainingLevels.find((l) => l.id == id || l.id === parseInt(id));
+    const arr = Array.isArray(trainingLevels) ? trainingLevels : [];
+    const level = arr.find((l) => l.id == id || l.id === parseInt(id));
     return level ? level.name : `ID: ${id}`;
   };
 
   const getInstitutionName = (id) => {
     if (!id) return "-";
-    const institution = trainingInstitutions.find((i) => i.id == id || i.id === parseInt(id));
+    const arr = Array.isArray(trainingInstitutions) ? trainingInstitutions : [];
+    const institution = arr.find((i) => i.id == id || i.id === parseInt(id));
     return institution ? institution.institute_name : `ID: ${id}`;
   };
 
   const getOutcomeName = (id) => {
     if (!id) return "-";
-    const outcome = trainingOutcomes.find((o) => o.id == id || o.id === parseInt(id));
+    const arr = Array.isArray(trainingOutcomes) ? trainingOutcomes : [];
+    const outcome = arr.find((o) => o.id == id || o.id === parseInt(id));
     return outcome ? outcome.name : `ID: ${id}`;
   };
 
@@ -561,7 +581,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Person</option>
-                          {applicants.map((applicant) => (
+                          {(Array.isArray(applicants) ? applicants : []).map((applicant) => (
                             <option key={applicant.id} value={applicant.id}>
                               {applicant.name} {applicant.surname}
                             </option>
@@ -594,7 +614,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Course</option>
-                          {trainingCourses.map((course) => (
+                          {(Array.isArray(trainingCourses) ? trainingCourses : []).map((course) => (
                             <option key={course.id} value={course.id}>
                               {course.name}
                             </option>
@@ -622,7 +642,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Means</option>
-                          {meansOfCommunication.map((means) => (
+                          {(Array.isArray(meansOfCommunication) ? meansOfCommunication : []).map((means) => (
                             <option key={means.id} value={means.id}>
                               {means.name}
                             </option>
@@ -671,7 +691,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Employee</option>
-                          {employees.map((employee) => (
+                          {(Array.isArray(employees) ? employees : []).map((employee) => (
                             <option key={employee.id} value={employee.id}>
                               {employee.name} {employee.surname}
                             </option>
@@ -699,7 +719,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Level</option>
-                          {trainingLevels.map((level) => (
+                          {(Array.isArray(trainingLevels) ? trainingLevels : []).map((level) => (
                             <option key={level.id} value={level.id}>
                               {level.name}
                             </option>
@@ -727,7 +747,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Provider</option>
-                          {trainingInstitutions.map((institution) => (
+                          {(Array.isArray(trainingInstitutions) ? trainingInstitutions : []).map((institution) => (
                             <option key={institution.id} value={institution.id}>
                               {institution.institute_name}
                             </option>
@@ -755,7 +775,7 @@ const Programs = () => {
                           {...field}
                         >
                           <option value="">Select Outcome</option>
-                          {trainingOutcomes.map((outcome) => (
+                          {(Array.isArray(trainingOutcomes) ? trainingOutcomes : []).map((outcome) => (
                             <option key={outcome.id} value={outcome.id}>
                               {outcome.name}
                             </option>

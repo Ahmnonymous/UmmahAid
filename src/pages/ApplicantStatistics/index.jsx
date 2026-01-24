@@ -356,9 +356,9 @@ const ApplicantStatistics = (props) => {
 
 
           {/* Charts Grid - Row 1 */}
-          <Row>
-            <Col xl="4" lg="6">
-              <Card>
+          <Row className="mb-4">
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Nationality</h4>
                   {loading ? (
@@ -373,8 +373,8 @@ const ApplicantStatistics = (props) => {
               </Card>
             </Col>
 
-            <Col xl="4" lg="6">
-              <Card>
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Gender</h4>
                   {loading ? (
@@ -388,9 +388,12 @@ const ApplicantStatistics = (props) => {
                 </CardBody>
               </Card>
             </Col>
+          </Row>
 
-            <Col xl="4" lg="6">
-              <Card>
+          {/* Charts Grid - Row 2 */}
+          <Row className="mb-4">
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Highest Education</h4>
                   {loading ? (
@@ -404,12 +407,9 @@ const ApplicantStatistics = (props) => {
                 </CardBody>
               </Card>
             </Col>
-          </Row>
 
-          {/* Charts Grid - Row 2 */}
-          <Row>
-            <Col xl="4" lg="6">
-              <Card>
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Race</h4>
                   {loading ? (
@@ -423,9 +423,12 @@ const ApplicantStatistics = (props) => {
                 </CardBody>
               </Card>
             </Col>
+          </Row>
 
-            <Col xl="4" lg="6">
-              <Card>
+          {/* Charts Grid - Row 3 */}
+          <Row className="mb-4">
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Suburbs</h4>
                   {loading ? (
@@ -440,8 +443,8 @@ const ApplicantStatistics = (props) => {
               </Card>
             </Col>
 
-            <Col xl="4" lg="6">
-              <Card>
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Employment Status</h4>
                   {loading ? (
@@ -457,10 +460,10 @@ const ApplicantStatistics = (props) => {
             </Col>
           </Row>
 
-          {/* Charts Grid - Row 3 */}
-          <Row>
-            <Col xl="4" lg="6">
-              <Card>
+          {/* Charts Grid - Row 4 */}
+          <Row className="mb-4">
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">Marital Status</h4>
                   {loading ? (
@@ -475,8 +478,8 @@ const ApplicantStatistics = (props) => {
               </Card>
             </Col>
 
-            <Col xl="4" lg="6">
-              <Card>
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">File Status</h4>
                   {loading ? (
@@ -490,9 +493,12 @@ const ApplicantStatistics = (props) => {
                 </CardBody>
               </Card>
             </Col>
+          </Row>
 
-            <Col xl="4" lg="6">
-              <Card>
+          {/* Charts Grid - Row 5 */}
+          <Row className="mb-4">
+            <Col xl="6" lg="6" className="d-flex">
+              <Card className="flex-fill" style={{ minHeight: "280px" }}>
                 <CardBody>
                   <h4 className="card-title mb-4">File Condition</h4>
                   {loading ? (

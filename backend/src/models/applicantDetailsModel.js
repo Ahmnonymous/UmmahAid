@@ -32,6 +32,7 @@ const applicantDetailsModel = {
           highest_education_level, marital_status, employment_status,
           suburb, dwelling_type, dwelling_status, health, skills,
           born_religion_id, period_as_muslim_id,
+          next_of_kin_name, next_of_kin_surname, next_of_kin_contact_number, next_of_kin_gender,
           created_by, created_at, updated_by, updated_at, center_id,
           signature_filename, signature_mime, signature_size
         FROM ${tableName}

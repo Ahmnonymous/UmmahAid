@@ -54,6 +54,10 @@ const EDIT_APPLICANT_TAB_FIELDS = {
     "Employment_Status",
     "Health",
     "Skills",
+    "Next_Of_Kin_Name",
+    "Next_Of_Kin_Surname",
+    "Next_Of_Kin_Contact_Number",
+    "Next_Of_Kin_Gender",
   ],
   2: [
     "Cell_Number",
@@ -213,6 +217,10 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         Skills: applicant.skills || "",
         POPIA_Agreement: applicant.popia_agreement === "Y",
         Signature: null,
+        Next_Of_Kin_Name: applicant.next_of_kin_name || "",
+        Next_Of_Kin_Surname: applicant.next_of_kin_surname || "",
+        Next_Of_Kin_Contact_Number: applicant.next_of_kin_contact_number || "",
+        Next_Of_Kin_Gender: applicant.next_of_kin_gender || "",
       });
       setHideExistingSignature(false);
       // Load existing signature preview via authenticated request
@@ -331,6 +339,10 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         if (data.Dwelling_Status && data.Dwelling_Status !== "") formData.append("dwelling_status", data.Dwelling_Status);
         if (data.Health && data.Health !== "") formData.append("health", data.Health);
         if (data.Skills && data.Skills !== "") formData.append("skills", data.Skills);
+        formData.append("next_of_kin_name", data.Next_Of_Kin_Name || "");
+        formData.append("next_of_kin_surname", data.Next_Of_Kin_Surname || "");
+        formData.append("next_of_kin_contact_number", data.Next_Of_Kin_Contact_Number || "");
+        if (data.Next_Of_Kin_Gender && data.Next_Of_Kin_Gender !== "") formData.append("next_of_kin_gender", data.Next_Of_Kin_Gender);
         
         if (centerIdValue !== null) {
           formData.append("center_id", String(centerIdValue));
@@ -378,6 +390,10 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
           dwelling_status: data.Dwelling_Status && data.Dwelling_Status !== "" ? parseInt(data.Dwelling_Status) : null,
           health: data.Health && data.Health !== "" ? parseInt(data.Health) : null,
           skills: data.Skills && data.Skills !== "" ? parseInt(data.Skills) : null,
+          next_of_kin_name: data.Next_Of_Kin_Name || null,
+          next_of_kin_surname: data.Next_Of_Kin_Surname || null,
+          next_of_kin_contact_number: data.Next_Of_Kin_Contact_Number || null,
+          next_of_kin_gender: data.Next_Of_Kin_Gender && data.Next_Of_Kin_Gender !== "" ? parseInt(data.Next_Of_Kin_Gender) : null,
           popia_agreement: data.POPIA_Agreement ? "Y" : "N",
           updated_by: getAuditName(),
         };
@@ -922,6 +938,81 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                           <Input type="select" {...field}>
                             <option value="">Select Skills</option>
                             {lookupData.skills.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {item.name}
+                              </option>
+                            ))}
+                          </Input>
+                        )}
+                      />
+                    </FormGroup>
+                  </Col>
+
+                  {/* Next of Kin Section */}
+                  <Col md={12}>
+                    <hr className="my-3" />
+                    <h6 className="mb-3 text-muted">Next of Kin</h6>
+                  </Col>
+
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label>Next of Kin Name</Label>
+                      <Controller
+                        name="Next_Of_Kin_Name"
+                        control={control}
+                        render={({ field }) => <Input type="text" {...field} />}
+                      />
+                    </FormGroup>
+                  </Col>
+
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label>Next of Kin Surname</Label>
+                      <Controller
+                        name="Next_Of_Kin_Surname"
+                        control={control}
+                        render={({ field }) => <Input type="text" {...field} />}
+                      />
+                    </FormGroup>
+                  </Col>
+
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label>Next of Kin Contact Number</Label>
+                      <Controller
+                        name="Next_Of_Kin_Contact_Number"
+                        control={control}
+                        rules={tenDigitRule(false, "Next of Kin contact number")}
+                        render={({ field }) => (
+                          <Input
+                            type="text"
+                            placeholder="0123456789"
+                            maxLength={10}
+                            onInput={(e) => {
+                              e.target.value = sanitizeTenDigit(e.target.value);
+                              field.onChange(e);
+                            }}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            invalid={!!errors.Next_Of_Kin_Contact_Number}
+                            {...field}
+                          />
+                        )}
+                      />
+                      {errors.Next_Of_Kin_Contact_Number && <FormFeedback>{errors.Next_Of_Kin_Contact_Number.message}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label>Next of Kin Gender</Label>
+                      <Controller
+                        name="Next_Of_Kin_Gender"
+                        control={control}
+                        render={({ field }) => (
+                          <Input type="select" {...field}>
+                            <option value="">Select Gender</option>
+                            {lookupData.gender.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.name}
                               </option>

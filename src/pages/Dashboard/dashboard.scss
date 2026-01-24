@@ -5,3 +5,31 @@
 //     fill: $text-muted !important;
 //   }
 // }
+
+// Equal height rows for dashboard charts
+.row-eq-height {
+  display: flex;
+  flex-wrap: wrap;
+  
+  > [class*="col"] {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// Ensure charts expand to fill card
+.chart-card {
+  min-height: 320px;
+  
+  .card-body {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .chart-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

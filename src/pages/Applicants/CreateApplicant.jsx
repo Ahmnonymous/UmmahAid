@@ -53,6 +53,10 @@ const CREATE_APPLICANT_TAB_FIELDS = {
     "Highest_Education",
     "Marital_Status",
     "Health_Conditions",
+    "Next_Of_Kin_Name",
+    "Next_Of_Kin_Surname",
+    "Next_Of_Kin_Contact_Number",
+    "Next_Of_Kin_Gender",
   ],
   2: [
     "Cell_Number",
@@ -208,6 +212,10 @@ const CreateApplicant = () => {
       File_Status: "",
       Signature: null,
       POPIA_Agreement: false, // boolean
+      Next_Of_Kin_Name: "",
+      Next_Of_Kin_Surname: "",
+      Next_Of_Kin_Contact_Number: "",
+      Next_Of_Kin_Gender: "",
     },
     mode: "onChange",           // Validate on change
     reValidateMode: "onChange", // Critical for checkboxes
@@ -364,6 +372,10 @@ const CreateApplicant = () => {
         if (data.Period_As_Muslim_ID) formData.append("period_as_muslim_id", data.Period_As_Muslim_ID);
         if (data.Health_Conditions) formData.append("health", data.Health_Conditions);
         if (data.Marital_Status) formData.append("marital_status", data.Marital_Status);
+        formData.append("next_of_kin_name", data.Next_Of_Kin_Name || "");
+        formData.append("next_of_kin_surname", data.Next_Of_Kin_Surname || "");
+        formData.append("next_of_kin_contact_number", data.Next_Of_Kin_Contact_Number || "");
+        if (data.Next_Of_Kin_Gender) formData.append("next_of_kin_gender", data.Next_Of_Kin_Gender);
         formData.append("date_intake", data.Date_Intake || new Date().toISOString().split("T")[0]);
         formData.append("file_number", data.File_Number || "");
         if (data.File_Condition) formData.append("file_condition", data.File_Condition);
@@ -402,6 +414,10 @@ const CreateApplicant = () => {
           dwelling_status: data.Dwelling_Status && data.Dwelling_Status !== "" ? parseInt(data.Dwelling_Status) : null,
           health: data.Health_Conditions && data.Health_Conditions !== "" ? parseInt(data.Health_Conditions) : null,
           marital_status: data.Marital_Status && data.Marital_Status !== "" ? parseInt(data.Marital_Status) : null,
+          next_of_kin_name: data.Next_Of_Kin_Name || null,
+          next_of_kin_surname: data.Next_Of_Kin_Surname || null,
+          next_of_kin_contact_number: data.Next_Of_Kin_Contact_Number || null,
+          next_of_kin_gender: data.Next_Of_Kin_Gender && data.Next_Of_Kin_Gender !== "" ? parseInt(data.Next_Of_Kin_Gender) : null,
           date_intake: data.Date_Intake || new Date().toISOString().split("T")[0],
           file_number: data.File_Number,
           file_condition: data.File_Condition && data.File_Condition !== "" ? parseInt(data.File_Condition) : null,
@@ -817,6 +833,82 @@ const CreateApplicant = () => {
                                 <Input id="Health_Conditions" type="select" {...field}>
                                   <option value="">Select Condition</option>
                                   {(lookupData.healthConditions || []).map((x) => (
+                                    <option key={x.id} value={x.id}>{x.name}</option>
+                                  ))}
+                                </Input>
+                              )}
+                            />
+                          </FormGroup>
+                        </Col>
+
+                        {/* Next of Kin Section */}
+                        <Col md={12}>
+                          <hr className="my-3" />
+                          <h6 className="mb-3 text-muted">Next of Kin</h6>
+                        </Col>
+
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label for="Next_Of_Kin_Name">Next of Kin Name</Label>
+                            <Controller
+                              name="Next_Of_Kin_Name"
+                              control={control}
+                              render={({ field }) => (
+                                <Input id="Next_Of_Kin_Name" type="text" {...field} />
+                              )}
+                            />
+                          </FormGroup>
+                        </Col>
+
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label for="Next_Of_Kin_Surname">Next of Kin Surname</Label>
+                            <Controller
+                              name="Next_Of_Kin_Surname"
+                              control={control}
+                              render={({ field }) => (
+                                <Input id="Next_Of_Kin_Surname" type="text" {...field} />
+                              )}
+                            />
+                          </FormGroup>
+                        </Col>
+
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label for="Next_Of_Kin_Contact_Number">Next of Kin Contact Number</Label>
+                            <Controller
+                              name="Next_Of_Kin_Contact_Number"
+                              control={control}
+                              rules={tenDigitRule(false, "Next of Kin contact number")}
+                              render={({ field }) => (
+                                <Input
+                                  id="Next_Of_Kin_Contact_Number"
+                                  type="text"
+                                  maxLength={10}
+                                  onInput={(e) => {
+                                    e.target.value = sanitizeTenDigit(e.target.value);
+                                    field.onChange(e);
+                                  }}
+                                  value={field.value}
+                                  onBlur={field.onBlur}
+                                  invalid={!!errors.Next_Of_Kin_Contact_Number}
+                                />
+                              )}
+                            />
+                            {errors.Next_Of_Kin_Contact_Number && <FormFeedback>{errors.Next_Of_Kin_Contact_Number.message}</FormFeedback>}
+                          </FormGroup>
+                        </Col>
+
+                        <Col md={6}>
+                          <FormGroup>
+                            <Label for="Next_Of_Kin_Gender">Next of Kin Gender</Label>
+                            <Controller
+                              name="Next_Of_Kin_Gender"
+                              control={control}
+                              render={({ field }) => (
+                                <Input id="Next_Of_Kin_Gender" type="select" {...field}>
+                                  <option value="">Select Gender</option>
+                                  {(lookupData.gender || []).map((x) => (
                                     <option key={x.id} value={x.id}>{x.name}</option>
                                   ))}
                                 </Input>

@@ -24,7 +24,7 @@ const SummaryMetrics = ({ applicantId, financialAssistance, foodAssistance, home
 
   const metrics = [
     {
-      title: "Financial Assistance",
+      title: "Ummah Aid Financial Assistance",
       value: `R ${totalFinancialAssistance.toFixed(2)}`,
       icon: "bx-money",
       color: "primary"
@@ -36,13 +36,13 @@ const SummaryMetrics = ({ applicantId, financialAssistance, foodAssistance, home
       color: "success"
     },
     {
-      title: "Home Visits",
+      title: "Home Visit",
       value: homeVisitCount,
       icon: "bx-home",
       color: "warning"
     },
     {
-      title: "Programs",
+      title: "Higher education",
       value: programCount,
       icon: "bxs-graduation",
       color: "info"

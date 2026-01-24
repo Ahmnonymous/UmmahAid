@@ -134,26 +134,6 @@ const SidebarContent = (props) => {
     const metisMenu = new MetisMenu("#side-menu");
     activeMenu();
 
-    // Force Personal section to always be expanded
-    setTimeout(() => {
-      const allLis = Array.from(document.querySelectorAll('#side-menu > li'));
-      const personalLi = allLis.find(li => {
-        const link = li.querySelector('a');
-        return link && link.textContent.includes('Personal');
-      });
-      
-      if (personalLi) {
-        personalLi.classList.add('mm-active');
-        const subMenu = personalLi.querySelector('ul.sub-menu');
-        if (subMenu) {
-          subMenu.classList.add('mm-show');
-          subMenu.style.display = 'block';
-          // Prevent MetisMenu from collapsing it
-          subMenu.setAttribute('data-keep-open', 'true');
-        }
-      }
-    }, 100);
-
     // Cleanup on component unmount
     return () => {
       metisMenu.dispose();
@@ -306,14 +286,14 @@ const SidebarContent = (props) => {
               </li>
             )}
 
-            {/* ✅ Personal Section - Always open */}
+            {/* ✅ Personal Section - Dropdown */}
             {(canAccessNav("filemanager") || canAccessNav("chat") || canAccessNav("policy")) && (
-              <li className="mm-active">
-                <Link to="/#" style={{ pointerEvents: "none", cursor: "default" }}>
+              <li>
+                <Link to="/#" className="has-arrow">
                   <i className="bx bx-user"></i>
                   <span>{props.t("Personal")}</span>
                 </Link>
-                <ul className="sub-menu mm-show" aria-expanded="true" style={{ display: "block" }}>
+                <ul className="sub-menu" aria-expanded="false">
                   {canAccessNav("filemanager") && (
                     <li>
                       <Link to="/FileManager">
