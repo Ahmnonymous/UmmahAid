@@ -53,6 +53,7 @@ import Login from "../pages/Authentication/Login";
 import Logout from "../pages/Authentication/Logout";
 import Register from "../pages/Authentication/Register";
 import ForgetPwd from "../pages/Authentication/ForgetPassword";
+import ResetPwd from "../pages/Authentication/ResetPassword";
 import Employees from "../pages/Employees/Employees";
 import ApplicantManagement from "../pages/Applicants/ApplicantManagement";
 import CreateApplicant from "../pages/Applicants/CreateApplicant";
@@ -422,6 +423,7 @@ const publicRoutes = [
   { path: "/logout", component: <Logout /> },
   { path: "/login", component: <Login /> },
   { path: "/forgot-password", component: <ForgetPwd /> },
+  { path: "/reset-password", component: <ResetPwd /> },
   { path: "/register", component: <Register /> },
 
   { path: "/pages-maintenance", component: <PagesMaintenance /> },
