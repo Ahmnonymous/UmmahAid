@@ -5,6 +5,11 @@ import axiosApi from '../../helpers/api_helper';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
 import { GET_TOTAL_FINANCIAL_ASSISTANCE_REPORT } from '../../helpers/url_helper';
 
+// Import images
+import financialAssistanceImage from '../../assets/images/icon_images/Financial Assistance/bank-safe-illustration-2025-10-20-04-32-44-utc.png';
+import foodAssistanceImage from '../../assets/images/icon_images/Food Assistance/salad-ingredients-illustration-2025-10-20-06-29-39-utc.png';
+// import higherEducationImage from '../../assets/images/icon_images/Higher Education/hand-holding-books-with-graduation-cap-and-diploma-2025-10-20-04-29-14-utc.png';
+import higherEducationImage from '../../assets/images/icon_images/Combined Financial Assistance/paying-deposit-illustration-2025-10-20-06-01-29-utc.png';
 const TotalFinancialAssistanceReport = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,6 +34,40 @@ const TotalFinancialAssistanceReport = () => {
 
     useEffect(() => {
         fetchData();
+    }, []);
+
+    // Add dark mode styles for metric cards
+    useEffect(() => {
+        const styleId = 'total-assistance-report-dark-mode-styles';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                [data-bs-theme="dark"] .metric-card-wrapper,
+                .dark .metric-card-wrapper,
+                body.dark .metric-card-wrapper {
+                    border-color: rgba(255, 255, 255, 0.2) !important;
+                    background: var(--bs-body-bg, #1a1a1a) !important;
+                }
+                [data-bs-theme="dark"] .metric-card-inner,
+                .dark .metric-card-inner,
+                body.dark .metric-card-inner {
+                    background: var(--bs-body-bg, #1a1a1a) !important;
+                    color: var(--bs-body-color, #e9ecef) !important;
+                }
+                [data-bs-theme="dark"] .metric-card-value,
+                .dark .metric-card-value,
+                body.dark .metric-card-value {
+                    color: var(--bs-body-color, #e9ecef) !important;
+                }
+                [data-bs-theme="dark"] .metric-card-wrapper:hover,
+                .dark .metric-card-wrapper:hover,
+                body.dark .metric-card-wrapper:hover {
+                    box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1) !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
     }, []);
 
     const fetchData = async () => {
@@ -256,57 +295,270 @@ const TotalFinancialAssistanceReport = () => {
                 <Breadcrumbs title="Reports" breadcrumbItem="Total Assistance Report" />
 
                 {/* Summary Cards */}
-                <Row>
-                    <Col md={4}>
-                        <Card className="mini-stats-wid">
-                            <CardBody>
-                                <div className="d-flex">
-                                    <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Ummah Aid Financial Assistance</p>
-                                        <h4 className="mb-0">{formatCurrency(totalFinancialTransactions)}</h4>
-                                    </div>
-                                    <div className="avatar-sm rounded-circle bg-info align-self-center mini-stat-icon">
-                                        <span className="avatar-title rounded-circle bg-info">
-                                            <i className="bx bx-credit-card font-size-24"></i>
-                                        </span>
-                                    </div>
+                <Row className="mb-4">
+                    <Col xs="12" md="6" lg="4" className="mb-3">
+                        <div
+                            className="w-100 metric-card-wrapper"
+                            style={{
+                                background: 'var(--bs-body-bg, transparent)',
+                                border: '1px solid var(--bs-border-color, rgb(96, 119, 231))',
+                                borderRadius: "12px",
+                                padding: "3px",
+                                transition: "all 0.3s ease",
+                                cursor: "default",
+                            }}
+                            onMouseEnter={(e) => {
+                                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                                             document.body.classList.contains('dark') ||
+                                             window.getComputedStyle(document.body).getPropertyValue('color-scheme') === 'dark';
+                                e.currentTarget.style.transform = "translateY(-5px)";
+                                e.currentTarget.style.boxShadow = isDark 
+                                    ? "0 10px 20px rgba(255,255,255,0.1)" 
+                                    : "0 10px 20px rgba(0,0,0,0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = "none";
+                            }}
+                        >
+                            <div
+                                className="w-100 d-flex align-items-center justify-content-between metric-card-inner"
+                                style={{
+                                    background: "var(--bs-body-bg, transparent)",
+                                    backgroundColor: "var(--bs-body-bg, transparent)",
+                                    backgroundImage: "none",
+                                    color: "var(--bs-body-color, #495057)",
+                                    minHeight: "90px",
+                                    borderRadius: "9px",
+                                    padding: "0.75rem 1rem",
+                                }}
+                            >
+                                <div className="flex-grow-1">
+                                    <p 
+                                        className="text-start fw-bold mb-1 metric-card-title" 
+                                        style={{ 
+                                            fontSize: "0.875rem", 
+                                            fontWeight: "700",
+                                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                            backgroundClip: "text",
+                                            marginBottom: "0.375rem"
+                                        }}
+                                    >
+                                        Financial Assistance
+                                    </p>
+                                    <h4 
+                                        className="mb-0 metric-card-value" 
+                                        style={{ 
+                                            fontSize: "1.25rem", 
+                                            fontWeight: "700", 
+                                            color: "var(--bs-body-color, #2d2d2d)"
+                                        }}
+                                    >
+                                        {formatCurrency(totalFinancialTransactions)}
+                                    </h4>
                                 </div>
-                            </CardBody>
-                        </Card>
+                                <div
+                                    className="flex-shrink-0 ms-3"
+                                    style={{ 
+                                        width: "70px", 
+                                        height: "70px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center"
+                                    }}
+                                >
+                                    <img 
+                                        src={financialAssistanceImage} 
+                                        alt="Financial Assistance"
+                                        style={{ 
+                                            width: "100%", 
+                                            height: "100%", 
+                                            objectFit: "contain",
+                                            maxWidth: "70px",
+                                            maxHeight: "70px"
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </Col>
-                    <Col md={4}>
-                        <Card className="mini-stats-wid">
-                            <CardBody>
-                                <div className="d-flex">
-                                    <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Food Assistance</p>
-                                        <h4 className="mb-0">{formatCurrency(totalFoodAssistance)}</h4>
-                                    </div>
-                                    <div className="avatar-sm rounded-circle bg-success align-self-center mini-stat-icon">
-                                        <span className="avatar-title rounded-circle bg-success">
-                                            <i className="bx bx-home font-size-24"></i>
-                                        </span>
-                                    </div>
+                    <Col xs="12" md="6" lg="4" className="mb-3">
+                        <div
+                            className="w-100 metric-card-wrapper"
+                            style={{
+                                background: 'var(--bs-body-bg, transparent)',
+                                border: '1px solid var(--bs-border-color, rgb(96, 119, 231))',
+                                borderRadius: "12px",
+                                padding: "3px",
+                                transition: "all 0.3s ease",
+                                cursor: "default",
+                            }}
+                            onMouseEnter={(e) => {
+                                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                                             document.body.classList.contains('dark') ||
+                                             window.getComputedStyle(document.body).getPropertyValue('color-scheme') === 'dark';
+                                e.currentTarget.style.transform = "translateY(-5px)";
+                                e.currentTarget.style.boxShadow = isDark 
+                                    ? "0 10px 20px rgba(255,255,255,0.1)" 
+                                    : "0 10px 20px rgba(0,0,0,0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = "none";
+                            }}
+                        >
+                            <div
+                                className="w-100 d-flex align-items-center justify-content-between metric-card-inner"
+                                style={{
+                                    background: "var(--bs-body-bg, transparent)",
+                                    backgroundColor: "var(--bs-body-bg, transparent)",
+                                    backgroundImage: "none",
+                                    color: "var(--bs-body-color, #495057)",
+                                    minHeight: "90px",
+                                    borderRadius: "9px",
+                                    padding: "0.75rem 1rem",
+                                }}
+                            >
+                                <div className="flex-grow-1">
+                                    <p 
+                                        className="text-start fw-bold mb-1 metric-card-title" 
+                                        style={{ 
+                                            fontSize: "0.875rem", 
+                                            fontWeight: "700",
+                                            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                            backgroundClip: "text",
+                                            marginBottom: "0.375rem"
+                                        }}
+                                    >
+                                        Food Assistance
+                                    </p>
+                                    <h4 
+                                        className="mb-0 metric-card-value" 
+                                        style={{ 
+                                            fontSize: "1.25rem", 
+                                            fontWeight: "700", 
+                                            color: "var(--bs-body-color, #2d2d2d)"
+                                        }}
+                                    >
+                                        {formatCurrency(totalFoodAssistance)}
+                                    </h4>
                                 </div>
-                            </CardBody>
-                        </Card>
+                                <div
+                                    className="flex-shrink-0 ms-3"
+                                    style={{ 
+                                        width: "70px", 
+                                        height: "70px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center"
+                                    }}
+                                >
+                                    <img 
+                                        src={foodAssistanceImage} 
+                                        alt="Food Assistance"
+                                        style={{ 
+                                            width: "100%", 
+                                            height: "100%", 
+                                            objectFit: "contain",
+                                            maxWidth: "70px",
+                                            maxHeight: "70px"
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </Col>
-                    <Col md={4}>
-                        <Card className="mini-stats-wid">
-                            <CardBody>
-                                <div className="d-flex">
-                                    <div className="flex-grow-1">
-                                        <p className="text-muted fw-medium mb-2">Combined Financial Assistance</p>
-                                        <h4 className="mb-0">{formatCurrency(grandTotal)}</h4>
-                                    </div>
-                                    <div className="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
-                                        <span className="avatar-title rounded-circle bg-primary">
-                                            <i className="bx bx-money font-size-24"></i>
-                                        </span>
-                                    </div>
+                    <Col xs="12" md="6" lg="4" className="mb-3">
+                        <div
+                            className="w-100 metric-card-wrapper"
+                            style={{
+                                background: 'var(--bs-body-bg, transparent)',
+                                border: '1px solid var(--bs-border-color, rgb(96, 119, 231))',
+                                borderRadius: "12px",
+                                padding: "3px",
+                                transition: "all 0.3s ease",
+                                cursor: "default",
+                            }}
+                            onMouseEnter={(e) => {
+                                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                                             document.body.classList.contains('dark') ||
+                                             window.getComputedStyle(document.body).getPropertyValue('color-scheme') === 'dark';
+                                e.currentTarget.style.transform = "translateY(-5px)";
+                                e.currentTarget.style.boxShadow = isDark 
+                                    ? "0 10px 20px rgba(255,255,255,0.1)" 
+                                    : "0 10px 20px rgba(0,0,0,0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = "none";
+                            }}
+                        >
+                            <div
+                                className="w-100 d-flex align-items-center justify-content-between metric-card-inner"
+                                style={{
+                                    background: "var(--bs-body-bg, transparent)",
+                                    backgroundColor: "var(--bs-body-bg, transparent)",
+                                    backgroundImage: "none",
+                                    color: "var(--bs-body-color, #495057)",
+                                    minHeight: "90px",
+                                    borderRadius: "9px",
+                                    padding: "0.75rem 1rem",
+                                }}
+                            >
+                                <div className="flex-grow-1">
+                                    <p 
+                                        className="text-start fw-bold mb-1 metric-card-title" 
+                                        style={{ 
+                                            fontSize: "0.875rem", 
+                                            fontWeight: "700",
+                                            background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                            backgroundClip: "text",
+                                            marginBottom: "0.375rem"
+                                        }}
+                                    >
+                                        Combined Assistance Given
+                                    </p>
+                                    <h4 
+                                        className="mb-0 metric-card-value" 
+                                        style={{ 
+                                            fontSize: "1.25rem", 
+                                            fontWeight: "700", 
+                                            color: "var(--bs-body-color, #2d2d2d)"
+                                        }}
+                                    >
+                                        {formatCurrency(grandTotal)}
+                                    </h4>
                                 </div>
-                            </CardBody>
-                        </Card>
+                                <div
+                                    className="flex-shrink-0 ms-3"
+                                    style={{ 
+                                        width: "70px", 
+                                        height: "70px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center"
+                                    }}
+                                >
+                                    <img 
+                                        src={higherEducationImage} 
+                                        alt="Combined Assistance Given"
+                                        style={{ 
+                                            width: "100%", 
+                                            height: "100%", 
+                                            objectFit: "contain",
+                                            maxWidth: "70px",
+                                            maxHeight: "70px"
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </Col>
                 </Row>
 
