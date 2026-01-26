@@ -85,7 +85,7 @@ const SummaryMetrics = ({ applicantId, financialAssistance, foodAssistance, home
       gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
     },
     {
-      title: "Higher Education",
+      title: "Programs",
       value: programCount,
       image: higherEducationImage,
       gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
