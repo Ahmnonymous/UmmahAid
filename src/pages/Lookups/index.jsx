@@ -12,6 +12,7 @@ const Lookups = () => {
       icon: "bxs-user-circle",
       categories: [
         { name: "Nationality", table: "Nationality", icon: "bxs-flag-alt" },
+        { name: "Relationship Types", table: "Relationship_Types", icon: "bxs-group" },
         { name: "Skills", table: "Skills", icon: "bxs-wrench" },
         { name: "Suburb", table: "Suburb", icon: "bxs-map" },
         { name: "Health Conditions", table: "Health_Conditions", icon: "bxs-first-aid" },
