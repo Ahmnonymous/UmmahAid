@@ -1,5 +1,31 @@
-﻿const applicantDetailsModel = require('../models/applicantDetailsModel');
+const applicantDetailsModel = require('../models/applicantDetailsModel');
 const fs = require('fs').promises;
+
+/**
+ * Normalize health to JSON string (array of integers) for JSONB column.
+ * Accepts: array of numbers, single number, JSON string, or comma-separated string.
+ */
+function normalizeHealthForDb(health) {
+  if (health == null || health === '') return JSON.stringify([]);
+  if (Array.isArray(health)) {
+    const ids = health.map((v) => (typeof v === 'number' ? v : parseInt(v, 10))).filter((n) => !Number.isNaN(n));
+    return JSON.stringify(ids);
+  }
+  if (typeof health === 'number' && !Number.isNaN(health)) return JSON.stringify([health]);
+  if (typeof health === 'string') {
+    try {
+      const parsed = JSON.parse(health);
+      if (Array.isArray(parsed)) {
+        const ids = parsed.map((v) => parseInt(v, 10)).filter((n) => !Number.isNaN(n));
+        return JSON.stringify(ids);
+      }
+    } catch (_) {
+      const n = parseInt(health, 10);
+      if (!Number.isNaN(n)) return JSON.stringify([n]);
+    }
+  }
+  return JSON.stringify([]);
+}
 
 const applicantDetailsController = {
   getAll: async (req, res) => { 
@@ -66,7 +92,11 @@ const applicantDetailsController = {
         fields.signature_size = file.size;
         await fs.unlink(file.path);
       }
-      
+
+      if (fields.health !== undefined) {
+        fields.health = normalizeHealthForDb(fields.health);
+      }
+
       const data = await applicantDetailsModel.create(fields); 
       res.status(201).json(data); 
     } catch(err){ 
@@ -93,7 +123,11 @@ const applicantDetailsController = {
         fields.signature_size = file.size;
         await fs.unlink(file.path);
       }
-      
+
+      if (fields.health !== undefined) {
+        fields.health = normalizeHealthForDb(fields.health);
+      }
+
       // ✅ Apply tenant filtering: App Admin (center_id=null) sees all, HQ and others see only their center
       const centerId = req.center_id || req.user?.center_id;
       // ✅ Only App Admin (role 1) bypasses filtering - HQ (role 2) should be filtered by center_id

@@ -7,6 +7,22 @@ const {
 
 const tableName = "Applicant_Details";
 
+function normalizeHealthForApi(health) {
+  if (health == null) return [];
+  if (Array.isArray(health)) return health.map((v) => (typeof v === "number" ? v : parseInt(v, 10))).filter((n) => !Number.isNaN(n));
+  if (typeof health === "string") {
+    try {
+      const parsed = JSON.parse(health);
+      return Array.isArray(parsed) ? parsed.map((v) => parseInt(v, 10)).filter((n) => !Number.isNaN(n)) : [];
+    } catch (_) {
+      const n = parseInt(health, 10);
+      return Number.isNaN(n) ? [] : [n];
+    }
+  }
+  if (typeof health === "number" && !Number.isNaN(health)) return [health];
+  return [];
+}
+
 const applicantDetailsModel = {
   /**
    * Get all applicants (LEAN - excludes signature BLOB for performance)
@@ -102,10 +118,11 @@ const applicantDetailsModel = {
 
       const res = await pool.query(finalQuery, finalValues);
 
-      // Return metadata only (no signature BLOB)
+      // Return metadata only (no signature BLOB); normalize health to array for API
       const data = res.rows.map((row) => ({
         ...row,
         signature: row.signature_filename ? "exists" : null, // Indicate signature exists without loading it
+        health: normalizeHealthForApi(row.health),
       }));
 
       return {
@@ -138,7 +155,8 @@ const applicantDetailsModel = {
 
       const res = await pool.query(scoped.text, scoped.values);
       if (!res.rows[0]) return null;
-      return res.rows[0];
+      const row = res.rows[0];
+      return { ...row, health: normalizeHealthForApi(row.health) };
     } catch (err) {
       throw new Error(
         `Error fetching record by ID from ${tableName}: ${err.message}`,
@@ -148,12 +166,18 @@ const applicantDetailsModel = {
 
   create: async (fields) => {
     try {
+      const keys = Object.keys(fields);
       const { columns, values, placeholders } = buildInsertFragments(fields, {
         quote: false,
       });
-      const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders}) RETURNING *`;
+      const placeholdersWithCast = placeholders
+        .split(", ")
+        .map((p, i) => (keys[i] === "health" ? `${p}::jsonb` : p))
+        .join(", ");
+      const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholdersWithCast}) RETURNING *`;
       const res = await pool.query(query, values);
-      return res.rows[0];
+      const row = res.rows[0];
+      return row ? { ...row, health: normalizeHealthForApi(row.health) } : null;
     } catch (err) {
       throw new Error(`Error creating record in ${tableName}: ${err.message}`);
     }
@@ -161,12 +185,17 @@ const applicantDetailsModel = {
 
   update: async (id, fields, centerId = null, isSuperAdmin = false) => {
     try {
+      const keys = Object.keys(fields);
       const { setClause, values } = buildUpdateFragments(fields, {
         quote: false,
       });
+      const setClauseWithCast = setClause
+        .split(", ")
+        .map((part, i) => (keys[i] === "health" ? part.replace(/=\s*\$\d+$/, (m) => m + "::jsonb") : part))
+        .join(", ");
       const scoped = scopeQuery(
         {
-          text: `UPDATE ${tableName} SET ${setClause} WHERE id = $${
+          text: `UPDATE ${tableName} SET ${setClauseWithCast} WHERE id = $${
             values.length + 1
           } RETURNING *`,
           values: [...values, id],
@@ -176,7 +205,8 @@ const applicantDetailsModel = {
 
       const res = await pool.query(scoped.text, scoped.values);
       if (res.rowCount === 0) return null;
-      return res.rows[0];
+      const row = res.rows[0];
+      return row ? { ...row, health: normalizeHealthForApi(row.health) } : null;
     } catch (err) {
       throw new Error(
         `Error updating record in ${tableName}: ${err.message}`,

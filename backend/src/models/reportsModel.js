@@ -90,7 +90,7 @@ class ReportsModel {
                     s.name AS suburb_name,
                     dt.name AS dwelling_type_name,
                     ds.name AS dwelling_status_name,
-                    hc.name AS health_condition_name,
+                    (SELECT string_agg(hc2.name, ', ' ORDER BY hc2.name) FROM jsonb_array_elements_text(ad.health) AS elem(id_text) JOIN health_conditions hc2 ON hc2.id = elem.id_text::bigint) AS health_condition_name,
                     sk.name AS skills_name,
                     g_nok.name AS next_of_kin_gender_name
                 FROM applicant_details ad
@@ -105,7 +105,6 @@ class ReportsModel {
                 LEFT JOIN suburb s ON ad.suburb = s.id
                 LEFT JOIN dwelling_type dt ON ad.dwelling_type = dt.id
                 LEFT JOIN dwelling_status ds ON ad.dwelling_status = ds.id
-                LEFT JOIN health_conditions hc ON ad.health = hc.id
                 LEFT JOIN skills sk ON ad.skills = sk.id
                 LEFT JOIN gender g_nok ON ad.next_of_kin_gender = g_nok.id
                 LEFT JOIN center_detail cd ON ad.center_id = cd.id
@@ -140,11 +139,11 @@ class ReportsModel {
                     COALESCE(fin_totals.financial_total, 0) AS financial_transactions,
                     COALESCE(fa_totals.food_total, 0) + COALESCE(fin_totals.financial_total, 0) AS total_financial,
                     cd.organisation_name AS center_name,
-                    -- Join with lookup tables for readable names
+                    -- Join with lookup tables for readable names (health is JSONB array)
                     fc.name AS file_condition_name,
                     fs.name AS file_status_name,
                     es.name AS employment_status_name,
-                    hc.name AS health_condition_name
+                    (SELECT string_agg(hc2.name, ', ' ORDER BY hc2.name) FROM jsonb_array_elements_text(ad.health) AS elem(id_text) JOIN health_conditions hc2 ON hc2.id = elem.id_text::bigint) AS health_condition_name
                 FROM applicant_details ad
                 LEFT JOIN (
                     SELECT 
@@ -163,7 +162,6 @@ class ReportsModel {
                 LEFT JOIN file_condition fc ON ad.file_condition = fc.id
                 LEFT JOIN file_status fs ON ad.file_status = fs.id
                 LEFT JOIN employment_status es ON ad.employment_status = es.id
-                LEFT JOIN health_conditions hc ON ad.health = hc.id
                 LEFT JOIN center_detail cd ON ad.center_id = cd.id
             `;
             

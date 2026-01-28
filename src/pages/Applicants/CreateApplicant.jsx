@@ -29,6 +29,7 @@ import { getAuditName } from "../../helpers/userStorage";
 import { useRole } from "../../helpers/useRole";
 import { sanitizeTenDigit, tenDigitRule } from "../../helpers/phone";
 import { createFieldTabMap, handleTabbedFormErrors } from "../../helpers/formErrorHandler";
+import Select from "react-select";
 
 const CREATE_APPLICANT_TAB_LABELS = {
   1: "Personal Info",
@@ -204,7 +205,7 @@ const CreateApplicant = () => {
       Suburb: "",
       Dwelling_Type: "",
       Dwelling_Status: "",
-      Health_Conditions: "",
+      Health_Conditions: [],
       Marital_Status: "",
       Date_Intake: "",
       File_Number: "",
@@ -330,6 +331,40 @@ const CreateApplicant = () => {
     }
   };
 
+  const getComputedStyle = () => {
+    if (typeof window !== "undefined" && document.documentElement) {
+      const root = document.documentElement;
+      const isDark = root.getAttribute("data-bs-theme") === "dark";
+      return {
+        controlBg: isDark ? "#212529" : "#fff",
+        menuBg: isDark ? "#212529" : "#fff",
+        inputColor: isDark ? "#fff" : "#000",
+        placeholderColor: isDark ? "#adb5bd" : "#6c757d",
+        multiValueBg: isDark ? "#495057" : "#e7f3ff",
+        multiValueLabelColor: isDark ? "#fff" : "#0066cc",
+        multiValueRemoveBg: isDark ? "#6c757d" : "#cfe2ff",
+        multiValueRemoveColor: isDark ? "#fff" : "#0066cc",
+        borderColor: isDark ? "#495057" : "#ced4da",
+        hoverBg: isDark ? "#343a40" : "#f8f9fa",
+      };
+    }
+    return {
+      controlBg: "#fff",
+      menuBg: "#fff",
+      inputColor: "#000",
+      placeholderColor: "#6c757d",
+      multiValueBg: "#e7f3ff",
+      multiValueLabelColor: "#0066cc",
+      multiValueRemoveBg: "#cfe2ff",
+      multiValueRemoveColor: "#0066cc",
+      borderColor: "#ced4da",
+      hoverBg: "#f8f9fa",
+    };
+  };
+
+  const themeColors = getComputedStyle();
+  const healthConditionOptions = (lookupData.healthConditions || []).map((x) => ({ value: x.id, label: x.name }));
+
   const onSubmit = async (data) => {
     try {
       const rawCenterId = isGlobalAdmin ? data.Center_ID : (userCenterId ?? null);
@@ -370,7 +405,8 @@ const CreateApplicant = () => {
         if (data.Dwelling_Status) formData.append("dwelling_status", data.Dwelling_Status);
         if (data.Born_Religion_ID) formData.append("born_religion_id", data.Born_Religion_ID);
         if (data.Period_As_Muslim_ID) formData.append("period_as_muslim_id", data.Period_As_Muslim_ID);
-        if (data.Health_Conditions) formData.append("health", data.Health_Conditions);
+        const healthIds = Array.isArray(data.Health_Conditions) ? data.Health_Conditions.map((c) => c.value) : [];
+        if (healthIds.length > 0) formData.append("health", JSON.stringify(healthIds));
         if (data.Marital_Status) formData.append("marital_status", data.Marital_Status);
         formData.append("next_of_kin_name", data.Next_Of_Kin_Name || "");
         formData.append("next_of_kin_surname", data.Next_Of_Kin_Surname || "");
@@ -412,7 +448,7 @@ const CreateApplicant = () => {
           suburb: data.Suburb && data.Suburb !== "" ? parseInt(data.Suburb) : null,
           dwelling_type: data.Dwelling_Type && data.Dwelling_Type !== "" ? parseInt(data.Dwelling_Type) : null,
           dwelling_status: data.Dwelling_Status && data.Dwelling_Status !== "" ? parseInt(data.Dwelling_Status) : null,
-          health: data.Health_Conditions && data.Health_Conditions !== "" ? parseInt(data.Health_Conditions) : null,
+          health: Array.isArray(data.Health_Conditions) ? data.Health_Conditions.map((c) => parseInt(c.value, 10)).filter((n) => !Number.isNaN(n)) : [],
           marital_status: data.Marital_Status && data.Marital_Status !== "" ? parseInt(data.Marital_Status) : null,
           next_of_kin_name: data.Next_Of_Kin_Name || null,
           next_of_kin_surname: data.Next_Of_Kin_Surname || null,
@@ -830,12 +866,41 @@ const CreateApplicant = () => {
                               name="Health_Conditions"
                               control={control}
                               render={({ field }) => (
-                                <Input id="Health_Conditions" type="select" {...field}>
-                                  <option value="">Select Condition</option>
-                                  {(lookupData.healthConditions || []).map((x) => (
-                                    <option key={x.id} value={x.id}>{x.name}</option>
-                                  ))}
-                                </Input>
+                                <Select
+                                  {...field}
+                                  isMulti
+                                  options={healthConditionOptions}
+                                  className="react-select-container"
+                                  classNamePrefix="react-select"
+                                  placeholder="Select conditions..."
+                                  styles={{
+                                    control: (base, state) => ({
+                                      ...base,
+                                      backgroundColor: themeColors.controlBg,
+                                      borderColor: state.isFocused ? "#86b7fe" : themeColors.borderColor,
+                                      boxShadow: state.isFocused ? "0 0 0 0.25rem rgba(13, 110, 253, 0.25)" : "none",
+                                      "&:hover": { borderColor: state.isFocused ? "#86b7fe" : themeColors.borderColor },
+                                    }),
+                                    menu: (base) => ({ ...base, backgroundColor: themeColors.menuBg, borderColor: themeColors.borderColor, zIndex: 9999 }),
+                                    menuList: (base) => ({ ...base, backgroundColor: themeColors.menuBg, padding: 0 }),
+                                    input: (base) => ({ ...base, color: themeColors.inputColor }),
+                                    placeholder: (base) => ({ ...base, color: themeColors.placeholderColor }),
+                                    multiValue: (base) => ({ ...base, backgroundColor: themeColors.multiValueBg }),
+                                    multiValueLabel: (base) => ({ ...base, color: themeColors.multiValueLabelColor }),
+                                    multiValueRemove: (base) => ({
+                                      ...base,
+                                      backgroundColor: themeColors.multiValueRemoveBg,
+                                      color: themeColors.multiValueRemoveColor,
+                                      "&:hover": { backgroundColor: themeColors.multiValueRemoveBg, color: themeColors.multiValueRemoveColor, opacity: 0.8 },
+                                    }),
+                                    option: (base, state) => ({
+                                      ...base,
+                                      backgroundColor: state.isSelected ? "#0d6efd" : state.isFocused ? themeColors.hoverBg : themeColors.menuBg,
+                                      color: state.isSelected ? "#fff" : themeColors.inputColor,
+                                      "&:active": { backgroundColor: "#0d6efd", color: "#fff" },
+                                    }),
+                                  }}
+                                />
                               )}
                             />
                           </FormGroup>

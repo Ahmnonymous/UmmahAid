@@ -30,6 +30,7 @@ import { API_BASE_URL } from "../../../helpers/url_helper";
 import { getAuditName } from "../../../helpers/userStorage";
 import { sanitizeTenDigit, tenDigitRule } from "../../../helpers/phone";
 import { createFieldTabMap, handleTabbedFormErrors } from "../../../helpers/formErrorHandler";
+import Select from "react-select";
 
 const EDIT_APPLICANT_TAB_LABELS = {
   1: "Personal Info",
@@ -52,7 +53,7 @@ const EDIT_APPLICANT_TAB_FIELDS = {
     "Highest_Education_Level",
     "Marital_Status",
     "Employment_Status",
-    "Health",
+    "Health_Conditions",
     "Skills",
     "Next_Of_Kin_Name",
     "Next_Of_Kin_Surname",
@@ -213,7 +214,14 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         Flat_Name: applicant.flat_name || "",
         Flat_Number: applicant.flat_number || "",
         Dwelling_Status: applicant.dwelling_status || "",
-        Health: applicant.health || "",
+        Health_Conditions: (() => {
+          const ids = Array.isArray(applicant.health)
+            ? applicant.health.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n))
+            : applicant.health != null && applicant.health !== ""
+            ? [parseInt(applicant.health, 10)].filter((n) => !Number.isNaN(n))
+            : [];
+          return (lookupData.healthConditions || []).filter((c) => ids.includes(parseInt(c.id, 10))).map((c) => ({ value: c.id, label: c.name }));
+        })(),
         Skills: applicant.skills || "",
         POPIA_Agreement: applicant.popia_agreement === "Y",
         Signature: null,
@@ -287,6 +295,40 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
     }
   };
 
+  const getComputedStyle = () => {
+    if (typeof window !== "undefined" && document.documentElement) {
+      const root = document.documentElement;
+      const isDark = root.getAttribute("data-bs-theme") === "dark";
+      return {
+        controlBg: isDark ? "#212529" : "#fff",
+        menuBg: isDark ? "#212529" : "#fff",
+        inputColor: isDark ? "#fff" : "#000",
+        placeholderColor: isDark ? "#adb5bd" : "#6c757d",
+        multiValueBg: isDark ? "#495057" : "#e7f3ff",
+        multiValueLabelColor: isDark ? "#fff" : "#0066cc",
+        multiValueRemoveBg: isDark ? "#6c757d" : "#cfe2ff",
+        multiValueRemoveColor: isDark ? "#fff" : "#0066cc",
+        borderColor: isDark ? "#495057" : "#ced4da",
+        hoverBg: isDark ? "#343a40" : "#f8f9fa",
+      };
+    }
+    return {
+      controlBg: "#fff",
+      menuBg: "#fff",
+      inputColor: "#000",
+      placeholderColor: "#6c757d",
+      multiValueBg: "#e7f3ff",
+      multiValueLabelColor: "#0066cc",
+      multiValueRemoveBg: "#cfe2ff",
+      multiValueRemoveColor: "#0066cc",
+      borderColor: "#ced4da",
+      hoverBg: "#f8f9fa",
+    };
+  };
+
+  const themeColors = getComputedStyle();
+  const healthConditionOptions = (lookupData.healthConditions || []).map((c) => ({ value: c.id, label: c.name }));
+
   const onSubmit = async (data) => {
     try {
       const rawCenterId = isGlobalAdmin ? data.Center_ID : (applicant?.center_id ?? userCenterId ?? null);
@@ -337,7 +379,8 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
         formData.append("flat_name", data.Flat_Name || "");
         formData.append("flat_number", data.Flat_Number || "");
         if (data.Dwelling_Status && data.Dwelling_Status !== "") formData.append("dwelling_status", data.Dwelling_Status);
-        if (data.Health && data.Health !== "") formData.append("health", data.Health);
+        const healthIds = Array.isArray(data.Health_Conditions) ? data.Health_Conditions.map((c) => c.value) : [];
+        if (healthIds.length > 0) formData.append("health", JSON.stringify(healthIds));
         if (data.Skills && data.Skills !== "") formData.append("skills", data.Skills);
         formData.append("next_of_kin_name", data.Next_Of_Kin_Name || "");
         formData.append("next_of_kin_surname", data.Next_Of_Kin_Surname || "");
@@ -388,7 +431,7 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
           flat_name: data.Flat_Name || null,
           flat_number: data.Flat_Number || null,
           dwelling_status: data.Dwelling_Status && data.Dwelling_Status !== "" ? parseInt(data.Dwelling_Status) : null,
-          health: data.Health && data.Health !== "" ? parseInt(data.Health) : null,
+          health: Array.isArray(data.Health_Conditions) ? data.Health_Conditions.map((c) => parseInt(c.value, 10)).filter((n) => !Number.isNaN(n)) : [],
           skills: data.Skills && data.Skills !== "" ? parseInt(data.Skills) : null,
           next_of_kin_name: data.Next_Of_Kin_Name || null,
           next_of_kin_surname: data.Next_Of_Kin_Surname || null,
@@ -576,10 +619,6 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
             <Col md={3}>
               <p className="text-muted mb-1 font-size-11 text-uppercase">File Status</p>
               <p className="mb-2 fw-medium font-size-12">{getLookupName(lookupData.fileStatus, applicant.file_status)}</p>
-            </Col>
-            <Col md={3}>
-              <p className="text-muted mb-1 font-size-11 text-uppercase">Health Condition</p>
-              <p className="mb-2 fw-medium font-size-12">{getLookupName(lookupData.healthConditions, applicant.health)}</p>
             </Col>
             <Col md={3}>
               <p className="text-muted mb-1 font-size-11 text-uppercase">Skills</p>
@@ -911,19 +950,46 @@ const ApplicantSummary = ({ applicant, lookupData, onUpdate, showAlert }) => {
                   </Col>
                   <Col md={4}>
                     <FormGroup>
-                      <Label>Health Condition</Label>
+                      <Label>Health Conditions</Label>
                       <Controller
-                        name="Health"
+                        name="Health_Conditions"
                         control={control}
                         render={({ field }) => (
-                          <Input type="select" {...field}>
-                            <option value="">Select Condition</option>
-                            {lookupData.healthConditions.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name}
-                              </option>
-                            ))}
-                          </Input>
+                          <Select
+                            {...field}
+                            isMulti
+                            options={healthConditionOptions}
+                            className="react-select-container"
+                            classNamePrefix="react-select"
+                            placeholder="Select conditions..."
+                            styles={{
+                              control: (base, state) => ({
+                                ...base,
+                                backgroundColor: themeColors.controlBg,
+                                borderColor: state.isFocused ? "#86b7fe" : themeColors.borderColor,
+                                boxShadow: state.isFocused ? "0 0 0 0.25rem rgba(13, 110, 253, 0.25)" : "none",
+                                "&:hover": { borderColor: state.isFocused ? "#86b7fe" : themeColors.borderColor },
+                              }),
+                              menu: (base) => ({ ...base, backgroundColor: themeColors.menuBg, borderColor: themeColors.borderColor, zIndex: 9999 }),
+                              menuList: (base) => ({ ...base, backgroundColor: themeColors.menuBg, padding: 0 }),
+                              input: (base) => ({ ...base, color: themeColors.inputColor }),
+                              placeholder: (base) => ({ ...base, color: themeColors.placeholderColor }),
+                              multiValue: (base) => ({ ...base, backgroundColor: themeColors.multiValueBg }),
+                              multiValueLabel: (base) => ({ ...base, color: themeColors.multiValueLabelColor }),
+                              multiValueRemove: (base) => ({
+                                ...base,
+                                backgroundColor: themeColors.multiValueRemoveBg,
+                                color: themeColors.multiValueRemoveColor,
+                                "&:hover": { backgroundColor: themeColors.multiValueRemoveBg, color: themeColors.multiValueRemoveColor, opacity: 0.8 },
+                              }),
+                              option: (base, state) => ({
+                                ...base,
+                                backgroundColor: state.isSelected ? "#0d6efd" : state.isFocused ? themeColors.hoverBg : themeColors.menuBg,
+                                color: state.isSelected ? "#fff" : themeColors.inputColor,
+                                "&:active": { backgroundColor: "#0d6efd", color: "#fff" },
+                              }),
+                            }}
+                          />
                         )}
                       />
                     </FormGroup>
